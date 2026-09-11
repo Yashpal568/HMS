@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module.js';
 import { RolesModule } from './roles/roles.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 import databaseConfig from './config/database.config.js';
 
 @Module({
@@ -20,6 +21,7 @@ import databaseConfig from './config/database.config.js';
     RolesModule,
     UsersModule,
     AuthModule,
+    DashboardModule,
     HealthModule,
   ],
 })

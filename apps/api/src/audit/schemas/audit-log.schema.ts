@@ -17,6 +17,9 @@ export class AuditLog {
   @Prop({ required: true, index: true })
   resource!: string;
 
+  @Prop({ type: String, default: 'SUCCESS', index: true })
+  status!: string;
+
   @Prop({ type: MongooseSchema.Types.Mixed, default: {} })
   details!: Record<string, unknown>;
 

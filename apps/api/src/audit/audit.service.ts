@@ -8,6 +8,7 @@ export interface CreateAuditLogParams {
   userId: string;
   action: string;
   resource: string;
+  status?: string;
   details?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;

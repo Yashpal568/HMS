@@ -29,7 +29,7 @@ export default function LoginPage() {
     setIsSubmitting(false);
 
     if (success) {
-      router.push('/');
+      router.push('/dashboard');
     }
   };
 

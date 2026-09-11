@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@hms/types": ["../../packages/types/index.ts"]
     }
   },
   "include": [
