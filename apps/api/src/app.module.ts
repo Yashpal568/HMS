@@ -9,7 +9,7 @@ import databaseConfig from './config/database.config.js';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig],
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: ['.env.local', '.env', 'apps/api/.env', '../../.env'],
     }),
     DatabaseModule,
     HealthModule,

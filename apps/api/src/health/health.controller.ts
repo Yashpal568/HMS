@@ -1,11 +1,11 @@
-import { Controller, Get, Optional } from '@nestjs/common';
-import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import { Controller, Get, Optional, Inject } from '@nestjs/common';
+import { getConnectionToken } from '@nestjs/mongoose';
+import type { Connection } from 'mongoose';
 
 @Controller('health')
 export class HealthController {
   constructor(
-    @Optional() @InjectConnection() private readonly connection?: Connection,
+    @Optional() @Inject(getConnectionToken()) private readonly connection?: Connection,
   ) {}
 
   @Get()
