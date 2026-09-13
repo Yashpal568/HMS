@@ -1,7 +1,7 @@
 # Antigravity IDE — Mandatory HMS Build Rules
 
 ## Mission
-Implement the HMS from the approved specification without hallucinating requirements.
+Implement the Multi-Tenant SaaS Hospital Management System (HMS MedCore) from approved specifications without hallucinating requirements.
 
 ## Read First
 Before coding, read:
@@ -11,6 +11,22 @@ Before coding, read:
 - DATABASE.md
 - ARCHITECTURE.md
 - DESIGN.md
+- SECURITY.md
+- API.md
+- DEVELOPMENT.md
+- docs/architecture/multi-tenancy.md
+- docs/security/tenant-isolation.md
+- docs/saas/subscriptions.md
+- task.md
+
+## Multi-Tenant SaaS Rules
+1. **Strict Tenant Isolation**: All tenant-owned records must be scoped server-side using `{ tenantId }`.
+2. **Never Trust Client Tenant Identifiers**: The backend derives `tenantId` exclusively from the verified JWT session (`req.user.tenantId`). Never accept `tenantId` from client request bodies, queries, or custom headers.
+3. **Zero Unscoped Queries**: Never call `.find()`, `.findOne()`, or update queries on tenant-owned models without `{ tenantId }`.
+4. **Platform vs Hospital Separation**: Platform Super Admins manage SaaS subscriptions and tenants with zero clinical access; Hospital Admins manage their hospital with zero platform privileges and zero cross-hospital access.
+5. **MongoDB Atlas is System of Record**: No PostgreSQL or Prisma.
+6. **AI is Phase 2**: AI Gateway via controlled APIs only; zero direct database access.
+7. **Electron is Later**: Web-first SaaS primary; Electron desktop packaging is deferred to Phase 2 and reuses the web app and cloud API.
 
 ## No Silent Assumptions
 If unclear:
@@ -29,35 +45,18 @@ WAITING FOR APPROVAL: YES
 ```
 
 ## Build in Small Milestones
-1. Foundation
-2. Auth/RBAC
-3. Patient
-4. Appointment/OPD
-5. EMR
-6. IPD
-7. Lab
-8. Pharmacy
-9. Inventory
-10. Billing
-11. Reports
-12. Security/operations
-13. UAT
-14. Phase 2 AI
-
-Never generate the entire production system in one step.
+Follow the sequential milestone roadmap in `docs/milestones/`. Never generate the entire production system in one step.
 
 ## Feature Completion
-A screen is NOT a complete feature.
-
-Complete means:
-- frontend
-- backend
-- database
-- validation
-- authorization
-- audit
-- tests
-- errors/loading/empty states
+A screen is NOT a complete feature. Complete means:
+- frontend UI
+- backend REST API
+- database schema with compound indexed `tenantId`
+- input validation via DTO pipes
+- tenant-aware authorization & RBAC guards
+- audit logging
+- automated unit and tenant-isolation tests
+- error/loading/empty states
 - documentation
 
 ## Never Invent
@@ -68,29 +67,28 @@ Do not invent:
 - reference ranges
 - insurance rules
 - permissions
-- fields with business impact
-- external APIs
-- credentials
+- pricing or subscription limits
+- external APIs or credentials
 - compliance certifications
 - workflows
 
 ## Security
-Never expose MongoDB to browser. Never put secrets in client code/source control. Never create bypass accounts. Never disable auth to make development easier. Never log credentials/tokens/sensitive medical records.
+Never expose MongoDB Atlas directly to the browser, Electron, or AI. Never put secrets in client code or source control. Never create bypass accounts. Never disable auth to make development easier. Never log credentials, tokens, or sensitive medical records.
 
 ## Database
-Do not duplicate concepts into multiple collections without an approved reason. Do not manually alter production data. Do not add random indexes. Keep schema/index changes version-controlled.
+Do not duplicate concepts into multiple collections without an approved reason. Do not manually alter production data. Do not add random indexes. Keep schema and index changes version-controlled.
 
 ## Dependencies
 Before adding a package, explain its purpose and why an existing package cannot be reused.
 
 ## Clinical Safety
-Phase 1 must not autonomously diagnose, prescribe, recommend treatment or decide discharge.
+Phase 1 must not autonomously diagnose, prescribe, recommend treatment, or decide discharge.
 
 ## AI
 Phase 2 only. When enabled:
 - AI Gateway
 - explicit tool allowlist
-- user permission checks
+- user permission checks & tenant context inheritance
 - minimum necessary data
 - output validation
 - human approval for consequential actions
@@ -99,59 +97,19 @@ Phase 2 only. When enabled:
 
 ## Verification
 After every meaningful change:
-- typecheck
-- lint
-- relevant unit tests
-- relevant integration tests
-- relevant E2E tests
+- typecheck (`pnpm typecheck`)
+- lint (`pnpm lint`)
+- relevant unit tests (`pnpm test`)
+- relevant integration/e2e tests (`pnpm test:e2e`)
 
 Fix failures before moving forward.
 
 ## UI
-Use the shared design system. Do not invent a new visual language per screen. Do not create fake production metrics.
-
-## Change Control
-Major changes require approval:
-- database architecture
-- authentication architecture
-- new module
-- external integration
-- clinical workflow
-- financial workflow
-- AI behavior
-- deployment architecture
-
-## Report Every Task
-```text
-IMPLEMENTED:
-...
-
-FILES CHANGED:
-...
-
-TESTS RUN:
-...
-
-RESULT:
-...
-
-OPEN QUESTIONS:
-...
-
-ASSUMPTIONS:
-...
-```
+Use the shared design system. Do not invent a new visual language per screen. Do not create fake production metrics. Authentic empty states only.
 
 ## Final Principle
-Correctness > speed.
-Security > convenience.
-Approved requirements > AI guesses.
+Correctness > speed.  
+Security > convenience.  
+Tenant Isolation > convenience.  
+Approved requirements > AI guesses.  
 Simple architecture > unnecessary complexity.
-
-
-## Web-First / Desktop-Later Rule
-Phase 1 is a web application. Do NOT introduce Electron, desktop installers or desktop-specific architecture unless explicitly approved.
-
-The frontend and backend must remain cleanly separated so the frontend can later be packaged with Electron.
-
-Electron is a delivery shell, not a replacement for the backend. Never let Electron access MongoDB directly.

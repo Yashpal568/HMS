@@ -52,40 +52,36 @@ Implement controlled, audited, and secure AI capabilities following the strict a
 
 ## Database Requirements
 - **Collections**:
-  - `ai_audit_logs`:
+  - `ai_audit_logs` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `userId`: ObjectId, ref 'User', required
     - `patientId`: ObjectId, ref 'Patient'
     - `taskType`: String enum (`soap_draft`, `discharge_summary`, `lab_summary`, `faq`)
     - `toolsInvoked`: Array of Strings
     - `promptTokens`: Number
     - `completionTokens`: Number
-    - `wasApproved`: Boolean
-    - `editedByDoctor`: Boolean
-    - `timestamp`: Date, default Date.now
-- **Rule**: No direct MongoDB connection credentials provided to any AI engine.
+    - `doctorAccepted`: Boolean
+    - `modificationsMade`: Boolean
+    - `createdAt`: Date
+- **Indexes**:
+  - `ai_audit_logs`: `{ tenantId: 1, userId: 1, createdAt: -1 }`
+  - `ai_audit_logs`: `{ tenantId: 1, patientId: 1, createdAt: -1 }`
 
 ## API Requirements
-- `POST /api/v1/ai/copilot/draft-soap`: Body `{ encounterId, rawNotes }`, returns `{ success, data: { draftNote: string } }`.
-- `POST /api/v1/ai/copilot/draft-discharge`: Body `{ admissionId }`, returns `{ success, data: { draftSummary: string } }`.
-- `POST /api/v1/ai/faq`: Body `{ query: string }`, returns `{ success, data: { answer: string, sources: string[] } }`.
+- `POST /api/v1/ai/soap-draft`: Body `{ encounterId, rawNotes }`, scoped to `tenantId`, returns `{ success, draftText: string }`.
+- `POST /api/v1/ai/discharge-draft`: Body `{ admissionId }`, scoped to `tenantId`, returns `{ success, draftSummary: string }`.
+- `POST /api/v1/ai/faq`: Body `{ query: string }`, returns `{ success, answer: string }`.
 
 ## RBAC Requirements
-- `ai.copilot.use`: Strictly restricted to `doctor`.
-- `ai.faq.use`: `receptionist`, `nurse`, `doctor`.
-- `ai.audit.read`: `super_admin`, `hospital_admin`.
+- `ai.clinical.use`: `doctor`.
+- `ai.support.use`: `receptionist`, `nurse`.
 
 ## Security Requirements
-- Absolute enforcement of the architectural rule: `Browser → Next.js → NestJS API → AI Gateway → Tool Allowlist → Approved HMS APIs → Doctor Approval → MongoDB Atlas`.
-- Zero raw database credentials exposed to AI models or LLM providers.
-- Strict PII minimization before external API transmission.
-
-## Audit Requirements
-- Every AI generation request is permanently recorded in `ai_audit_logs`.
-- Clinician modifications to AI drafts are tracked to monitor copilot accuracy.
-
-## UX Requirements
-- Unmistakable visual differentiation between human-authored text and AI-generated draft suggestions.
-- Easy "Accept", "Edit", and "Discard" actions for clinicians.
+- **Tenant Context Inheritance**: AI requests inherit caller's verified `tenantId` and RBAC permissions; AI cannot cross tenant boundaries or access foreign tenant records.
+- **Zero Direct Database Exposure**: AI models never receive MongoDB connection strings or query permissions.
+- All external API calls pass through Data Minimizer to remove patient PII.
+- Clinician sign-off is mandatory before committing any AI-generated note to the medical record.
 
 ## Testing Requirements
 - Unit tests:
@@ -93,11 +89,12 @@ Implement controlled, audited, and secure AI capabilities following the strict a
   - Tool allowlist rejects unapproved function calls.
   - Draft commits fail if not accompanied by authentic doctor signature.
 - Integration tests:
-  - Verify full workflow from raw doctor notes to finalized encounter.
+  - Verify full workflow from raw doctor notes to finalized encounter with tenant scoping.
 
 ## Acceptance Criteria
 - [ ] AI Gateway architecture strictly follows `docs/ARCHITECTURE.md`.
 - [ ] Zero direct MongoDB access for AI services.
+- [ ] AI requests inherit tenant context and enforce tenant isolation.
 - [ ] Data minimization verifies PII redaction.
 - [ ] Tool allowlist restricts AI actions to approved read-only APIs.
 - [ ] All AI outputs require explicit human doctor approval before saving.
@@ -108,7 +105,7 @@ Implement controlled, audited, and secure AI capabilities following the strict a
 - Downstream: Milestone 14 (Electron Desktop Packaging).
 
 ## Implementation Notes
-- AI models should be configurable via environment variables (`AI_PROVIDER`, `AI_API_KEY`) to allow swapping local on-premise models (Ollama/vLLM) for cloud models without codebase changes.
+- AI models should be configurable via environment variables (`AI_PROVIDER`, `AI_API_KEY`) to allow swapping approved model providers without codebase changes.
 
 ## Do Not Implement
 - Autonomous clinical diagnosis or autonomous prescription authorization.

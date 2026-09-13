@@ -1,6 +1,9 @@
-# HMS Development Standards & Workflow
+# Hospital Management System — Development Standards & Workflow
 
-This document specifies the engineering conventions, coding standards, architectural patterns, and testing guidelines for the Hospital Management System.
+**Product**: Hospital Management System (HMS MedCore)  
+**Architecture**: Multi-Tenant SaaS Modular Monolith  
+**Database**: MongoDB Atlas  
+**Status**: Authoritative Developer Guide  
 
 ---
 
@@ -23,91 +26,77 @@ READ → UNDERSTAND → PLAN → IMPLEMENT → TEST → DOCUMENT → UPDATE TASK
 
 ---
 
-## 2. Monorepo Architecture
+## 2. Multi-Tenant SaaS Development Rules
 
-The repository is organized as a pnpm workspace:
+### Rule 1: Zero Unscoped Queries
+Every database query executed on a tenant-owned collection **must** include `{ tenantId }` in the query predicate:
+```typescript
+// ❌ CRITICAL SECURITY FLAW: Unscoped query leaks cross-tenant data
+const patient = await this.patientModel.findOne({ _id: id });
 
-```text
-FluBird/
-├── apps/
-│   ├── web/           # Next.js 16 (React 19) Hospital Web Application
-│   └── api/           # NestJS 12 (Node 22) Modular Monolith REST API
-├── packages/
-│   ├── types/         # Shared domain contracts, enums, interfaces
-│   ├── ui/            # Shared UI components
-│   └── config/        # Shared configuration presets
-├── docs/              # Master specifications and milestone docs
-│   └── milestones/    # Individual milestone specifications (M01 to M14)
-├── AGENTS.md          # Operating instructions for AI coding assistants
-├── task.md            # Current work state and milestone progress
-└── pnpm-workspace.yaml
+// ✅ AUTHORITATIVE PATTERN: Scoped strictly to authenticated tenant
+const patient = await this.patientModel.findOne({ _id: id, tenantId });
 ```
+
+### Rule 2: Never Trust Client-Supplied Tenant Identifiers
+The client must **never** specify or override its `tenantId` via request bodies, query parameters, or HTTP headers. The backend derives `tenantId` exclusively from the cryptographically verified JWT session:
+```typescript
+// In Controller:
+@Post()
+@RequirePermissions('patients.create')
+async create(
+  @Body() dto: CreatePatientDto,
+  @CurrentUser() user: AuthenticatedUser,
+) {
+  // Pass verified user.tenantId down to service
+  return this.patientsService.create(dto, user.tenantId, user.userId);
+}
+```
+
+### Rule 3: Uniform Error Masking (Existence Masking)
+When querying a resource by ID that belongs to another hospital tenant, always return `404 Not Found` (never `403 Forbidden`) to prevent cross-tenant ID enumeration attacks.
 
 ---
 
-## 3. Backend Conventions (NestJS)
+## 3. Backend Architecture & Conventions (NestJS)
 
-### Architecture
+### Execution Pipeline
 All business capabilities must follow the modular monolith pattern:
 ```text
 Controller
    ↓
-Guards & Decorators (Authentication & RBAC)
+Guards & Decorators (JwtAuthGuard, RolesGuard, PermissionsGuard)
    ↓
-DTO Validation (class-validator)
+DTO Validation (ValidationPipe with class-validator)
    ↓
-Application Service
+Application Service (Tenant-Scoped Business Logic)
    ↓
-Data Access (Mongoose Models)
+Data Access (Mongoose Models with { tenantId } filter)
    ↓
-MongoDB Atlas
+MongoDB Atlas Cluster
 ```
 
-- Controllers must remain thin. Never execute database queries directly within a controller.
-- Database operations belong inside Services.
-- Cross-module communication must use explicit service injection.
+- **Controllers**: Must remain thin. Validate inputs via DTOs and delegate directly to services.
+- **Services**: Own the domain logic. Accept `tenantId` as a mandatory parameter for all tenant-scoped operations.
+- **TypeScript & ESM**:
+  - Use NodeNext module resolution.
+  - Explicit `.js` extensions are mandatory for relative imports (e.g. `import { AuthService } from './auth.service.js';`).
+  - When importing Mongoose types, use `import type { Model, Connection } from 'mongoose';` to prevent ESM runtime errors.
+  - Always inject Mongoose connection via `@Inject(getConnectionToken())`.
 
-### TypeScript & ESM
-- Use NodeNext module resolution.
-- Explicit `.js` extensions are mandatory for relative imports (e.g. `import { AuthService } from './auth.service.js';`).
-- When importing Mongoose types, use `import type { Model, Connection } from 'mongoose';` to prevent ESM named export runtime errors.
-- Always inject Mongoose connection via `@Inject(getConnectionToken())`.
-
-### Validation
-- Validate all incoming HTTP payloads using NestJS global `ValidationPipe` with:
-  ```typescript
-  new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  });
-  ```
-- DTOs must use `class-validator` and `class-transformer` decorators.
-
-### API Response Format
-All REST endpoints must adhere to the standard envelope:
-- **Success Response**:
-  ```json
-  {
-    "success": true,
-    "data": { ... }
-  }
-  ```
-- **Error Response**:
-  ```json
-  {
-    "success": false,
-    "error": {
-      "code": "RESOURCE_NOT_FOUND",
-      "message": "Human readable error description without stack trace.",
-      "requestId": "req-123456"
-    }
-  }
-  ```
+### Validation Pipeline
+Incoming HTTP payloads are validated globally using `ValidationPipe`:
+```typescript
+new ValidationPipe({
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  transform: true,
+});
+```
 
 ---
 
-## 4. Frontend Conventions (Next.js)
+## 4. Frontend Architecture & Conventions (Next.js)
 
 ### Architecture
 - Next.js App Router (`apps/web/src/app/`).
@@ -131,10 +120,12 @@ All REST endpoints must adhere to the standard envelope:
 
 - MongoDB Atlas is the authoritative cloud system of record.
 - **Frontend MUST NEVER connect directly to MongoDB**.
-- **Collection Naming**: Plural lowercase snake_case (e.g. `users`, `patients`, `appointments`, `audit_logs`).
-- **Schema Naming**: Singular PascalCase (e.g. `User`, `Patient`, `Appointment`).
+- **Collection Classification**:
+  - Global / Platform-Owned: `tenants`, `subscriptions`, `plans`, `platform_users`, `platform_audit_logs`.
+  - Tenant-Owned: Mandatory indexed `tenantId: ObjectId` (e.g. `users`, `patients`, `appointments`, `invoices`).
+  - System-Owned: `system_settings`, `outbox_events`.
 - **Financial Precision**: All monetary values MUST be stored as `Decimal128` or integer minor units (cents/paise). Never use JavaScript floating-point numbers for currency calculations.
-- **Indexes**: Add compound indexes strictly based on actual query patterns (e.g. `{ hospitalId: 1, uhid: 1 }`). Never add random indexes.
+- **Indexes**: Add compound indexes with `tenantId` as the leading key (e.g. `{ tenantId: 1, uhid: 1 }`).
 
 ---
 
@@ -144,7 +135,11 @@ All REST endpoints must adhere to the standard envelope:
   - Run via `pnpm --filter api run test`.
 - **E2E Tests**: Place in `apps/api/test/` with `.e2e-spec.ts` extensions.
   - Run via `pnpm --filter api run test:e2e`.
-- All tests must be deterministic, self-contained, and run without lingering database locks.
+- **Tenant-Isolation Tests**: Every tenant-owned module must include automated tests asserting:
+  - Cross-tenant read returns 404.
+  - Cross-tenant update/delete returns 404.
+  - List queries strictly return only caller's tenant data.
+  - Injected request body `tenantId` is ignored.
 
 ---
 

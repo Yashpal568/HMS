@@ -67,15 +67,17 @@ Build the authoritative patient registry, automated Unique Hospital Identifier (
   - `PatientsService`:
     - `generateUhid()`: Sequential counter or atomic format (`UHID-YYYY-NNNNNN`).
     - `checkDuplicates(dto)`: Queries by phone and DOB.
-    - `createPatient(dto, userId)`: Validates, assigns UHID, saves, and logs audit.
-    - `findPatients(filter, pagination)`: Performs case-insensitive regex or index query.
+    - `createPatient(dto, tenantId, userId)`: Validates, assigns UHID, scopes to tenant, saves, and logs audit.
+    - `findPatients(filter, pagination, tenantId)`: Performs case-insensitive regex or index query scoped to caller's tenantId.
+    - `findPatientById(id, tenantId)`: Queries `{ _id: id, tenantId }`, returning 404 if not found or owned by another tenant.
 - **DTOs**: `CreatePatientDto`, `UpdatePatientDto`, `PatientQueryDto` with `class-validator` annotations.
 
 ## Database Requirements
-- **Collection**: `patients`.
+- **Collection**: `patients` (Tenant-Owned).
 - **Schema Fields**:
   - `_id`: ObjectId
-  - `uhid`: String, required, unique index
+  - `tenantId`: ObjectId, required, ref: 'Tenant', index: true
+  - `uhid`: String, required, tenant-scoped unique identifier
   - `name`: Object `{ first: String, middle?: String, last: String }`, required
   - `dateOfBirth`: Date, required
   - `gender`: String enum (`male`, `female`, `other`), required
@@ -88,16 +90,16 @@ Build the authoritative patient registry, automated Unique Hospital Identifier (
   - `createdAt`, `updatedAt`: Timestamps
   - `createdBy`, `updatedBy`: String user IDs
 - **Indexes**:
-  - `{ uhid: 1 }` (unique)
-  - `{ 'contacts.phone': 1, dateOfBirth: 1 }`
-  - `{ 'name.last': 1, 'name.first': 1 }`
-  - `{ createdAt: -1 }`
+  - `{ tenantId: 1, uhid: 1 }` (unique: true)
+  - `{ tenantId: 1, 'contacts.phone': 1, dateOfBirth: 1 }`
+  - `{ tenantId: 1, 'name.last': 1, 'name.first': 1 }`
+  - `{ tenantId: 1, createdAt: -1 }`
 
 ## API Requirements
-- `POST /api/v1/patients`: Body `CreatePatientDto`, returns `{ success: true, data: Patient }`.
-- `GET /api/v1/patients`: Query `{ search?: string, page?: number, limit?: number }`, returns `{ success: true, data: Patient[], meta: PaginationMeta }`.
-- `GET /api/v1/patients/:id`: Param `id`, returns `{ success: true, data: Patient }`.
-- `PATCH /api/v1/patients/:id`: Body `UpdatePatientDto`, returns `{ success: true, data: Patient }`.
+- `POST /api/v1/patients`: Body `CreatePatientDto`, automatically attaches caller's `tenantId`, returns `{ success: true, data: Patient }`.
+- `GET /api/v1/patients`: Query `{ search?: string, page?: number, limit?: number }`, scoped to `tenantId`, returns `{ success: true, data: Patient[], meta: PaginationMeta }`.
+- `GET /api/v1/patients/:id`: Param `id`, scoped to `tenantId`, returns `{ success: true, data: Patient }` (or `404 Not Found` if belonging to another tenant).
+- `PATCH /api/v1/patients/:id`: Body `UpdatePatientDto`, scoped to `tenantId`, returns `{ success: true, data: Patient }`.
 
 ## RBAC Requirements
 - `patients.create`: Assigned to `super_admin`, `hospital_admin`, `receptionist`.
@@ -106,6 +108,8 @@ Build the authoritative patient registry, automated Unique Hospital Identifier (
 - `patients.delete`: Strictly restricted to `super_admin`.
 
 ## Security Requirements
+- **Tenant Isolation**: Non-negotiable backend-enforced scoping using caller's verified `tenantId`. Client cannot specify or override `tenantId`.
+- **IDOR Defense & Existence Masking**: Cross-tenant ID queries return uniform `404 Not Found`.
 - Full request validation via DTO pipes.
 - Sensitive identifiers masked on preview screens.
 - Server-side authorization check for all patient mutation operations.

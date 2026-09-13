@@ -1,56 +1,73 @@
-# HMS Deployment Strategy
+# Hospital Management System — Deployment Strategy
 
-## Approved Direction
+**Product**: Hospital Management System (HMS MedCore)  
+**Model**: Multi-Tenant SaaS Platform  
+**Database**: MongoDB Atlas  
+**Status**: Authoritative Deployment Policy  
 
-**WEB FIRST → WINDOWS .EXE LATER**
+---
 
-This is the official project direction.
+## 1. Approved Deployment Direction
 
-## Phase 1
+**WEB-FIRST MULTI-TENANT SAAS → WINDOWS DESKTOP (.EXE) LATER**
+
+The official business direction is a cloud-hosted, subscription-based Multi-Tenant SaaS application.
+
+---
+
+## 2. Primary Architecture: Cloud Multi-Tenant SaaS
+
 ```text
-Browser
-  ↓
-Next.js / React
-  ↓
-NestJS REST API
-  ↓
-MongoDB Atlas
+Hospital Clinicians & Staff (Browsers)
+                  │
+                  ▼ HTTPS / WAF
+       Next.js Web Application
+                  │ HTTPS REST API
+                  ▼
+  NestJS Modular Monolith API Gateway
+    ├── Authentication & Session Verification
+    ├── Tenant Context Resolution (req.user.tenantId)
+    ├── RBAC Authorization Guards
+    └── Tenant-Scoped Domain Services
+                  │ TLS 1.2+ Mongoose Driver
+                  ▼
+        MongoDB Atlas Cloud Cluster
+    ├── Multi-AZ High Availability
+    ├── Continuous Automated Backups
+    └── Enforced Encryption at Rest & In-Transit
 ```
 
-Build the entire core HMS this way.
+All hospitals and medical clinics operate as isolated tenants on this managed cloud architecture.
 
-## Phase 2
+---
+
+## 3. Secondary Architecture: Windows Desktop Shell (Phase 2)
+
 ```text
-Next.js / React
-      ↓
-Electron
-      ↓
-HMS.exe / HMS.msi
-      ↓
-NestJS REST API
-      ↓
-MongoDB Atlas
+Next.js Web Application UI
+            │
+            ▼
+   Electron Shell Wrapper
+            │
+            ▼
+    HMS.exe / HMS.msi
+            │ HTTPS REST API
+            ▼
+     NestJS Cloud API
+            │
+            ▼
+      MongoDB Atlas
 ```
 
-The desktop package reuses the existing application. Do not rewrite the HMS as a separate desktop system.
+The desktop packaging completely reuses the existing Next.js web application and cloud API. A separate desktop backend or direct desktop-to-database connection is strictly prohibited.
 
-## Future On-Premise
-```text
-Windows/Browser Clients
-          ↓
-Hospital LAN
-          ↓
-Local NestJS Server
-          ↓
-Local MongoDB
-```
+---
 
-This option is for hospitals that require local data storage.
+## 4. Non-Negotiable Deployment Rules
 
-## Non-Negotiable Rules
-1. Frontend never connects directly to MongoDB.
-2. Electron never connects directly to MongoDB.
-3. Business logic stays in NestJS/services.
-4. Phase 1 does not depend on Electron.
-5. Phase 2 desktop packaging must reuse the Phase 1 frontend.
-6. Cloud/on-premise database selection is an infrastructure configuration decision, not a frontend rewrite.
+1. **Strict Tenant Isolation**: All tenant-owned queries must be server-scoped using `tenantId`.
+2. **Zero Direct Database Exposure**: Neither browser clients nor Electron wrappers can connect directly to MongoDB Atlas.
+3. **Modular Monolith Integrity**: All business logic remains centralized in NestJS domain services.
+4. **Phase 1 Independence**: Phase 1 is 100% web-first and does not install or depend on Electron.
+5. **No Microservices**: The entire system deploys as a clean modular monolith.
+6. **No PostgreSQL/Prisma**: MongoDB Atlas is the exclusive system of record.

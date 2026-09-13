@@ -71,9 +71,10 @@ Build the core clinical consultation workspace for physicians to conduct outpati
 
 ## Database Requirements
 - **Collections**:
-  - `encounters`:
+  - `encounters` (Tenant-Owned):
     - `_id`: ObjectId
-    - `hospitalId`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `hospitalId`: ObjectId, ref 'Hospital', required: false
     - `patientId`: ObjectId, ref 'Patient', required
     - `doctorId`: ObjectId, ref 'User', required
     - `appointmentId`: ObjectId, ref 'Appointment', required
@@ -85,8 +86,9 @@ Build the core clinical consultation workspace for physicians to conduct outpati
     - `diagnoses`: Array of Objects `[{ code: String, description: String, type: String, status: String }]`
     - `finalizedAt`: Date
     - `createdAt`, `updatedAt`: Timestamps
-  - `prescriptions`:
+  - `prescriptions` (Tenant-Owned):
     - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `encounterId`: ObjectId, ref 'Encounter', required
     - `patientId`: ObjectId, ref 'Patient', required
     - `doctorId`: ObjectId, ref 'User', required
@@ -94,15 +96,15 @@ Build the core clinical consultation workspace for physicians to conduct outpati
     - `items`: Array of Objects `[{ medicineName: String, dosageForm: String, strength: String, frequency: String, route: String, durationDays: Number, quantity: Number, instructions: String }]`
     - `createdAt`, `updatedAt`: Timestamps
 - **Indexes**:
-  - `encounters`: `{ patientId: 1, createdAt: -1 }`
-  - `encounters`: `{ appointmentId: 1 }` (unique)
-  - `prescriptions`: `{ encounterId: 1 }`
-  - `prescriptions`: `{ patientId: 1, createdAt: -1 }`
+  - `encounters`: `{ tenantId: 1, patientId: 1, createdAt: -1 }`
+  - `encounters`: `{ tenantId: 1, appointmentId: 1 }` (unique)
+  - `prescriptions`: `{ tenantId: 1, encounterId: 1 }`
+  - `prescriptions`: `{ tenantId: 1, patientId: 1, createdAt: -1 }`
 
 ## API Requirements
-- `POST /api/v1/emr/encounters`: Body `{ appointmentId, patientId }`, returns `{ success, data: Encounter }`.
-- `PATCH /api/v1/emr/encounters/:id`: Body `{ vitals, chiefComplaints, notes, diagnoses, prescriptionItems }`.
-- `POST /api/v1/emr/encounters/:id/finalize`: Seals record, updates appointment to `completed`.
+- `POST /api/v1/emr/encounters`: Body `{ appointmentId, patientId }`, scoped to `tenantId`, returns `{ success, data: Encounter }`.
+- `PATCH /api/v1/emr/encounters/:id`: Body `{ vitals, chiefComplaints, notes, diagnoses, prescriptionItems }`, scoped to `tenantId`.
+- `POST /api/v1/emr/encounters/:id/finalize`: Seals record, scoped to `tenantId`, updates appointment to `completed`.
 
 ## RBAC Requirements
 - `emr.create`, `emr.update`: `doctor`.

@@ -32,7 +32,7 @@ Package the existing Next.js web application into an enterprise Windows desktop 
 1. **Hospital Workstation Launch**: Nurse turns on nursing station desktop PC, double-clicks "HMS MedCore" desktop shortcut. Electron shell launches full-screen, checks backend connectivity, and renders the standard secure login screen.
 2. **Direct Thermal Printing**: Cashier processes a consultation fee payment and clicks "Print Receipt". Desktop adapter bypasses the OS print preview and sends raw ESC/POS commands directly to the receipt printer, issuing a receipt in under 1 second.
 3. **Barcode Scanning**: Pharmacist scans a medicine carton barcode; Electron global shortcut interceptor decodes the stream and populates the batch entry field instantly.
-4. **Endpoint Configuration**: Hospital IT administrator accesses configuration settings in the installer to point the desktop client to the hospital's local on-premise NestJS API server (`https://hms-server.local:3001/api/v1`).
+4. **Endpoint Configuration**: Hospital IT administrator accesses configuration settings in the installer to configure the Cloud SaaS API endpoint (e.g. `https://api.hms.health/api/v1`) and default hospital tenant domain.
 
 ## Frontend Requirements
 - **Adapters**:

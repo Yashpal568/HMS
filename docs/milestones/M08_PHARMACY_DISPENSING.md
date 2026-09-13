@@ -68,7 +68,9 @@ Build the hospital pharmacy management and medication dispensing module, integra
 
 ## Database Requirements
 - **Collections**:
-  - `medicines`:
+  - `medicines` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `brandName`: String, required
     - `genericName`: String, required
     - `dosageForm`: String enum (`tablet`, `capsule`, `syrup`, `injection`, `ointment`, `inhaler`, `drops`), required
@@ -77,7 +79,9 @@ Build the hospital pharmacy management and medication dispensing module, integra
     - `schedule`: String enum (`otc`, `prescription`, `schedule_h`, `narcotic`), default `prescription`
     - `minStockLevel`: Number (reorder trigger)
     - `isActive`: Boolean
-  - `medicine_batches`:
+  - `medicine_batches` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `medicineId`: ObjectId, ref 'Medicine', required
     - `batchNumber`: String, required
     - `expiryDate`: Date, required
@@ -87,14 +91,18 @@ Build the hospital pharmacy management and medication dispensing module, integra
     - `unitCostPrice`: Number
     - `unitSalePrice`: Number (MRP)
     - `isActive`: Boolean
-  - `dispensing_records`:
-    - `dispenseNumber`: String, unique (e.g. "DSP-2026-00312")
+  - `dispensing_records` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `dispenseNumber`: String, required (e.g. "DSP-2026-00312")
     - `prescriptionId`: ObjectId, ref 'Prescription', required
     - `patientId`: ObjectId, ref 'Patient', required
     - `pharmacistId`: ObjectId, ref 'User', required
     - `items`: Array of Objects `[{ medicineId: ObjectId, batchId: ObjectId, batchNumber: String, quantity: Number, instructions: String }]`
     - `dispensedAt`: Date, default Date.now
-  - `pharmacy_transactions`:
+  - `pharmacy_transactions` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `batchId`: ObjectId, ref 'MedicineBatch', required
     - `type`: String enum (`purchase_in`, `dispense_out`, `return_in`, `adjustment_out`), required
     - `quantity`: Number, required
@@ -102,16 +110,15 @@ Build the hospital pharmacy management and medication dispensing module, integra
     - `referenceId`: String
     - `createdAt`: Date
 - **Indexes**:
-  - `medicine_batches`: `{ medicineId: 1, expiryDate: 1 }`
-  - `medicine_batches`: `{ batchNumber: 1, medicineId: 1 }` (unique)
-  - `medicine_batches`: `{ expiryDate: 1 }`
-  - `medicines`: `{ genericName: 1, brandName: 1 }`
-  - `dispensing_records`: `{ prescriptionId: 1 }`
+  - `medicine_batches`: `{ tenantId: 1, medicineId: 1, expiryDate: 1 }`
+  - `medicine_batches`: `{ tenantId: 1, medicineId: 1, batchNumber: 1 }` (unique)
+  - `dispensing_records`: `{ tenantId: 1, dispenseNumber: 1 }` (unique)
+  - `medicines`: `{ tenantId: 1, genericName: 1, brandName: 1 }`
 
 ## API Requirements
-- `POST /api/v1/pharmacy/dispense`: Body `{ prescriptionId, items: [{ medicineId, batchId, quantity }] }`, returns `{ success, data: DispensingRecord }`.
-- `GET /api/v1/pharmacy/prescriptions`: Query `{ status?: string, patientId?: string }`, returns `{ success, data: Prescription[] }`.
-- `GET /api/v1/pharmacy/batches/alerts`: Returns `{ success, data: { nearExpiry: Batch[], lowStock: Batch[] } }`.
+- `POST /api/v1/pharmacy/dispense`: Body `{ prescriptionId, items: [{ medicineId, batchId, quantity }] }`, scoped to `tenantId`, returns `{ success, data: DispensingRecord }`.
+- `GET /api/v1/pharmacy/prescriptions`: Query `{ status?: string, patientId?: string }`, scoped to `tenantId`, returns `{ success, data: Prescription[] }`.
+- `GET /api/v1/pharmacy/batches/alerts`: Scoped to `tenantId`, returns `{ success, data: { nearExpiry: Batch[], lowStock: Batch[] } }`.
 
 ## RBAC Requirements
 - `pharmacy.dispense`: `pharmacist`, `super_admin`.
@@ -119,6 +126,7 @@ Build the hospital pharmacy management and medication dispensing module, integra
 - `pharmacy.manage`: `pharmacist`, `hospital_admin`, `super_admin`.
 
 ## Security Requirements
+- **Tenant Isolation**: Pharmacy stock, medicine catalogs, and dispensing logs strictly scoped to caller's verified `tenantId`.
 - Stock deduction must use MongoDB transactions or atomic `$inc` with negative balance guards (`currentQuantity >= requestedQuantity`).
 - Dispensing of narcotic/Schedule H medicines requires double-entry verification of doctor prescription.
 - All stock movements logged immutably in `pharmacy_transactions`.

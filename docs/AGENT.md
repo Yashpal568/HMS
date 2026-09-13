@@ -1,6 +1,6 @@
 # HMS DEVELOPMENT RULES
 
-This is a production-oriented Hospital Management System.
+This is a production-oriented Multi-Tenant SaaS Hospital Management System (HMS MedCore).
 
 The following documents are authoritative:
 
@@ -11,29 +11,35 @@ The following documents are authoritative:
 5. SECURITY.md
 6. API.md
 7. DEVELOPMENT.md
-8. task.md
+8. docs/architecture/multi-tenancy.md
+9. docs/security/tenant-isolation.md
+10. docs/saas/subscriptions.md
+11. task.md
 
 Priority:
 
-Security > Architecture > Database integrity > PRD > Design > convenience
+Tenant Isolation > Security > Architecture > Database integrity > PRD > Design > Convenience
 
-Never invent requirements.
-
-Never create fake hospital data.
-
-Never expose sensitive information.
-
-Never bypass authentication/RBAC.
-
-Never connect frontend directly to MongoDB.
-
-Never hard-code secrets.
-
-Never implement future milestones unless explicitly instructed.
-
-Reuse existing components and services.
-
-Do not repeatedly rebuild or verify completed infrastructure.
+Core Rules:
+1. This is a multi-tenant SaaS HMS.
+2. Tenant isolation is mandatory.
+3. Never trust client-provided tenant identifiers.
+4. Never perform unscoped tenant database queries.
+5. Never bypass backend authorization.
+6. Never expose one tenant's data to another tenant.
+7. Platform and hospital administrative privileges are separate.
+8. MongoDB Atlas is the system of record.
+9. Do not introduce PostgreSQL/Prisma without explicit architectural approval.
+10. AI is Phase 2.
+11. Electron is later.
+12. Never fabricate hospital data.
+13. Never invent clinical rules.
+14. Never invent permissions.
+15. Never invent pricing.
+16. Never invent subscription limits.
+17. Never implement future milestones automatically.
+18. Read the relevant milestone specification before coding.
+19. Test tenant isolation for tenant-aware features.
 
 When a milestone is completed:
 
@@ -45,52 +51,6 @@ When a milestone is completed:
 
 Do not automatically start the next milestone.
 
-Before modifying architecture:
-
-1. Read ARCHITECTURE.md
-2. Explain the proposed change
-3. Update architecture documentation
-4. Then implement
-
-Before modifying database schema:
-
-1. Read DATABASE.md
-2. Update DATABASE.md
-3. Implement the schema change
-
-Before creating UI:
-
-1. Read DESIGN.md
-2. Reuse existing components
-3. Do not create a new visual system
-
-Before adding dependencies:
-
-1. Check whether an existing dependency can solve the problem
-2. Add the smallest appropriate dependency
-3. Document why it was added
-
-Do not rewrite working code without a concrete reason.
-
-Do not create placeholder implementations that pretend to be production functionality.
-
-Do not fabricate API responses or statistics.
-
-Use real backend data whenever a feature requires data.
-
-All sensitive hospital data must be treated as confidential.
-
-AI features are Phase 2.
-Do not implement AI unless the current task explicitly belongs to Phase 2.
-
-Electron/Desktop packaging is a later phase.
-Do not introduce Electron during web development.
-
-Current strategy:
-
-Web application first.
-Electron packaging later.
-
 Development workflow:
 
-READ → PLAN → IMPLEMENT → TEST → DOCUMENT → UPDATE TASK → STOP
+READ → UNDERSTAND → PLAN → IMPLEMENT → TEST → DOCUMENT → UPDATE TASK → STOP

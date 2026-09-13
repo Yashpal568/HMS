@@ -69,18 +69,18 @@ Build the comprehensive hospital reporting suite and administrative audit center
   - `AuditQueryService`: Handles paginated queries on `audit_logs` collection.
 
 ## Database Requirements
-- **Collections Utilized**: `users`, `patients`, `appointments`, `admissions`, `beds`, `lab_orders`, `dispensing_records`, `invoices`, `payments`, `audit_logs`.
+- **Collections Utilized** (All Tenant-Owned): `users`, `patients`, `appointments`, `admissions`, `beds`, `lab_orders`, `dispensing_records`, `invoices`, `payments`, `audit_logs`.
 - **Indexes Utilized**:
-  - `audit_logs`: `{ timestamp: -1 }`, `{ action: 1, timestamp: -1 }`, `{ userId: 1, timestamp: -1 }`
-  - `appointments`: `{ scheduledAt: 1, status: 1 }`
-  - `admissions`: `{ admissionDate: 1, status: 1 }`
-  - `invoices`: `{ createdAt: 1, status: 1 }`
-  - `payments`: `{ paidAt: 1, method: 1 }`
+  - `audit_logs`: `{ tenantId: 1, timestamp: -1 }`, `{ tenantId: 1, action: 1, timestamp: -1 }`, `{ tenantId: 1, userId: 1, timestamp: -1 }`
+  - `appointments`: `{ tenantId: 1, scheduledAt: 1, status: 1 }`
+  - `admissions`: `{ tenantId: 1, admissionDate: 1, status: 1 }`
+  - `invoices`: `{ tenantId: 1, createdAt: 1, status: 1 }`
+  - `payments`: `{ tenantId: 1, paidAt: 1, method: 1 }`
 
 ## API Requirements
-- `GET /api/v1/reports/census`: Query `{ startDate, endDate }`, returns `{ success, data: CensusReport }`.
-- `GET /api/v1/reports/financial`: Query `{ startDate, endDate, department? }`, returns `{ success, data: FinancialReport }`.
-- `GET /api/v1/audit`: Query `{ startDate?, endDate?, action?, userId?, page, limit }`, returns `{ success, data: AuditLog[], meta: PaginationMeta }`.
+- `GET /api/v1/reports/census`: Query `{ startDate, endDate }`, scoped to `tenantId`, returns `{ success, data: CensusReport }`.
+- `GET /api/v1/reports/financial`: Query `{ startDate, endDate, department? }`, scoped to `tenantId`, returns `{ success, data: FinancialReport }`.
+- `GET /api/v1/audit`: Query `{ startDate?, endDate?, action?, userId?, page, limit }`, scoped to `tenantId`, returns `{ success, data: AuditLog[], meta: PaginationMeta }`.
 
 ## RBAC Requirements
 - `reports.read`: `super_admin`, `hospital_admin`, `doctor` (department heads).
@@ -88,6 +88,7 @@ Build the comprehensive hospital reporting suite and administrative audit center
 - `audit.logs.read`: `super_admin`, `hospital_admin`.
 
 ## Security Requirements
+- **Tenant Isolation**: All aggregation pipelines and audit log searches strictly scoped to caller's verified `tenantId`. Aggregations never mix metrics across tenants.
 - Aggregation pipelines must enforce hospital/tenant boundaries.
 - Rate-limiting applied to heavy report and export endpoints to prevent resource exhaustion.
 - Audit export files must never contain passwords, tokens, or encryption keys.

@@ -105,11 +105,18 @@ Harden the entire Hospital Management System for production deployment, implemen
 
 ## Testing Requirements
 - End-to-End Vertical Slice Test Suite (`apps/api/test/vertical-slice.e2e-spec.ts`).
+- **Tenant Isolation Security Test Suite**:
+  - Assert Tenant A user querying Tenant B entity receives HTTP 404.
+  - Assert Tenant A doctor mutating Tenant B clinical record receives HTTP 404.
+  - Assert Tenant A admin managing Tenant B staff receives HTTP 404.
+  - Assert body-injected `tenantId` is ignored and overridden by session JWT context.
+  - Assert list queries return 0 records from foreign tenants.
 - Rate limiting tests: 429 response emitted upon limit breach.
 - Security exception filter tests: Assert internal server errors return generic message and correlation ID.
 - Full test suite execution across monorepo: `pnpm test` and `pnpm test:e2e`.
 
 ## Acceptance Criteria
+- [ ] Multi-tenant isolation test suite passes 100% with zero cross-tenant leakage.
 - [ ] Rate limiting active on authentication and financial endpoints.
 - [ ] Security headers properly configured and verified via HTTP response inspection.
 - [ ] Global exception filter sanitizes all error responses and assigns correlation IDs.

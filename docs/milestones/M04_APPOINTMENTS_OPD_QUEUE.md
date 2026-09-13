@@ -72,9 +72,10 @@ Implement doctor scheduling, outpatient appointment booking, queue token dispatc
 
 ## Database Requirements
 - **Collections**:
-  - `appointments`:
+  - `appointments` (Tenant-Owned):
     - `_id`: ObjectId
-    - `hospitalId`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `hospitalId`: ObjectId, ref 'Hospital', required: false
     - `patientId`: ObjectId, ref 'Patient', required
     - `doctorId`: ObjectId, ref 'User', required
     - `department`: String, required
@@ -87,7 +88,8 @@ Implement doctor scheduling, outpatient appointment booking, queue token dispatc
     - `checkedInAt`: Date
     - `cancelledReason`: String
     - `createdAt`, `updatedAt`: Timestamps
-  - `doctor_schedules`:
+  - `doctor_schedules` (Tenant-Owned):
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `doctorId`: ObjectId, ref 'User', required
     - `department`: String, required
     - `dayOfWeek`: Number (0-6), required
@@ -97,16 +99,16 @@ Implement doctor scheduling, outpatient appointment booking, queue token dispatc
     - `maxPatients`: Number
     - `isActive`: Boolean
 - **Indexes**:
-  - `appointments`: `{ doctorId: 1, scheduledAt: 1 }`
-  - `appointments`: `{ patientId: 1, scheduledAt: -1 }`
-  - `appointments`: `{ doctorId: 1, scheduledAt: 1, tokenNumber: 1 }`
-  - `doctor_schedules`: `{ doctorId: 1, dayOfWeek: 1 }` (unique)
+  - `appointments`: `{ tenantId: 1, doctorId: 1, scheduledAt: 1 }`
+  - `appointments`: `{ tenantId: 1, patientId: 1, scheduledAt: -1 }`
+  - `appointments`: `{ tenantId: 1, doctorId: 1, scheduledAt: 1, tokenNumber: 1 }`
+  - `doctor_schedules`: `{ tenantId: 1, doctorId: 1, dayOfWeek: 1 }` (unique)
 
 ## API Requirements
-- `POST /api/v1/appointments`: Request `{ patientId, doctorId, scheduledAt, type, chiefComplaint }`, returns `{ success, data: Appointment }`.
-- `GET /api/v1/appointments/slots`: Query `{ doctorId, date }`, returns `{ success, data: { availableSlots: string[] } }`.
-- `POST /api/v1/appointments/:id/check-in`: Returns `{ success, data: Appointment }`.
-- `POST /api/v1/appointments/:id/cancel`: Request `{ reason }`, returns `{ success, data: Appointment }`.
+- `POST /api/v1/appointments`: Request `{ patientId, doctorId, scheduledAt, type, chiefComplaint }`, scoped to caller's `tenantId`, returns `{ success, data: Appointment }`.
+- `GET /api/v1/appointments/slots`: Query `{ doctorId, date }`, scoped to caller's `tenantId`, returns `{ success, data: { availableSlots: string[] } }`.
+- `POST /api/v1/appointments/:id/check-in`: Scoped to caller's `tenantId`, returns `{ success, data: Appointment }`.
+- `POST /api/v1/appointments/:id/cancel`: Request `{ reason }`, scoped to caller's `tenantId`, returns `{ success, data: Appointment }`.
 
 ## RBAC Requirements
 - `appointments.create`: `super_admin`, `hospital_admin`, `receptionist`.

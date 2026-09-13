@@ -75,21 +75,27 @@ Build the Inpatient Department (IPD) workflow covering inpatient admissions, rea
 
 ## Database Requirements
 - **Collections**:
-  - `wards`:
+  - `wards` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `name`: String, required (e.g. "Intensive Care Unit")
-    - `code`: String, unique (e.g. "ICU")
+    - `code`: String, required (e.g. "ICU")
     - `type`: String enum (`general`, `semi_private`, `private`, `icu`, `ccu`, `maternity`, `pediatric`)
     - `floor`: String
     - `totalBeds`: Number
     - `isActive`: Boolean
-  - `beds`:
+  - `beds` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `bedNumber`: String, required (e.g. "ICU-01")
     - `wardId`: ObjectId, ref 'Ward', required
     - `status`: String enum (`available`, `occupied`, `maintenance`, `cleaning`), default `available`
     - `currentAdmissionId`: ObjectId, ref 'Admission'
     - `createdAt`, `updatedAt`: Timestamps
-  - `admissions`:
-    - `admissionNumber`: String, unique (e.g. "ADM-2026-00042")
+  - `admissions` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `admissionNumber`: String, required (e.g. "ADM-2026-00042")
     - `patientId`: ObjectId, ref 'Patient', required
     - `attendingDoctorId`: ObjectId, ref 'User', required
     - `admittedBedId`: ObjectId, ref 'Bed', required
@@ -100,7 +106,9 @@ Build the Inpatient Department (IPD) workflow covering inpatient admissions, rea
     - `dischargeCondition`: String
     - `dischargeSummary`: String
     - `createdAt`, `updatedAt`: Timestamps
-  - `bed_allocations`:
+  - `bed_allocations` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `admissionId`: ObjectId, ref 'Admission', required
     - `patientId`: ObjectId, ref 'Patient', required
     - `bedId`: ObjectId, ref 'Bed', required
@@ -108,17 +116,18 @@ Build the Inpatient Department (IPD) workflow covering inpatient admissions, rea
     - `releasedAt`: Date
     - `transferReason`: String
 - **Indexes**:
-  - `beds`: `{ wardId: 1, status: 1 }`
-  - `beds`: `{ bedNumber: 1 }` (unique)
-  - `admissions`: `{ patientId: 1, status: 1 }`
-  - `admissions`: `{ admissionNumber: 1 }` (unique)
-  - `bed_allocations`: `{ admissionId: 1, allocatedAt: -1 }`
+  - `wards`: `{ tenantId: 1, code: 1 }` (unique)
+  - `beds`: `{ tenantId: 1, wardId: 1, status: 1 }`
+  - `beds`: `{ tenantId: 1, wardId: 1, bedNumber: 1 }` (unique)
+  - `admissions`: `{ tenantId: 1, patientId: 1, status: 1 }`
+  - `admissions`: `{ tenantId: 1, admissionNumber: 1 }` (unique)
+  - `bed_allocations`: `{ tenantId: 1, admissionId: 1, allocatedAt: -1 }`
 
 ## API Requirements
-- `POST /api/v1/ipd/admissions`: Body `{ patientId, attendingDoctorId, bedId, admittingDiagnosis }`, returns `{ success, data: Admission }`.
-- `GET /api/v1/ipd/beds`: Query `{ wardId?, status? }`, returns `{ success, data: Bed[] }`.
-- `POST /api/v1/ipd/admissions/:id/transfer`: Body `{ destinationBedId, reason }`, returns `{ success, data: Admission }`.
-- `POST /api/v1/ipd/admissions/:id/discharge`: Body `{ dischargeSummary, condition, followUpInstructions }`, returns `{ success, data: Admission }`.
+- `POST /api/v1/ipd/admissions`: Body `{ patientId, attendingDoctorId, bedId, admittingDiagnosis }`, scoped to `tenantId`, returns `{ success, data: Admission }`.
+- `GET /api/v1/ipd/beds`: Query `{ wardId?, status? }`, scoped to `tenantId`, returns `{ success, data: Bed[] }`.
+- `POST /api/v1/ipd/admissions/:id/transfer`: Body `{ destinationBedId, reason }`, scoped to `tenantId`, returns `{ success, data: Admission }`.
+- `POST /api/v1/ipd/admissions/:id/discharge`: Body `{ dischargeSummary, condition, followUpInstructions }`, scoped to `tenantId`, returns `{ success, data: Admission }`.
 
 ## RBAC Requirements
 - `admissions.create`: `super_admin`, `hospital_admin`, `doctor`, `receptionist`.
@@ -127,6 +136,7 @@ Build the Inpatient Department (IPD) workflow covering inpatient admissions, rea
 - `beds.manage`: `hospital_admin`, `nurse`.
 
 ## Security Requirements
+- **Tenant Isolation**: All IPD operations strictly scoped to caller's verified `tenantId`.
 - Atomic bed allocation prevents two patients from being assigned to the same bed concurrently.
 - Discharge authorization restricted strictly to medical officers and doctors.
 

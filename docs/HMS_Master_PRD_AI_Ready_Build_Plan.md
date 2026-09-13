@@ -1,9 +1,9 @@
 # Hospital Management System (HMS) — Master PRD & AI-Ready Build Plan
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** 31 August 2026  
 **Strategy:** Phase 1 Core HMS → Phase 2 AI  
-**Primary deployment:** On-premise; SaaS/cloud supported by the same application architecture
+**Primary deployment:** Multi-Tenant SaaS (Cloud); Secondary/future: Electron Windows desktop application
 
 ## 0. Critical Build Rule
 
@@ -44,13 +44,13 @@ Build a secure, modular Hospital Management System that centralizes:
 
 The architecture must be **AI-ready from Phase 1**, while actual AI models/agents are deferred to Phase 2.
 
-Supported deployment models:
+Deployment model:
 
-### On-Premise
-Hospital-owned server, local PostgreSQL database, hospital LAN, controlled local access.
+### Multi-Tenant SaaS (Cloud Primary)
+High-availability web application running on Next.js + NestJS with cloud-hosted MongoDB Atlas. Complete logical tenant isolation via indexed `tenantId`.
 
-### SaaS / Cloud
-Same application architecture deployed to managed infrastructure with explicit tenant isolation.
+### Future Windows Desktop (Electron Shell)
+The web application packaged with Electron for desktop environments, connecting to the cloud NestJS API over HTTPS.
 
 ---
 
@@ -59,7 +59,7 @@ Same application architecture deployed to managed infrastructure with explicit t
 1. Security first.
 2. Correct hospital workflow before automation.
 3. Backend authorization is authoritative.
-4. PostgreSQL is the system of record.
+4. MongoDB Atlas is the system of record.
 5. No direct browser-to-database access.
 6. Sensitive operations are auditable.
 7. Human approval for consequential clinical actions.
@@ -119,7 +119,7 @@ Same application architecture deployed to managed infrastructure with explicit t
 - Audit logging
 - Security events
 - Backup/restore procedures
-- On-premise deployment
+- Multi-tenant cloud SaaS deployment
 - Production hardening
 - Testing and UAT
 
@@ -165,7 +165,7 @@ Unless separately approved:
 - Training a custom medical foundation model
 - Sending unrestricted patient data to an external LLM
 - Direct AI-to-database access
-- Public internet exposure of PostgreSQL
+- Public internet exposure of MongoDB Atlas
 - Custom mobile apps
 - Multi-hospital federation
 - Insurance integrations
@@ -196,13 +196,13 @@ These require approved change requests.
 - OpenAPI/Swagger
 - DTO validation
 - Centralized error handling
-- Guards/interceptors for authorization and audit concerns
+- Guards/interceptors for authorization, tenant context, and audit concerns
 
 ## Database
-- PostgreSQL
-- Prisma ORM
+- MongoDB Atlas (Cloud Cluster)
+- Mongoose ODM
 
-PostgreSQL is the source of truth.
+MongoDB Atlas is the source of truth.
 
 ## Cache / Jobs
 - Redis
@@ -211,26 +211,22 @@ PostgreSQL is the source of truth.
 Redis is not the source of truth.
 
 ## Document Storage
-- MinIO for on-premise object/file storage, or an approved equivalent.
+- Cloud Object Storage (S3-compatible) or secure volume storage.
 
-Store metadata in PostgreSQL and files in protected storage.
+Store metadata in MongoDB Atlas and files in protected storage.
 
 ## Authentication
-Evaluate:
-- Keycloak for enterprise/on-premise identity management
-- Secure application-managed authentication for smaller deployments
-
-Final choice is an `OPEN QUESTION` until deployment requirements are confirmed.
+- Multi-tenant application-managed JWT authentication with HttpOnly cookies, RBAC permissions, and automatic tenant context resolution.
 
 ## Password hashing
-- Argon2id
+- bcryptjs (work factor 12)
 
 ## Reverse proxy
-- Nginx or Caddy
+- Nginx or Cloudflare / Caddy
 
 ## Containers
 - Docker
-- Docker Compose for the initial single-site on-premise deployment
+- Production cloud deployment with environment-based configuration
 
 ## Testing
 - Jest
@@ -270,9 +266,9 @@ NestJS API
   +--> Notifications
   +--> Event / Outbox
   |
-  +--> PostgreSQL
+  +--> MongoDB Atlas
   |
-  +--> MinIO / Document Storage
+  +--> Cloud Object Storage
   |
   +--> Redis / BullMQ
   |
@@ -303,55 +299,52 @@ Browser -> API -> Service -> Database
 
 Never:
 ```text
-Browser -> PostgreSQL
-AI -> PostgreSQL
+Browser -> MongoDB Atlas
+AI -> MongoDB Atlas
 ```
 
 ---
 
-# 7. On-Premise Deployment
+# 7. Cloud SaaS Deployment
 
 ```text
-Hospital LAN
-    |
-Firewall / Network Gateway
-    |
-HMS Server
-    |
-    +-- Reverse Proxy
-    +-- Frontend
-    +-- Backend
-    +-- PostgreSQL
-    +-- Redis
-    +-- MinIO
-    +-- Worker
-    +-- Backup process
+User Browser / [Phase 2 Electron]
+    │
+    ▼
+Cloudflare / Reverse Proxy WAF
+    │
+    ▼
+Next.js Web Application & NestJS REST API
+    │
+    ├── Authentication & Session Verification
+    ├── Tenant Context Pipeline (req.user.tenantId)
+    ├── RBAC Permissions Guard
+    └── Tenant-Scoped Services
+    │
+    ▼
+MongoDB Atlas Cloud Cluster
+    ├── Multi-AZ High Availability
+    ├── Continuous Backups
+    └── Enforced TLS 1.2+
 ```
 
 Requirements:
-- PostgreSQL must not be exposed to ordinary client devices.
-- Guest Wi-Fi must not access the HMS server.
-- Server should use UPS.
-- Server should have restricted physical access.
-- OS firewall and security updates must be enabled.
-- Backups must be configured and tested.
+- MongoDB Atlas credentials must never be exposed to clients.
+- Public internet access to database is restricted via Atlas IP access allowlists.
+- All tenant-owned records enforce server-side `tenantId` scoping.
+- OS and container security updates must be enabled.
+- Backups must be automated and tested.
 
 ---
 
 # 8. SaaS Architecture
 
-If cloud SaaS is enabled:
-- Represent tenant explicitly.
-- Scope tenant-owned records server-side.
-- Verify tenant context on every protected request.
-- Never rely on frontend tenant filtering.
-
-Possible isolation strategies:
-1. Shared database + strict tenant_id isolation
-2. Separate schema per tenant
-3. Separate database per tenant
-
-Final strategy is an `OPEN QUESTION` based on scale/security requirements.
+The product model is finalized as a **Multi-Tenant SaaS Product**:
+- Every hospital is a distinct sovereign tenant.
+- Tenant context is extracted exclusively from verified backend authentication tokens (`req.user.tenantId`).
+- Client-supplied `tenantId` in request bodies, query strings, or headers is strictly untrusted.
+- Isolation strategy: **Shared database on MongoDB Atlas with mandatory compound indexed `tenantId` discriminator fields**.
+- Platform Super Admin and Hospital Admin trust boundaries are strictly decoupled.
 
 ---
 
@@ -540,7 +533,7 @@ Role alone may not determine access. Department/branch/resource restrictions may
 
 # 12. Authentication Requirements
 
-- Argon2id password hashing
+- bcryptjs (work factor 12) password hashing
 - Strong password policy
 - Brute-force protection/rate limiting
 - Session expiry
@@ -580,7 +573,7 @@ Never log passwords, tokens or secrets.
 
 ## Database
 - Least-privilege database account
-- Application must not use PostgreSQL superuser
+- Application must use least-privilege MongoDB Atlas database credentials
 - Database access restricted to backend/services
 - Encrypted backups
 - Appropriate database logging
@@ -656,7 +649,7 @@ Potential documents:
 - Administrative documents
 
 Requirements:
-- Metadata in PostgreSQL
+- Metadata in MongoDB Atlas
 - File content in protected storage
 - Authenticated/authorized document access
 - File type and size validation
@@ -1466,7 +1459,7 @@ Avoid:
 ## Sprint 1 — Foundation
 - Repository
 - Docker
-- PostgreSQL
+- MongoDB Atlas
 - NestJS
 - Next.js
 - Authentication
@@ -1618,8 +1611,8 @@ hms/
 │   ├── validation/
 │   └── config/
 │
-├── prisma/
-│   ├── schema.prisma
+├── database/
+│   ├── schemas/
 │   └── migrations/
 │
 ├── infra/
@@ -1657,7 +1650,7 @@ Phase 1 is ready for production consideration only when:
 - Sensitive API endpoints are authorization-tested.
 - Audit logging is verified.
 - Backup and restore are tested.
-- On-premise deployment is reproducible.
+- Multi-tenant cloud deployment is reproducible.
 - Production configuration is documented.
 - No critical/high security findings remain unresolved.
 - Hospital stakeholders complete UAT.
@@ -1680,7 +1673,7 @@ Before production coding, the agent must produce:
 6. `docs/api/api-conventions.md`
 7. `docs/workflows/opd-workflow.md`
 8. `docs/workflows/ipd-workflow.md`
-9. `docs/deployment/on-premise.md`
+9. `docs/deployment/saas-cloud.md`
 10. `docs/testing/test-strategy.md`
 
 Do **not** generate the entire application in one step.
@@ -1700,7 +1693,7 @@ Do not add libraries because an AI suggested them.
 Do not invent requirements.
 Do not sacrifice security for speed.
 
-Build Phase 1 as a **modular monolith with clean domain boundaries, secure APIs, PostgreSQL, events/outbox, auditability, and reproducible deployment**.
+Build Phase 1 as a **modular monolith with clean domain boundaries, secure APIs, MongoDB Atlas, events/outbox, auditability, and reproducible deployment**.
 
 The Phase 2 AI layer must consume approved HMS capabilities through the AI Gateway and controlled tools rather than directly accessing the database.
 

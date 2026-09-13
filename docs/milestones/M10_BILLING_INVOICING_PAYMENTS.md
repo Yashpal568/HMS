@@ -79,16 +79,20 @@ Build the hospital financial management system, covering medical service tariffs
 
 ## Database Requirements
 - **Collections**:
-  - `services`:
-    - `code`: String, unique (e.g. "CONS-SPEC", "BED-ICU")
+  - `services` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `code`: String, required (e.g. "CONS-SPEC", "BED-ICU")
     - `name`: String, required
     - `category`: String enum (`consultation`, `bed_charge`, `procedure`, `nursing`, `diagnostic`, `other`)
     - `standardRate`: Schema.Types.Decimal128, required
     - `taxRatePercent`: Number, default 0
     - `department`: String
     - `isActive`: Boolean
-  - `invoices`:
-    - `invoiceNumber`: String, unique (e.g. "INV-2026-00054")
+  - `invoices` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `invoiceNumber`: String, required (e.g. "INV-2026-00054")
     - `patientId`: ObjectId, ref 'Patient', required
     - `admissionId`: ObjectId, ref 'Admission'
     - `encounterId`: ObjectId, ref 'Encounter'
@@ -101,8 +105,10 @@ Build the hospital financial management system, covering medical service tariffs
     - `paidAmount`: Schema.Types.Decimal128, default 0
     - `balanceDue`: Schema.Types.Decimal128, required
     - `createdAt`, `updatedAt`: Timestamps
-  - `payments`:
-    - `receiptNumber`: String, unique (e.g. "RCP-2026-00054")
+  - `payments` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `receiptNumber`: String, required (e.g. "RCP-2026-00054")
     - `invoiceId`: ObjectId, ref 'Invoice', required
     - `patientId`: ObjectId, ref 'Patient', required
     - `cashierId`: ObjectId, ref 'User', required
@@ -110,8 +116,10 @@ Build the hospital financial management system, covering medical service tariffs
     - `method`: String enum (`cash`, `credit_card`, `debit_card`, `upi`, `bank_transfer`, `insurance_claim`), required
     - `transactionReference`: String
     - `paidAt`: Date, default Date.now
-  - `refunds`:
-    - `refundNumber`: String, unique (e.g. "RFD-2026-00012")
+  - `refunds` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `refundNumber`: String, required (e.g. "RFD-2026-00012")
     - `invoiceId`: ObjectId, ref 'Invoice', required
     - `amount`: Schema.Types.Decimal128, required
     - `reason`: String, required
@@ -120,26 +128,28 @@ Build the hospital financial management system, covering medical service tariffs
     - `status`: String enum (`requested`, `approved`, `rejected`, `disbursed`), default `requested`
     - `approvedAt`: Date
 - **Indexes**:
-  - `invoices`: `{ invoiceNumber: 1 }` (unique)
-  - `invoices`: `{ patientId: 1, createdAt: -1 }`
-  - `invoices`: `{ status: 1, createdAt: -1 }`
-  - `payments`: `{ receiptNumber: 1 }` (unique)
-  - `payments`: `{ invoiceId: 1 }`
-  - `services`: `{ code: 1 }` (unique)
+  - `invoices`: `{ tenantId: 1, invoiceNumber: 1 }` (unique)
+  - `invoices`: `{ tenantId: 1, patientId: 1, createdAt: -1 }`
+  - `invoices`: `{ tenantId: 1, status: 1, createdAt: -1 }`
+  - `payments`: `{ tenantId: 1, receiptNumber: 1 }` (unique)
+  - `payments`: `{ tenantId: 1, invoiceId: 1 }`
+  - `refunds`: `{ tenantId: 1, refundNumber: 1 }` (unique)
+  - `services`: `{ tenantId: 1, code: 1 }` (unique)
 
 ## API Requirements
-- `POST /api/v1/billing/invoices`: Body `{ patientId, items: [{ description, quantity, unitPrice }] }`, returns `{ success, data: Invoice }`.
-- `POST /api/v1/billing/payments`: Body `{ invoiceId, amount, method, transactionReference }`, returns `{ success, data: Payment }`.
-- `POST /api/v1/billing/refunds`: Body `{ invoiceId, amount, reason }`, returns `{ success, data: Refund }`.
-- `GET /api/v1/billing/patients/:patientId/statement`: Returns all invoices and outstanding ledger for a patient.
+- `POST /api/v1/billing/invoices`: Body `CreateInvoiceDto`, scoped to `tenantId`, returns `{ success, data: Invoice }`.
+- `GET /api/v1/billing/invoices`: Query `{ status, patientId, page, limit }`, scoped to `tenantId`, returns `{ success, data: Invoice[] }`.
+- `POST /api/v1/billing/payments`: Body `ProcessPaymentDto`, scoped to `tenantId`, returns `{ success, data: Payment }`.
+- `POST /api/v1/billing/refunds`: Body `CreateRefundDto`, scoped to `tenantId`, returns `{ success, data: Refund }`.
 
 ## RBAC Requirements
-- `billing.invoices.create`: `accountant`, `hospital_admin`, `receptionist`.
-- `billing.invoices.read`: All clinical and administrative roles.
-- `billing.payments.process`: `accountant`, `receptionist` (Cashier privilege).
-- `billing.refunds.manage`: `accountant`, `super_admin`.
+- `billing.invoices.create`: `accountant`, `receptionist`, `hospital_admin`.
+- `billing.invoices.read`: All administrative and accounting staff.
+- `billing.payments.process`: `accountant`, `cashier`.
+- `billing.refunds.manage`: `hospital_admin`, `super_admin`.
 
 ## Security Requirements
+- **Tenant Isolation**: Invoices, tariff schedules, payments, and financial refunds strictly scoped to caller's verified `tenantId`.
 - Financial math must use MongoDB `Decimal128` to maintain financial precision and eliminate floating-point drift.
 - Payment updates and invoice balance reconciliation must execute inside MongoDB transactions.
 - Zero cash disbursement allowed without prior authorized approval record.

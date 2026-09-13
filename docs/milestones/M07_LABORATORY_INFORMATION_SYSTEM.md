@@ -70,16 +70,20 @@ Build the hospital Laboratory Information System (LIS) managing diagnostic test 
 
 ## Database Requirements
 - **Collections**:
-  - `lab_tests`:
-    - `code`: String, unique (e.g. "CBC", "LIPID")
+  - `lab_tests` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `code`: String, required (e.g. "CBC", "LIPID")
     - `name`: String, required
     - `category`: String enum (`hematology`, `biochemistry`, `microbiology`, `immunology`, `serology`, `pathology`)
     - `specimenType`: String
     - `parameters`: Array of Objects `[{ name: String, unit: String, referenceMin: Number, referenceMax: Number, criticalLow: Number, criticalHigh: Number, textOptions?: String[] }]`
     - `tariffPrice`: Number
     - `isActive`: Boolean
-  - `lab_orders`:
-    - `orderNumber`: String, unique (e.g. "LAB-2026-00108")
+  - `lab_orders` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `orderNumber`: String, required (e.g. "LAB-2026-00108")
     - `patientId`: ObjectId, ref 'Patient', required
     - `doctorId`: ObjectId, ref 'User', required
     - `testIds`: Array of ObjectIds, ref 'LabTest', required
@@ -94,16 +98,16 @@ Build the hospital Laboratory Information System (LIS) managing diagnostic test 
     - `pathologistRemarks`: String
     - `createdAt`, `updatedAt`: Timestamps
 - **Indexes**:
-  - `lab_orders`: `{ patientId: 1, createdAt: -1 }`
-  - `lab_orders`: `{ status: 1, priority: 1, createdAt: -1 }`
-  - `lab_orders`: `{ orderNumber: 1 }` (unique)
-  - `lab_tests`: `{ code: 1 }` (unique)
+  - `lab_orders`: `{ tenantId: 1, patientId: 1, createdAt: -1 }`
+  - `lab_orders`: `{ tenantId: 1, status: 1, priority: 1, createdAt: -1 }`
+  - `lab_orders`: `{ tenantId: 1, orderNumber: 1 }` (unique)
+  - `lab_tests`: `{ tenantId: 1, code: 1 }` (unique)
 
 ## API Requirements
-- `POST /api/v1/lab/orders`: Body `{ patientId, doctorId, testIds, priority }`, returns `{ success, data: LabOrder }`.
-- `POST /api/v1/lab/orders/:id/sample`: Body `{ containerType, collectedNotes }`, returns `{ success, data: LabOrder }`.
-- `POST /api/v1/lab/orders/:id/results`: Body `{ results: [{ testId, parameterName, value }] }`, returns `{ success, data: LabOrder }`.
-- `POST /api/v1/lab/orders/:id/verify`: Body `{ pathologistRemarks }`, returns `{ success, data: LabOrder }`.
+- `POST /api/v1/lab/orders`: Body `{ patientId, doctorId, testIds, priority }`, scoped to `tenantId`, returns `{ success, data: LabOrder }`.
+- `POST /api/v1/lab/orders/:id/sample`: Body `{ containerType, collectedNotes }`, scoped to `tenantId`, returns `{ success, data: LabOrder }`.
+- `POST /api/v1/lab/orders/:id/results`: Body `{ results: [{ testId, parameterName, value }] }`, scoped to `tenantId`, returns `{ success, data: LabOrder }`.
+- `POST /api/v1/lab/orders/:id/verify`: Body `{ pathologistRemarks }`, scoped to `tenantId`, returns `{ success, data: LabOrder }`.
 
 ## RBAC Requirements
 - `lab.orders.create`: `doctor`, `hospital_admin`, `receptionist`.
@@ -112,6 +116,7 @@ Build the hospital Laboratory Information System (LIS) managing diagnostic test 
 - `lab.results.verify`: `super_admin`, `doctor` (Pathologist role).
 
 ## Security Requirements
+- **Tenant Isolation**: Laboratory orders, catalogs, and test results strictly scoped to caller's verified `tenantId`.
 - Parameter validation: Numeric results validated for sanity boundaries.
 - Verified reports are locked against modification; corrections require a distinct addendum record.
 - Strict isolation: Lab results for restricted infectious panels follow hospital confidentiality tags.

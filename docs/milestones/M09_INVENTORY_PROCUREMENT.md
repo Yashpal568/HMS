@@ -75,8 +75,10 @@ Build the hospital central inventory management and procurement system, covering
 
 ## Database Requirements
 - **Collections**:
-  - `inventory_items`:
-    - `itemCode`: String, unique (e.g. "ITM-GLV-001")
+  - `inventory_items` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `itemCode`: String, required (e.g. "ITM-GLV-001")
     - `name`: String, required
     - `category`: String enum (`consumable`, `surgical`, `reagent`, `linen`, `general`, `equipment`)
     - `uom`: String, required (e.g. "Box", "Piece")
@@ -85,7 +87,9 @@ Build the hospital central inventory management and procurement system, covering
     - `stockOnHand`: Number, default 0
     - `unitCost`: Number
     - `isActive`: Boolean
-  - `suppliers`:
+  - `suppliers` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `name`: String, required
     - `contactPerson`: String
     - `phone`: String, required
@@ -94,8 +98,10 @@ Build the hospital central inventory management and procurement system, covering
     - `address`: String
     - `paymentTerms`: String
     - `isActive`: Boolean
-  - `purchase_orders`:
-    - `poNumber`: String, unique (e.g. "PO-2026-00120")
+  - `purchase_orders` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `poNumber`: String, required (e.g. "PO-2026-00120")
     - `supplierId`: ObjectId, ref 'Supplier', required
     - `status`: String enum (`draft`, `submitted`, `approved`, `partially_received`, `completed`, `cancelled`), default `draft`
     - `items`: Array of Objects `[{ itemId: ObjectId, quantityOrdered: Number, quantityReceived: Number, unitPrice: Number, lineTotal: Number }]`
@@ -103,14 +109,18 @@ Build the hospital central inventory management and procurement system, covering
     - `approvedBy`: ObjectId, ref 'User'
     - `approvedAt`: Date
     - `createdAt`, `updatedAt`: Timestamps
-  - `purchase_receipts`:
-    - `grnNumber`: String, unique (e.g. "GRN-2026-00085")
+  - `purchase_receipts` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
+    - `grnNumber`: String, required (e.g. "GRN-2026-00085")
     - `poId`: ObjectId, ref 'PurchaseOrder', required
     - `supplierId`: ObjectId, ref 'Supplier', required
     - `receivedBy`: ObjectId, ref 'User', required
     - `items`: Array of Objects `[{ itemId: ObjectId, quantityReceived: Number, lotNumber: String, expiryDate: Date, unitPrice: Number }]`
     - `receivedDate`: Date, default Date.now
-  - `stock_movements`:
+  - `stock_movements` (Tenant-Owned):
+    - `_id`: ObjectId
+    - `tenantId`: ObjectId, ref 'Tenant', required, index: true
     - `itemId`: ObjectId, ref 'InventoryItem', required
     - `type`: String enum (`grn_receipt`, `dept_transfer`, `adjustment_loss`, `adjustment_gain`), required
     - `fromLocation`: String
@@ -120,26 +130,26 @@ Build the hospital central inventory management and procurement system, covering
     - `reason`: String
     - `createdAt`: Date
 - **Indexes**:
-  - `inventory_items`: `{ itemCode: 1 }` (unique)
-  - `inventory_items`: `{ category: 1, stockOnHand: 1 }`
-  - `purchase_orders`: `{ poNumber: 1 }` (unique)
-  - `purchase_orders`: `{ supplierId: 1, status: 1 }`
-  - `stock_movements`: `{ itemId: 1, createdAt: -1 }`
+  - `inventory_items`: `{ tenantId: 1, itemCode: 1 }` (unique)
+  - `inventory_items`: `{ tenantId: 1, category: 1, stockOnHand: 1 }`
+  - `purchase_orders`: `{ tenantId: 1, poNumber: 1 }` (unique)
+  - `purchase_receipts`: `{ tenantId: 1, grnNumber: 1 }` (unique)
 
 ## API Requirements
-- `POST /api/v1/inventory/items`: Body `{ name, itemCode, category, uom, reorderLevel }`, returns `{ success, data: InventoryItem }`.
-- `POST /api/v1/inventory/purchase-orders`: Body `{ supplierId, items: [{ itemId, quantityOrdered, unitPrice }] }`, returns `{ success, data: PurchaseOrder }`.
-- `POST /api/v1/inventory/purchase-orders/:id/approve`: Returns `{ success, data: PurchaseOrder }`.
-- `POST /api/v1/inventory/grn`: Body `{ poId, items: [{ itemId, quantityReceived, lotNumber, expiryDate }] }`, returns `{ success, data: PurchaseReceipt }`.
-- `GET /api/v1/inventory/alerts/low-stock`: Returns items where `stockOnHand <= reorderLevel`.
+- `POST /api/v1/inventory/items`: Body `CreateItemDto`, scoped to `tenantId`, returns `{ success, data: InventoryItem }`.
+- `POST /api/v1/inventory/purchase-orders`: Body `CreatePoDto`, scoped to `tenantId`, returns `{ success, data: PurchaseOrder }`.
+- `POST /api/v1/inventory/purchase-orders/:id/approve`: Scoped to `tenantId`, returns `{ success, data: PurchaseOrder }`.
+- `POST /api/v1/inventory/grn`: Body `CreateGrnDto`, scoped to `tenantId`, returns `{ success, data: PurchaseReceipt }`.
+- `POST /api/v1/inventory/transfers`: Body `StockTransferDto`, scoped to `tenantId`, returns `{ success, data: StockMovement }`.
 
 ## RBAC Requirements
-- `inventory.read`: All hospital administrative and clinical department heads.
 - `inventory.create`: `inventory_manager`, `hospital_admin`.
-- `inventory.update`: `inventory_manager`, `pharmacist`.
-- `inventory.manage`: `hospital_admin`, `super_admin` (required for PO approval and supplier contracts).
+- `inventory.manage`: `hospital_admin`, `super_admin`.
+- `inventory.read`: `inventory_manager`, `pharmacist`, `hospital_admin`.
+- `inventory.update`: `inventory_manager`.
 
 ## Security Requirements
+- **Tenant Isolation**: All inventory items, suppliers, POs, and stock records strictly scoped to caller's verified `tenantId`.
 - All stock increments and decrements verified within transactions to prevent inventory balance drift.
 - Purchase order approvals strictly gated to administrative authorities.
 
