@@ -1,15 +1,19 @@
 # AGENTS.md — Permanent Operating Instructions for AI Coding Agent
 
-This is a production-oriented Multi-Tenant Software-as-a-Service (SaaS) Hospital Management System (HMS MedCore).
+This is a production-oriented Multi-Tenant Software-as-a-Service (SaaS) Hospital Management System (HMS MedCore) & Patient Healthcare Platform.
 This document is the authoritative, binding operational directive for every AI coding session on this repository.
 
 ---
 
 ## 1. Core Operating Principles
 
-1. **Multi-Tenant SaaS Foundation**:
+1. **Multi-Tenant SaaS Foundation & Four Applications**:
    - The system is built as a **Multi-Tenant SaaS Product** hosted on MongoDB Atlas.
-   - Every hospital, clinic, or medical network is an isolated sovereign **Tenant**.
+   - The repository strictly maintains four distinct applications:
+     1. `apps/server/`: The single canonical NestJS REST API shared by all frontends.
+     2. `apps/hms-client/`: Dedicated Hospital & Doctor workstation web app (Next.js).
+     3. `apps/patient-app/`: Dedicated mobile-first Patient Healthcare platform (Next.js).
+     4. `apps/super-admin/`: Dedicated SaaS Platform Owner console (Next.js).
    - **Tenant isolation is mandatory** at the backend data access layer.
    - **Never trust client-provided tenant identifiers**: The backend must derive `tenantId` exclusively from the cryptographically verified JWT session context (`req.user.tenantId`).
    - **Never perform unscoped tenant database queries**: All queries against tenant-owned collections must be scoped by `{ tenantId }`.
@@ -30,21 +34,22 @@ This document is the authoritative, binding operational directive for every AI c
      ```text
      Tenant Isolation > Security > Architecture > Database Integrity > PRD > Design System > Convenience
      ```
-   - **Frontend, Electron, and AI MUST NEVER connect directly to MongoDB Atlas**:
+   - **Frontends, Electron, and AI MUST NEVER connect directly to MongoDB Atlas**:
      ```text
-     Next.js Web / [Phase 2 Electron]
-                ↓
-         NestJS REST API
-                ↓
-     Authentication & Tenant Resolution (req.user.tenantId)
-                ↓
-            RBAC Guards
-                ↓
-     Tenant-Scoped Service Layer
-                ↓
-     Data Access Layer ({ tenantId: user.tenantId, ... })
-                ↓
-           MongoDB Atlas
+     apps/hms-client | apps/patient-app | apps/super-admin
+                           │
+                           ▼
+                 apps/server (NestJS REST API)
+                           │
+                 Authentication & Tenant Resolution (req.user.tenantId)
+                           │
+                       RBAC Guards
+                           │
+                 Tenant-Scoped Service Layer
+                           │
+                 Data Access Layer ({ tenantId: user.tenantId, ... })
+                           │
+                      MongoDB Atlas
      ```
    - All external requests must be authenticated, tenant-resolved, authorized, and validated.
    - **MongoDB Atlas is the cloud system of record**: Do not introduce PostgreSQL or Prisma without explicit architectural approval.
@@ -84,18 +89,24 @@ STOP
 
 ### Step 1: READ
 - Read `AGENTS.md` (this file).
-- Read `task.md` (root) and `docs/TASK.md` to identify the **Current Milestone**.
-- Read the specific milestone specification in `docs/milestones/Mxx_[NAME].md`.
-- Read the relevant architectural source of truth:
-  - `docs/PRD.md`
-  - `docs/ARCHITECTURE.md`
-  - `docs/DATABASE.md`
-  - `docs/SECURITY.md`
-  - `docs/API.md`
-  - `docs/DEVELOPMENT.md`
-  - `docs/architecture/multi-tenancy.md`
-  - `docs/security/tenant-isolation.md`
-  - `docs/saas/subscriptions.md`
+- Read `task.md` (root) to identify the **Current Milestone** (OWNER: Current Execution State).
+- Read the specific milestone specification in `docs/MILESTONES.md` (OWNER: Development Roadmap).
+- Consult the authoritative Source-of-Truth owners per `docs/DEVELOPMENT_RULES.md`:
+  1. `docs/PRD.md` — Product Requirements
+  2. `docs/ARCHITECTURE.md` — System Architecture
+  3. `docs/DATABASE.md` — Data Model & Schemas
+  4. `docs/SECURITY.md` — Security & RBAC
+  5. `docs/FRONTEND.md` — Frontend Engineering
+  6. `docs/BACKEND.md` — Backend Engineering
+  7. `docs/DESIGN.md` — UI/UX Design
+  8. `docs/SAAS.md` — SaaS Business Model
+  9. `docs/PATIENT_PLATFORM.md` — Patient Experience
+  10. `docs/AI_ARCHITECTURE.md` — AI/Agent Architecture
+  11. `docs/DEPLOYMENT.md` — Deployment & Infrastructure
+  12. `docs/DEVELOPMENT_RULES.md` — Engineering Process
+  13. `docs/MILESTONES.md` — Development Roadmap
+  14. `docs/DECISIONS.md` — Architectural Decision History
+- **Conflict Rule**: If two documents conflict, the higher-ranking owner strictly wins. Do not proceed with ambiguity.
 
 ### Step 2: UNDERSTAND
 - Confirm explicit boundaries: What is IN SCOPE vs OUT OF SCOPE for this milestone.
@@ -123,10 +134,10 @@ STOP
 
 ### Step 6: DOCUMENT
 - Update `walkthrough.md` in the artifact directory with technical details, tested flows, and validation outputs.
-- Document any non-obvious design choices or verified assumptions.
+- Document any non-obvious design choices or verified assumptions in `docs/DECISIONS.md`.
 
 ### Step 7: UPDATE TASK
-- Update `task.md` (and `docs/TASK.md`):
+- Update `task.md`:
   - Mark the completed milestone as `COMPLETE`.
   - Advance the **Current Milestone** to the next milestone in sequence.
   - Update completed checklist and milestone index.

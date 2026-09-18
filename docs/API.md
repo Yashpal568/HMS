@@ -1,9 +1,11 @@
 # Hospital Management System — API Specification & Conventions
 
+**SOURCE-OF-TRUTH OWNER**: `docs/BACKEND.md` (BACKEND ENGINEERING)  
+**Classification**: Supporting Specification  
 **Protocol**: REST over HTTPS/TLS  
 **Architecture**: Multi-Tenant SaaS API  
-**Base URL**: `http://localhost:3001/api/v1` (Development) / `https://api.hms.health/api/v1` (Production)  
-**Status**: Authoritative API Specification  
+**Base URL**: `http://localhost:4000/api/v1` (Development) / `https://api.medcore.health/api/v1` (Production)  
+**Status**: Supporting API Technical Specification  
 
 ---
 

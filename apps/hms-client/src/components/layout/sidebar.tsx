@@ -69,17 +69,13 @@ const NAVIGATION_SECTIONS: NavSection[] = [
         name: 'Doctor EMR',
         href: '/emr',
         icon: Stethoscope,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'Doctor Consultation, clinical notes, and e-prescriptions are scheduled for Milestone 5.',
+        isReady: true,
       },
       {
         name: 'IPD & Wards',
         href: '/ipd',
         icon: Bed,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'IPD admissions, bed allocation, and nursing charts are scheduled for Milestone 6.',
+        isReady: true,
       },
     ],
   },
@@ -90,25 +86,19 @@ const NAVIGATION_SECTIONS: NavSection[] = [
         name: 'Laboratory',
         href: '/laboratory',
         icon: FlaskConical,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'Laboratory investigation orders and result verification are scheduled for Milestone 7.',
+        isReady: true,
       },
       {
         name: 'Pharmacy',
         href: '/pharmacy',
         icon: Pill,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'Pharmacy dispensing and medication verification are scheduled for Milestone 8.',
+        isReady: true,
       },
       {
         name: 'Inventory',
         href: '/inventory',
         icon: Package,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'Stock tracking, purchase orders, and procurement are scheduled for Milestone 9.',
+        isReady: true,
       },
     ],
   },
@@ -119,9 +109,8 @@ const NAVIGATION_SECTIONS: NavSection[] = [
         name: 'Billing & Invoicing',
         href: '/billing',
         icon: Receipt,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'Inpatient and outpatient billing, receipts, and invoices are scheduled for Milestone 10.',
+        isReady: true,
+        badge: 'Live',
       },
     ],
   },
@@ -132,9 +121,8 @@ const NAVIGATION_SECTIONS: NavSection[] = [
         name: 'Reports & Census',
         href: '/reports',
         icon: FileSpreadsheet,
-        isReady: false,
-        badge: 'Phase 1',
-        milestoneNotice: 'Hospital census, financial summaries, and clinical analytics are scheduled for Milestone 11.',
+        isReady: true,
+        badge: 'Live',
       },
     ],
   },
@@ -143,7 +131,7 @@ const NAVIGATION_SECTIONS: NavSection[] = [
     items: [
       {
         name: 'Audit & Security',
-        href: '/dashboard#audit',
+        href: '/audit',
         icon: ShieldAlert,
         isReady: true,
         badge: 'Live',
@@ -264,7 +252,10 @@ export function Sidebar({
 
               <ul className="space-y-0.5">
                 {section.items.map((item) => {
-                  const isActive = item.isReady && pathname === item.href;
+                  const isActive =
+                    item.isReady &&
+                    (pathname === item.href ||
+                      (item.href !== '/' && pathname.startsWith(item.href + '/')));
                   const Icon = item.icon;
 
                   return (

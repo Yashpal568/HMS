@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { CommandPalette } from '@/components/ui/command-palette';
 import { UserProfileModal } from '@/components/profile/user-profile-modal';
+import { CurrencySelector } from '@/components/common/currency-selector';
 
 export interface HeaderProps {
   onMenuClick: () => void;
@@ -224,6 +225,9 @@ export function Header({
             <Database className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
             <span className="hidden lg:inline">MongoDB Atlas Active</span>
           </div>
+
+          {/* Display Currency Selector */}
+          <CurrencySelector />
 
           {/* Notifications Bell Dropdown */}
           <div className="relative">

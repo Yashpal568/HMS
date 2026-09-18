@@ -1,190 +1,245 @@
-# Hospital Management System — Master PRD
-Version 2.0 | Multi-Tenant SaaS | Phase 1 Core HMS → Phase 2 AI | Database: MongoDB Atlas
+# Hospital Management System & Patient Healthcare Platform — Master PRD
 
-## 1. Product Vision & Goal
-The Hospital Management System (HMS MedCore) is built as a **SaaS-first, multi-tenant Hospital Management System**. 
-
-The system delivers an enterprise-grade, web-first cloud platform serving multiple independent hospitals, clinics, and healthcare networks from a single, resilient multi-tenant architecture on MongoDB Atlas. It covers patient registration, OPD, EMR, IPD, nursing, laboratory, pharmacy, inventory, billing, documents, notifications, reports, staff administration, audit, and platform security.
-
-Because the system manages mission-critical healthcare operations and Protected Health Information (PHI):
-- **Tenant Isolation** is a non-negotiable security invariant.
-- **Data Integrity**, **RBAC authorization**, and **immutable auditability** are first-class requirements.
-- **MongoDB Atlas** is the sole authoritative system of record.
-- **Web-First** is the primary deployment model; Electron desktop packaging is deferred to Phase 2.
-- **AI-Ready** architecture is established in Phase 1, with AI implementation strictly deferred to Phase 2.
+**SOURCE-OF-TRUTH OWNER**: `docs/PRD.md` (PRODUCT REQUIREMENTS)  
+**Classification**: Authoritative  
+**Document Version:** 3.0.0  
+**Product Status:** Multi-Tenant SaaS Platform + Patient Healthcare Ecosystem  
+**Target Architecture:** Cloud-Native, 4 Application Surfaces, MongoDB Atlas, AI-Ready (Phase 2)  
+**Primary Database:** MongoDB Atlas (System of Record)  
+**Cache & Queue:** Redis  
 
 ---
 
-## 2. SaaS Architecture & Tenancy Model
+## 1. Executive Summary & Vision
 
-### Tenancy Hierarchy
+The **HMS MedCore Platform** is an enterprise-grade, cloud-native **Multi-Tenant Software-as-a-Service (SaaS) Hospital Management System and Patient Healthcare Ecosystem**.
+
+Unlike legacy, single-installation hospital management software, HMS MedCore operates as a sovereign multi-tenant platform serving independent hospitals, outpatient clinics, and medical enterprise networks worldwide from a unified cloud backend, while concurrently providing a direct-to-consumer mobile-first patient healthcare experience and a platform-owner SaaS management interface.
+
+### The Four Sovereign Application Surfaces
+
+The platform explicitly separates four specialized application surfaces that all communicate with a single canonical backend:
+
 ```text
-Platform (SaaS Provider)
-  │
-  ├── Tenant A (Hospital / Clinic A)
-  │     ├── Configuration & Branches
-  │     ├── Users, Roles & Permissions
-  │     ├── Patients & Medical Records
-  │     ├── Appointments & OPD Queues
-  │     ├── Inpatient Admissions & Beds
-  │     ├── Laboratory & Pharmacy
-  │     └── Billing & Inventory
-  │
-  ├── Tenant B (Hospital / Clinic B)
-  │     └── [Completely Isolated Workspace & Data]
-  │
-  └── Tenant C (Hospital / Clinic C)
+                     ┌──────────────────────────────────────────────┐
+                     │          Platform Super Admin Console        │
+                     │               (apps/super-admin)             │
+                     └──────────────────────┬───────────────────────┘
+                                            │ (Platform APIs)
+                                            ▼
+┌───────────────────────────┐    ┌──────────────────────────────────┐    ┌───────────────────────────┐
+│     Hospital HMS Client   │    │      Canonical Shared Backend    │    │    Patient Mobile Portal  │
+│      (apps/hms-client)    ├───►│           (apps/server)          │◄───┤     (apps/patient-app)    │
+│  [Admin, Doctors, Staff]  │    │     NestJS Modular Monolith      │    │  [Discovery, Queue, PHI]  │
+└───────────────────────────┘    └──────────┬─────────────────┬─────┘    └───────────────────────────┘
+                                            │                 │
+                                            ▼                 ▼
+                                   ┌─────────────────┐ ┌─────────────┐
+                                   │  MongoDB Atlas  │ │    Redis    │
+                                   │System of Record │ │Cache & Queue│
+                                   └─────────────────┘ └─────────────┘
 ```
 
-### Key Tenancy Principles
-1. **Absolute Isolation**: Tenant A must never be able to access, view, or modify Tenant B's data under any circumstance.
-2. **Backend Enforcement**: Tenant context is derived strictly from the authenticated user's verified session/JWT claims on the backend. The backend never trusts client-supplied tenant identifiers.
-3. **Data Scoping**: Every tenant-owned database entity is stamped with an indexed `tenantId`. All queries on tenant collections are scoped by `tenantId`.
-4. **Platform vs. Hospital Separation**:
-   - **Platform Level**: SaaS provider operations (tenant provisioning, subscription lifecycle, plan definitions, global platform telemetry, system maintenance).
-   - **Hospital Level**: Customer healthcare operations (hospital configuration, staff, patients, clinical consultations, billing, dispensing, inventory).
-   - Hospital administrators have **zero** platform-level privileges and cannot cross hospital boundaries.
+1. **`apps/server`**: The single canonical backend engine (NestJS, TypeScript, MongoDB Atlas, Redis). It powers all business logic, tenant isolation, RBAC authorization, healthcare workflows, queue calculations, and the future Phase 2 AI Gateway. Frontends NEVER communicate directly with MongoDB.
+2. **`apps/hms-client`**: The dedicated hospital management application (Next.js, Tailwind CSS) used by Hospital Administrators, Consulting Physicians, Nurses, Receptionists, Pharmacists, Lab Technicians, and Billing Officers.
+3. **`apps/patient-app`**: A standalone, mobile-first patient application (Next.js, Tailwind CSS) providing hospital and doctor discovery, appointment booking, live OPD queue tracking, and secure access to personal medical records.
+4. **`apps/super-admin`**: A standalone SaaS provider command console (Next.js, Tailwind CSS) for platform owners to govern tenant provisioning, subscriptions, plan entitlements, usage limits, platform telemetry, and system-wide security.
 
 ---
 
-## 3. Subscription & Plan Model
+## 2. Core Operating Principles & Invariants
 
-The architecture is subscription-ready and built on three conceptual entities:
-- **`Tenant`**: The customer organization (hospital, medical center, clinic).
-- **`Subscription`**: The commercial contract governing tenant status and lifecycle.
-- **`Plan`**: The tier configuration defining enabled modules, resource allocations, and capabilities.
-
-### Subscription Lifecycle States
-- **`TRIAL`**: Initial evaluation period with full or configured capabilities.
-- **`ACTIVE`**: Paid subscription in good operational standing.
-- **`PAST_DUE`**: Grace period following payment failure; warning banner displayed.
-- **`SUSPENDED`**: Operational access locked due to non-payment or compliance policy hold.
-- **`CANCELLED`**: Customer requested cancellation; active until period end.
-- **`EXPIRED`**: Period elapsed without renewal; locked or read-only archive state.
-
-> [!NOTE]
-> **No Hardcoded Pricing or Gateways**:  
-> Payment gateways (e.g. Stripe, Razorpay) and specific pricing tiers are not implemented in Phase 1. Subscriptions are managed administratively by Platform Super Admins until payment milestones are scheduled.
-
----
-
-## 4. Phase 1 Core Modules (In-Scope)
-
-1. **Platform Foundation & Multi-Tenancy**: Tenant context resolution, tenant isolation guards, organization configuration.
-2. **Authentication & Security**: Multi-tenant login, session tokens, account lockout, audit logging.
-3. **Users, Roles & RBAC**: Tenant-scoped user directory, granular permissions, role assignment.
-4. **Hospital & Facilities**: Branches, departments, wards, rooms, beds, doctor schedules.
-5. **Patient Management**: Centralized registry, tenant-scoped unique UHID, demographics, contacts, allergies, duplicate detection.
-6. **Appointments & OPD**: Doctor schedules, booking, token generation, queue management, check-in.
-7. **Doctor Consultation & EMR**: Encounters, chief complaints, clinical notes, vitals, ICD-coded diagnoses, electronic prescriptions.
-8. **IPD & Bed Management**: Inpatient admission, bed allocation, intra-hospital transfers, rounds, discharge summaries.
-9. **Nursing Station**: Vitals monitoring, medication administration records (eMAR), nursing tasks.
-10. **Laboratory Information System (LIS)**: Test catalog, lab orders, sample collection, result entry, pathologist verification.
-11. **Pharmacy & Dispensing**: Medicine catalog, batch management, expiry tracking, FEFO dispensing, prescription fulfillment.
-12. **Inventory & Procurement**: Item catalog, suppliers, purchase orders, goods receipt notes (GRN), stock ledger, departmental transfers.
-13. **Billing, Invoicing & Payments**: Tariff masters, invoices, receipts, payment tracking, credit notes, refunds.
-14. **Document Management**: Clinical file attachments, diagnostic uploads, protected access audit.
-15. **Notifications**: In-app operational alerts and automated clinical reminders.
-16. **Reports & Dashboards**: Operational census, bed occupancy, revenue attribution, financial summaries.
-17. **Audit & Security Center**: Master immutable audit trail, cross-tenant security anomaly logging.
+1. **Strict Multi-Tenant Isolation**:
+   - Every hospital is an isolated, sovereign tenant.
+   - Tenant isolation is enforced at the backend data access layer.
+   - The backend strictly derives `tenantId` from the cryptographically verified JWT session context (`req.user.tenantId`). Client-supplied tenant identifiers are NEVER trusted.
+   - All queries and mutations against tenant collections are automatically scoped by `{ tenantId }`.
+   - Cross-tenant IDOR probes return uniform `404 Not Found` to prevent entity enumeration.
+2. **Strict Privilege Separation (Platform vs. Hospital vs. Patient)**:
+   - Platform Super Admins govern SaaS plans, subscriptions, and tenant lifecycles with **zero clinical access** to private patient medical charts.
+   - Hospital Administrators manage their hospital's staff, doctors, and configuration with **zero platform privileges** and **zero cross-hospital access**.
+   - Patients have access strictly to their own authorized medical records and appointment tokens.
+3. **Canonical Shared Backend**:
+   - There is only ONE backend (`apps/server`). Frontends do not maintain separate backends.
+4. **Authentic Data (Zero Fake Metrics)**:
+   - Dashboard widgets, census counters, and telemetry report real data or authentic empty states. No fabricated mock numbers.
+5. **Phase 2 AI Readiness**:
+   - Phase 1 establishes an AI-ready architecture with an abstracted AI Gateway, tool registry, and permission engine. Model execution is strictly deferred to Phase 2.
 
 ---
 
-## 5. Phase 2 AI Intelligence (Controlled Roadmap)
+## 3. Detailed Application Surfaces
 
-The Phase 1 architecture is engineered to be **AI-ready** while keeping all AI model execution strictly in Phase 2.
+### Surface 1: `apps/server` (Canonical Shared Backend)
+- **Technology:** NestJS 12, Node 22, TypeScript, Mongoose 9, MongoDB Atlas, Redis.
+- **Architectural Pattern:** Modular Monolith with bounded domain modules.
+- **Capabilities:**
+  - Multi-tenant JWT authentication, password hashing (`bcryptjs` cost 12), account lockout.
+  - Role-Based Access Control (RBAC) with granular permissions and `@RequirePermissions()` decorators.
+  - Multi-tenant request pipeline resolving verified `tenantId` into request execution context.
+  - Unified REST APIs for Hospital Admin, Doctors, Staff, Patients, and Super Admin.
+  - Real-time OPD queue orchestration engine with sequential daily token generation.
+  - Centralized Security Audit Ledger (`audit_logs` collection).
+  - Background worker dispatch and Redis caching pipeline.
 
-Planned controlled AI capabilities include:
-- Reception / appointment scheduling assistant
-- Hospital clinical knowledge assistant
-- Doctor documentation & clinical note drafting copilot
-- Patient medical record summarization
-- Discharge summary drafting
-- Laboratory result anomaly flagging
-- Pharmacy drug-drug interaction alerts
-- Inventory demand & expiry forecasting
-- Hospital management intelligence & census forecasting
-- Security anomaly & unusual access detection
+### Surface 2: `apps/hms-client` (Hospital Management Application)
+- **Technology:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Lucide Icons.
+- **Audience:** Hospital Administrators, Medical Directors, Doctors, Clinical Staff.
+- **Sub-Workspaces:**
+  1. **Hospital Administrator Experience:**
+     - Overview Analytics Cockpit & Live Telemetry.
+     - Facility Settings (Departments, Wards, Rooms, Beds).
+     - Staff Directory, Role Assignment & Permission Auditing.
+     - Centralized Patient Directory & Intake Management.
+     - Master Schedule Roster & Clinic Operating Hours.
+     - Billing, Tariff Masters, Insurance & Financial Reconciliation.
+     - Comprehensive Hospital Audit Trail.
+  2. **Doctor & Clinical Experience:**
+     - Consulting Physician Dashboard (Today's Schedule & Patient Queue).
+     - Electronic Medical Records (EMR) & Clinical Encounter Intake.
+     - Chief complaints, vitals capture, allergy warnings, ICD-coded diagnoses.
+     - Electronic Prescriptions (linked to Medicine Master catalog).
+     - Diagnostic Laboratory Test Ordering & Result Verification.
+     - Patient Medical History & Follow-up Scheduling.
+  3. **Departmental Operations:**
+     - Reception & OPD Registration Desk.
+     - IPD Admissions, Bed Allocation & Nursing Stations.
+     - Pharmacy Dispensing & Inventory Management.
+     - Diagnostic Laboratory Information System (LIS).
 
-### AI Architectural Safeguards
-- **Zero Direct Database Exposure**: AI models never receive MongoDB connection strings or query credentials.
-- **AI Gateway**: All AI requests pass through an AI Gateway that enforces data minimization, PII redaction, and tool allowlists.
-- **Mandatory Human Sign-Off**: AI drafts notes or summaries; a licensed human clinician must explicitly review and sign before anything is committed to a patient's medical record.
+### Surface 3: `apps/patient-app` (Patient Healthcare Portal)
+- **Technology:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Mobile-First Responsive Design.
+- **Audience:** Patients, Family Caregivers.
+- **Key Modules:**
+  1. **Authentication & Profile:** Secure patient signup, login, multi-factor security, personal contact and emergency demographics.
+  2. **Hospital Discovery:** Search and browse verified hospital networks, departments, facilities, clinical accreditations, and contact directions.
+  3. **Doctor Discovery:** Filter doctors by specialty, affiliated hospital, consultation days, experience, and fee structure.
+  4. **Appointment Booking Wizard:** Select hospital, specialty, consulting doctor, consultation date, and interactive time slot. Instant booking confirmation.
+  5. **Real-Time OPD Queue Tracking:**
+     - View allocated daily token number (e.g., `A-027`).
+     - Real-time display of currently serving token (e.g., `A-019`).
+     - Live calculation of patients ahead in queue and estimated wait time in minutes.
+     - Automated turn-approaching notifications.
+  6. **Personal Health Records (PHR) Vault:** Access authorized electronic prescriptions, laboratory test reports, visit history, discharge summaries, and medical invoices.
+  7. **Privacy Guarantee:** Patient medical data is cryptographically protected and never publicly discoverable.
 
----
-
-## 6. Initial User Roles
-
-- **Platform Super Admin**: Manages tenants, plans, and global infrastructure. Zero clinical access.
-- **Hospital Admin**: Manages hospital settings, departments, staff, and hospital-level workflows. Bound to single tenant.
-- **Doctor**: Clinical consultations, encounters, diagnosis, prescriptions, inpatient rounds.
-- **Nurse**: Patient vitals, bed tracking, medication administration, nursing notes.
-- **Receptionist**: Patient registration, appointment booking, queue management, check-in.
-- **Lab Technician**: Specimen collection, result recording, preliminary lab processing.
-- **Pharmacist**: Prescription review, batch stock verification, dispensing.
-- **Accountant**: Invoice generation, payment receipting, financial reconciliation.
-- **Inventory Manager**: Stock receiving, purchase orders, departmental distribution.
-
----
-
-## 7. Core Workflows
-
-### OPD Workflow
-Registration (generates tenant-scoped UHID) → Appointment/Walk-in → Check-in & Queue Token → Doctor Consultation → Vitals & Diagnoses → Investigation / E-Prescription → Billing & Invoicing → Payment Collection → Follow-up.
-
-### IPD Workflow
-Inpatient Admission → Bed Allocation → Doctor Rounds & Nursing Care → Investigations & Pharmacy Dispensing → Discharge Clearance → Final Invoicing & Settlement.
-
-### Laboratory Workflow
-Order Creation → Specimen Collection & Barcode Labeling → Processing → Result Entry → Pathologist Verification → Final Report Publication.
-
-### Pharmacy Workflow
-Prescription Receipt → Batch & Expiry Validation (FEFO) → Medication Dispensing → Stock Ledger Deduction → Payment Receipt.
-
-### Inventory Workflow
-Purchase Order Generation → Supplier Delivery & Goods Receipt (GRN) → Batch & Expiry Registration → Stock Movements & Issue → Departmental Adjustments.
-
-### Billing Workflow
-Service Tariff Lookup → Invoice Compilation → Payment Processing (Cash/Card/Online/UPI) → Receipt Issuance → Reconciliation.
-
----
-
-## 8. Non-Functional Requirements
-
-- **Tenant Isolation**: Non-negotiable backend-enforced partitioning. Cross-tenant leakage is a Severity-0 defect.
-- **Security by Default**: Enforce least privilege, encrypted communications, and secure token handling.
-- **Responsive Enterprise Web UI**: Desktop, tablet, and mobile-friendly responsive layouts with accessible components.
-- **Financial Precision**: Use MongoDB `Decimal128` or integer minor units (paise/cents) for all monetary fields; avoid floating-point math.
-- **Auditability**: Permanent, immutable audit trail for all authentication, clinical, and financial actions.
-- **Structured Telemetry**: Standardized logging with correlation IDs; no sensitive PHI or credentials in logs.
-- **Zero-Fake-Data Compliance**: Dashboards and widgets display genuine telemetry or authentic empty states; no mock figures.
+### Surface 4: `apps/super-admin` (SaaS Platform Owner Console)
+- **Technology:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Dark Theme Console Aesthetics.
+- **Audience:** SaaS Platform Super Admins, DevOps, Platform Support Operations.
+- **Key Modules:**
+  1. **Tenant Governance:** Create and onboard hospital tenants, activate/deactivate hospitals, configure tenant-specific domains and hospital metadata.
+  2. **Subscription & Plan Engine:** Define plan tiers (Trial, Clinic, Hospital, Enterprise Network), set bed/doctor/storage quotas, toggle feature flags, and manage subscription lifecycles.
+  3. **Platform Telemetry:** Monitor system-wide active tenant census, MongoDB Atlas connection health, Redis queue latency, and global request volume.
+  4. **Platform Security Ledger:** Audit platform administrative actions, monitor cross-tenant security anomalies, and track administrative logins.
+  5. **Global Support & System Announcements:** Broadcast maintenance notices and manage tenant support escalations.
 
 ---
 
-## 9. Security & Governance Standards
+## 4. Key Functional Modules (Phase 1 Scope)
 
-- **Authentication**: Salted and hashed passwords using `bcryptjs` (work factor 12). Account lockout for 15 minutes after 5 failed attempts.
-- **Session Security**: Signed HMAC SHA-256 JWTs transmitted via `HttpOnly`, `SameSite=lax`, `Secure` cookies.
-- **Tenant Context Protection**: Derives `tenantId` strictly from verified JWT claims; rejects/sanitizes any client-supplied tenant overrides.
-- **RBAC**: Guard evaluation using `@Roles()` and `@RequirePermissions('resource.action')`.
-- **Existence Masking**: Cross-tenant IDOR probes return uniform `404 Not Found` to prevent entity enumeration across hospitals.
-- **Database Security**: Enforced TLS 1.2+ to MongoDB Atlas, network IP access allowlists, least-privilege database user.
-- **Regulatory Notice**: The system implements enterprise healthcare security best practices. Do not claim formal HIPAA, GDPR, or ISO 27001 certifications without third-party legal and technical audit verification.
+| Module | Scope & Responsibilities | Core Entities |
+|---|---|---|
+| **Multi-Tenancy & Platform** | Strict tenant context resolution, tenant provisioning, sovereign isolation. | `tenants`, `subscriptions`, `plans` |
+| **Authentication & RBAC** | JWT authentication, bcryptjs (cost 12), lockout policies, role & permission guards. | `users`, `roles`, `permissions`, `audit_logs` |
+| **Facility Management** | Hospital branches, medical departments, wards, rooms, and operational beds. | `hospitals`, `departments`, `wards`, `beds` |
+| **Patient Foundation** | Universal Health ID (`UHID-YYYY-NNNNNN`), demographics, duplicate detection, allergy registry. | `patients`, `counters` |
+| **Appointments & OPD Queue** | Doctor schedules, slot reservation, double-booking prevention, daily token issuance, reception check-in. | `appointments`, `doctor_schedules`, `queues` |
+| **Clinical EMR & Consultation** | Encounters, chief complaints, vitals, clinical progress notes, diagnoses, e-prescriptions. | `encounters`, `prescriptions`, `diagnoses` |
+| **IPD & Ward Management** | Inpatient admissions, bed tracking, ward transfers, nursing charts, discharge summaries. | `admissions`, `bed_assignments`, `nursing_notes` |
+| **Laboratory (LIS)** | Test catalog, lab order requisition, specimen collection, result entry, pathologist sign-off. | `lab_tests`, `lab_orders`, `lab_results` |
+| **Pharmacy & Medicine Master** | Canonical Medicine Master catalog, batch tracking, expiry monitoring, FEFO dispensing. | `medicines`, `medicine_batches`, `dispensations` |
+| **Inventory & Procurement** | Hospital consumables, equipment, suppliers, purchase orders, goods receipts, stock ledger. | `inventory_items`, `suppliers`, `purchase_orders` |
+| **Billing & Invoicing** | Unified billing engine, tariff masters, itemized invoices, receipt generation, refunds. | `invoices`, `payments`, `tariff_rates` |
+| **Audit & Security Center** | Immutable logging of all sensitive data access, authentication events, and clinical modifications. | `audit_logs` |
 
 ---
 
-## 10. Deployment Strategy
+## 5. Architectural Invariants for Medicine & Billing
 
-### Primary: Cloud Multi-Tenant SaaS
-- **Frontend**: Next.js 16 (React 19, TypeScript) hosted on high-availability web infrastructure.
-- **Backend**: NestJS 12 modular monolith (Node.js 22, TypeScript) hosted on scalable application servers.
-- **Database**: MongoDB Atlas cloud cluster with automated continuous backups, multi-AZ replica sets, and encryption at rest.
+To prevent catalog duplication, stock discrepancy, and revenue leakage:
 
-### Future: Windows Desktop Packaging (Phase 2)
-- Once the web SaaS platform is complete and verified, package the existing Next.js frontend using Electron to produce an installable Windows desktop application (`.exe`/`.msi`).
-- The Electron application connects exclusively to the NestJS cloud API over HTTPS and never connects directly to MongoDB.
+```text
+┌────────────────────────────────────────────────────────┐
+│               Canonical Medicine Master                │
+│             (Brand, Generic, Form, Dosage)             │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               Medicine Batches & Stock                 │
+│         (Batch No, Expiry Date, MRP, Unit Cost)        │
+└───────────────────────────┬────────────────────────────┘
+                            │
+              ┌─────────────┴─────────────┐
+              ▼                           ▼
+┌───────────────────────────┐ ┌───────────────────────────┐
+│     Pharmacy Dispensing   │ │      Billing & Invoicing  │
+│   (FEFO Stock Deduction)  │ │   (Direct Tariff Pull)    │
+└───────────────────────────┘ └───────────────────────────┘
+```
 
-### Prohibitions
-- ❌ Do NOT deploy as an on-premise single-tenant architecture.
-- ❌ Do NOT use PostgreSQL or Prisma.
-- ❌ Do NOT allow direct database access from frontend, Electron, or AI.
+1. **Single Source of Truth:** `medicines` collection is the master drug catalog.
+2. **Batch Tracking:** Stock quantities, batch numbers, unit costs, and expiry dates are managed in `medicine_batches`.
+3. **No Duplicate Billing Catalog:** The billing module NEVER maintains its own copy of medicines; billable medication charges reference `medicine_batches`.
+4. **Bulk Import:** Hospitals populate the Medicine Master through standardized CSV/Excel bulk upload. The application NEVER hardcodes thousands of drug names in source code.
+
+---
+
+## 6. Real-Time OPD Queue Architecture
+
+The OPD Queue system synchronizes Reception Check-In, Doctor Consultation, and Patient App live status:
+
+1. **Token Allocation:** Generated sequentially per doctor/date upon booking or walk-in arrival (e.g., `A-001`, `A-002`).
+2. **Reception Check-In:** When patient arrives, status transitions from `SCHEDULED` to `CHECKED_IN` (Waiting).
+3. **Doctor Consultation Flow:**
+   - Doctor calls next patient: Status transitions to `IN_CONSULTATION`.
+   - Doctor concludes encounter: Status transitions to `COMPLETED`.
+   - Patient absent: Doctor/Reception marks `NO_SHOW` or `SKIPPED`.
+4. **Live Metrics Calculation:**
+   - **Currently Serving:** Lowest token currently `IN_CONSULTATION`.
+   - **Patients Ahead:** Count of `CHECKED_IN` tokens preceding current patient.
+   - **Estimated Waiting Time:** `(Patients Ahead) × (Doctor's Configured Slot Duration)`.
+
+---
+
+## 7. Phase 2 AI Roadmap (Controlled Architecture)
+
+AI capabilities are strictly Phase 2 deliverables, built on top of the Phase 1 AI Gateway:
+
+```text
+Hospital Data / Patient Request
+              ↓
+     Phase 2 AI Gateway
+              ↓
+      Agent Orchestrator
+              ↓
+   Policy & Permissions Engine (Inherits User Scope & Tenant ID)
+              ↓
+      Narrow Approved Tools (No Direct Database Queries)
+              ↓
+   Human Approval Check (High-Impact Clinical Decisions)
+              ↓
+       Execution & Audit Log
+```
+
+- **Core Tenet:** The core HMS remains 100% operational if AI services are unavailable.
+- **Safety Boundary:** AI agents never have direct database access and cannot autonomously make high-impact clinical prescriptions or diagnosis decisions.
+
+---
+
+## 8. Summary of Milestones
+
+- **Milestone 0:** Project Foundation & Repository Reorganization (COMPLETED)
+- **Milestone 1:** Authentication + Multi-Tenancy + RBAC (READY / NEXT)
+- **Milestone 2:** Hospital + Departments + Doctors + Staff
+- **Milestone 3:** Patient Foundation & Centralized Registry
+- **Milestone 4:** Appointments & OPD Queue Engine
+- **Milestone 5:** Clinical Workflow & Electronic Prescriptions
+- **Milestone 6:** IPD & Ward Management
+- **Milestone 7:** Laboratory Information System (LIS)
+- **Milestone 8:** Pharmacy, Medicine Master & Inventory
+- **Milestone 9:** Billing, Invoicing & Payments
+- **Milestone 10:** Patient Healthcare Discovery Platform (`apps/patient-app`)
+- **Milestone 11:** SaaS Management & Super Admin Console (`apps/super-admin`)
+- **Milestone 12:** Production Hardening, Security, Backup & Audit Center
+- **Milestone 13:** Phase 2 AI Intelligence & Specialized Agent Network

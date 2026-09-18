@@ -1,148 +1,210 @@
 # Hospital Management System — Security Architecture & Governance
 
-**Product**: Hospital Management System (HMS MedCore)  
-**Classification**: Multi-Tenant Healthcare SaaS Platform  
-**Security Standard**: Zero-Trust Multi-Tenant Isolation & Defense-in-Depth  
+**SOURCE-OF-TRUTH OWNER**: `docs/SECURITY.md` (SECURITY)  
+**Classification**: Authoritative  
+**Product**: Multi-Tenant Hospital Management SaaS & Patient Healthcare Platform  
+**Security Model**: Zero-Trust Multi-Tenant Isolation & Defense-in-Depth  
 **Status**: Authoritative Security Directive  
 
 ---
 
-## 1. Security Architecture Principles
+## 1. Core Security Principles
 
-1. **Defense in Depth**: Security controls are enforced at every architectural tier: edge/WAF, TLS transport, reverse proxy, JWT authentication, tenant context resolution, RBAC guards, service-level scoping, and MongoDB Atlas database access.
-2. **Authoritative Backend**: Client-side routing and UI toggles are purely user experience affordances; the NestJS backend is the sole authoritative gatekeeper for authentication, tenant isolation, and RBAC authorization.
-3. **Zero Direct Database Exposure**: Web applications, mobile clients, Electron desktop shells, and AI models have zero direct network exposure or credentials to MongoDB Atlas. All access flows through the authenticated NestJS API.
-4. **Mandatory Tenant Scoping**: Every tenant-owned data access must be scoped to the authenticated caller's verified `tenantId`. A cross-tenant leak is classified as a Severity-0 (P0) critical defect.
-5. **Least Privilege**: Users, services, and API keys operate with only the minimum set of permissions necessary to execute their designated duties.
+1. **Defense in Depth**: Layered security controls enforced at every boundary: Cloudflare Edge/WAF -> TLS transport -> NestJS API Gateway -> JWT verification -> Tenant context extraction -> RBAC Guards -> Tenant-scoped Service queries -> MongoDB Atlas data layer.
+2. **Authoritative Backend**: Client applications (`hms-client`, `patient-app`, `super-admin`) are untrusted presentation layers. All authentication, tenant isolation, and authorization logic resides exclusively on `apps/server/`.
+3. **Zero Direct Database Exposure**: Frontend applications, mobile clients, desktop shells, and AI agents have zero network access or credentials to MongoDB Atlas or Redis.
+4. **Mandatory Tenant Scoping**: Every database interaction for hospital data is scoped by `tenantId`. Cross-tenant data leaks are classified as Severity-0 (P0) critical defects.
+5. **Principle of Least Privilege**: Users, micro-processes, and background jobs operate with the minimum necessary permissions.
+6. **No Unverified Regulatory Claims**: The system implements rigorous privacy and security controls aligned with industry standards (e.g. OWASP, HIPAA, GDPR, ISO 27001 principles); however, formal certification claims are prohibited until independent third-party audits are completed and legally signed off.
 
 ---
 
 ## 2. Multi-Tenant Isolation & Identity Governance
 
-### The Tenant Context Security Invariant
+### 2.1. The Tenant Context Security Invariant
+
 ```text
-Authenticated Session (JWT)
-            │
-            ▼
-    Cryptographic Verification
-            │
-            ▼
-    Extract Verified `tenantId`
-            │
-            ▼
-Bind to Request Context (req.user.tenantId)
-            │
-            ▼
-Pass to Tenant-Scoped Repository Query
+HTTP Request (Bearer Token or HttpOnly Cookie)
+             │
+             ▼
+     Cryptographic Verification (JwtAuthGuard)
+             │
+             ▼
+     Extract Verified `tenantId` from JWT Payload
+             │
+             ▼
+     Bind to Request Context (`req.user.tenantId`)
+             │
+             ▼
+     Tenant-Scoped Service Layer (`{ tenantId: req.user.tenantId, ... }`)
+             │
+             ▼
+     MongoDB Atlas (Compound Index on `{ tenantId: 1, ... }`)
 ```
 
-- **No Client Tenant Trust**: The backend **never** accepts or honors a `tenantId` supplied by the client via request body, query string, or HTTP headers.
-- **Uniform Error Masking**: Querying a resource belonging to another tenant returns `404 Not Found` (identical to a non-existent ID) to prevent cross-tenant entity enumeration, while internally raising a security audit warning.
-- **Boundary Separation**:
-  - **Platform Super Admin**: Manages SaaS tenants and billing; zero access to patient health records or clinical notes.
-  - **Hospital Admin**: Manages own hospital staff and configuration; zero access to platform configuration or other hospitals.
+- **Zero Trust for Client-Provided Tenant Identifiers**: The backend strictly ignores and strips any `tenantId` passed in request bodies, query strings, or headers. The tenant identity is derived exclusively from the cryptographically verified JWT session context (`req.user.tenantId`).
+- **Uniform Error Masking for IDOR Prevention**: Attempting to query, mutate, or delete a resource belonging to another tenant returns `404 Not Found` (identical to a non-existent ID). This prevents cross-tenant entity enumeration, while internally emitting a security audit warning.
+- **Strict Separation of Platform vs. Hospital Privileges**:
+  - **Platform Super Admin**: Manages SaaS tenants, subscriptions, plan limits, and global system configurations. Has ZERO access to clinical EMR, prescriptions, doctor notes, or patient records.
+  - **Hospital Administrator**: Manages their own hospital facility, departments, staff accounts, and operational settings. Has ZERO access to platform-level configurations, other tenants' data, or super-admin functions.
 
 ---
 
-## 3. Mandatory Tenant-Isolation Testing Strategy
+## 3. Mandatory Tenant-Isolation Attack Validation Matrix
 
-Every release build and test suite must validate tenant isolation against the following attack scenarios:
+Every CI/CD build and test suite must continuously validate tenant isolation against these five attack scenarios:
 
 | Test Scenario | Attack Simulation | Expected Result |
 |---|---|---|
-| **Scenario 1: Cross-Tenant Resource Read (IDOR)** | User from Hospital A requests Patient ID belonging to Hospital B via `GET /api/v1/patients/:id`. | HTTP `404 Not Found`; zero data returned; security audit logged. |
-| **Scenario 2: Cross-Tenant Mutation** | Doctor from Hospital A attempts `PATCH /api/v1/patients/:id` on Hospital B's patient. | HTTP `404 Not Found`; Hospital B's patient record remains untouched. |
-| **Scenario 3: Cross-Tenant Administration** | Hospital Admin from Hospital A attempts `DELETE /api/v1/users/:id` on Hospital B's staff user. | HTTP `404 Not Found`; target user unaffected. |
-| **Scenario 4: Tenant Parameter Tampering** | Attacker injects `"tenantId": "target_tenant_id"` into `POST /api/v1/patients`. | Payload `tenantId` is stripped; record created with caller's verified `tenantId`. |
-| **Scenario 5: Cross-Tenant Query Enumeration** | User from Hospital A requests `GET /api/v1/patients?limit=100`. | Response contains only Hospital A patients; zero Hospital B patients included. |
+| **Scenario 1: Cross-Tenant Resource Read (IDOR)** | User from Hospital A requests Patient ID belonging to Hospital B via `GET /api/v1/patients/:id`. | HTTP `404 Not Found`; zero data returned; security warning logged in audit trail. |
+| **Scenario 2: Cross-Tenant Mutation** | Doctor from Hospital A attempts `PATCH /api/v1/patients/:id` on Hospital B's patient record. | HTTP `404 Not Found`; Hospital B's patient record remains untouched. |
+| **Scenario 3: Cross-Tenant Administration** | Hospital Admin from Hospital A attempts `DELETE /api/v1/users/:id` targeting Hospital B's doctor. | HTTP `404 Not Found`; target user unaffected. |
+| **Scenario 4: Tenant Parameter Tampering** | Attacker injects `"tenantId": "hospital_b_id"` into `POST /api/v1/patients`. | Payload `tenantId` is stripped; record is saved with caller's verified `req.user.tenantId`. |
+| **Scenario 5: Cross-Tenant Query Enumeration** | User from Hospital A requests `GET /api/v1/patients?limit=100`. | Query results contain only Hospital A records; zero Hospital B records leaked. |
 
 ---
 
 ## 4. Authentication & Session Security
 
-- **Password Hashing**:
-  - Salted and hashed using `bcryptjs` with a work factor of 12.
-  - Plaintext passwords are never stored, logged, or returned in API responses.
-  - Schema definition marks password hashes `{ select: false }` to prevent accidental database extraction.
-- **Brute-Force & Lockout Protection**:
-  - Accounts track consecutive failed login attempts via `failedLoginAttempts`.
-  - Upon 5 consecutive failed attempts, the account is locked for 15 minutes (`lockUntil`).
-  - Successful authentication resets failed attempts to 0.
-- **User Enumeration Defense**:
-  - Failed logins return generic responses: `"Invalid email or password"`.
-  - The API does not disclose whether a given email address exists.
-- **Session & Cookie Security**:
-  - Signed JSON Web Tokens (JWT) signed using HMAC SHA-256 (`HS256`) with a 24-hour expiration.
-  - Set as `HttpOnly` cookies to protect against cross-site scripting (XSS) token harvesting.
-  - Set to `SameSite=lax` to mitigate Cross-Site Request Forgery (CSRF).
-  - Configured with `Secure=true` in production environments.
+1. **Password Hashing**:
+   - Passwords hashed using `bcryptjs` with an adaptive work factor of 12.
+   - Plaintext passwords and hashes are never returned in API responses or logs (`{ select: false }` on User schema).
+2. **Brute-Force & Lockout Protection**:
+   - Accounts track consecutive failed attempts via `failedLoginAttempts`.
+   - Upon 5 consecutive failed login attempts, the account is locked for 15 minutes (`lockUntil`).
+   - Successful login resets failed attempts to 0.
+3. **User Enumeration Defense**:
+   - Authentication failures return uniform generic errors: `"Invalid email or password"`.
+   - The API never reveals whether a given email address exists in the system.
+4. **Session & Token Management**:
+   - Cryptographically signed JSON Web Tokens (JWT) using HMAC SHA-256 (`HS256`) or asymmetric RSA.
+   - Short-lived Access Tokens (15–60 minutes) combined with sliding Refresh Tokens stored in Redis with revocation capability.
+   - Browser cookies set as `HttpOnly`, `SameSite=lax`, and `Secure=true` (in production) to prevent XSS-based token theft.
 
 ---
 
 ## 5. Role-Based Access Control (RBAC)
 
-- **Permission Architecture**:
+The system enforces granular authorization at the controller and service levels:
+
+```text
+Request ──► JwtAuthGuard ──► RolesGuard ──► PermissionsGuard ──► Controller Handler
+```
+
+- **Permissions Structure**: Granular format `resource:action` (e.g. `patients:read`, `patients:create`, `prescriptions:issue`, `billing:invoice_void`).
+- **Decorators**:
+  - `@Roles('HOSPITAL_ADMIN', 'DOCTOR')`
+  - `@RequirePermissions('prescriptions:issue')`
+- **Guards**:
+  - `JwtAuthGuard`: Confirms authenticated cryptographic session.
+  - `RolesGuard`: Validates caller's role against route requirements.
+  - `PermissionsGuard`: Checks whether the user's role/permission set contains all required permission tokens.
+
+---
+
+## 6. API Security, Input Validation & Rate Limiting
+
+1. **Strict Input Validation**:
+   - All inbound payloads validated using NestJS `ValidationPipe` with `class-validator` and `zod` schemas.
+   - Unknown properties automatically stripped via `whitelist: true` and `forbidNonWhitelisted: true`.
+2. **Rate Limiting & DoS Mitigation**:
+   - Distributed rate limiting managed via Redis (`nestjs/throttler` with Redis store).
+   - Global rate limit: 100 requests per minute per IP.
+   - Sensitive auth endpoints (`/auth/login`, `/auth/register`): 5 requests per minute per IP.
+   - Tenant-level throttling prevents single-tenant traffic spikes from impacting platform availability.
+3. **HTTP Security Headers**:
+   - Hardened with `helmet` middleware:
+     - Strict Content Security Policy (CSP)
+     - HTTP Strict Transport Security (HSTS: `max-age=31536000; includeSubDomains; preload`)
+     - `X-Content-Type-Options: nosniff`
+     - `X-Frame-Options: DENY`
+     - `Referrer-Policy: strict-origin-when-cross-origin`
+4. **CORS Hardening**:
+   - Origin whitelisting restricted strictly to designated domains (`hms-client`, `patient-app`, `super-admin`). Wildcard CORS (`*`) is prohibited.
+
+---
+
+## 7. Data Protection & Encryption Standards
+
+1. **Encryption in Transit**:
+   - All communication over public networks requires TLS 1.3 or TLS 1.2 with forward-secret cipher suites.
+   - Plain HTTP requests automatically redirected to HTTPS.
+2. **Encryption at Rest**:
+   - MongoDB Atlas volumes encrypted using AES-256 encryption at rest.
+   - Redis cache instances configured with TLS in-transit encryption and encrypted storage volumes.
+3. **Protected Health Information (PHI) Handling**:
+   - Patient clinical notes, diagnostic results, and prescriptions restricted to authorized clinical personnel.
+   - Demographic exports and audit reports require administrative authorization and are logged.
+4. **Zero Secrets in Source Control**:
+   - Secrets (`JWT_SECRET`, database URIs, API keys) managed via environment variables and secret stores. `.env` files are strictly excluded via `.gitignore`.
+
+---
+
+## 8. Redis Security & Key Namespacing
+
+Redis is used for caching, rate limiting, temporary authentication state, and BullMQ background queues. To prevent cross-tenant collisions or state poisoning:
+
+- **Mandatory Tenant Namespacing**: Every tenant-specific Redis key MUST follow the prefix format:
   ```text
-  User → Tenant Context → Assigned Role → Permission Set → Guard Evaluation
+  tenant:{tenantId}:{module}:{key}
   ```
-- **Granular Permissions**: Formatted as `resource.action` (e.g. `patients.read`, `prescriptions.create`, `billing.invoices.create`).
-- **Reusable Guards**:
-  - `JwtAuthGuard`: Verifies valid cryptographic session.
-  - `RolesGuard`: Validates role claims against `@Roles('super_admin', 'hospital_admin')`.
-  - `PermissionsGuard`: Validates required permissions against `@RequirePermissions('resource.action')`.
+  Examples:
+  - `tenant:60f1b2c3d4e5f6a7b8c9d0e1:queue:active_token:doctor_12`
+  - `tenant:60f1b2c3d4e5f6a7b8c9d0e1:rate_limit:user_88`
+  - `tenant:60f1b2c3d4e5f6a7b8c9d0e1:cache:department_list`
+- **Network Isolation**: Redis access is restricted to internal VPC/private networks with mandatory authentication (`AUTH` password required).
 
 ---
 
-## 6. Sensitive Medical & Financial Data Handling
+## 9. Secure File Handling (Documents & Medical Scans)
 
-- **Protected Health Information (PHI)**:
-  - Patient demographics, clinical encounters, and diagnostic reports are accessible strictly to authorized clinical personnel within the specific hospital tenant.
-  - Sensitive identifiers are masked on general administrative screens.
-- **Financial Precision Standard**:
-  - All monetary values are represented as MongoDB `Decimal128` or integer minor currency units to eliminate floating-point calculation drift.
-- **Phase 2 AI Gateway**:
-  - Future AI models operate strictly via an AI Gateway enforcing data minimization, PII token redaction, and read-only tool allowlists.
-  - AI receives zero MongoDB credentials.
-
----
-
-## 7. Audit Logging & Security Event Monitoring
-
-- **Audit Collection (`audit_logs`)**:
-  - Security-sensitive operations are permanently recorded:
-    - Authentication events (`LOGIN_SUCCESS`, `LOGIN_FAILED`, `LOGOUT`).
-    - Administrative actions (user creation, role modification).
-    - Cross-tenant access attempts (`CROSS_TENANT_ACCESS_ATTEMPT`).
-    - Clinical access and prescription generation.
-    - Invoicing, payments, and refunds.
-- **Mandatory Redaction**:
-  - Passwords, hashes, tokens, authorization headers, and card/bank numbers are automatically stripped from audit payloads.
-- **Audit Immutability**:
-  - Audit log documents cannot be updated or deleted through application APIs.
+1. **Direct Uploads Prohibited**: Frontend clients never upload large medical scans or lab PDFs directly to the NestJS API server memory.
+2. **Pre-Signed URL Workflow**:
+   ```text
+   1. Client requests upload ticket: POST /api/v1/documents/presigned-upload
+   2. Server validates user permissions and generates time-limited (15m) S3/R2 presigned PUT URL
+   3. Client uploads file directly to object storage via HTTPS
+   4. Client notifies server: POST /api/v1/documents/confirm-upload
+   5. Server records document metadata in `documents` collection
+   ```
+3. **MIME-Type & Extension Whitelisting**: Restricted to approved medical document formats (`application/pdf`, `image/jpeg`, `image/png`, `application/dicom`). Executable files (`.exe`, `.sh`, `.js`) are strictly rejected.
+4. **Time-Limited Read Access**: Patient documents are accessed exclusively via short-lived (5-minute) pre-signed download URLs.
 
 ---
 
-## 8. Network, API & Infrastructure Security
+## 10. Immutable Audit Logging & Sanitization
 
-- **Security HTTP Headers (Helmet)**:
-  - Strict Content Security Policy (CSP).
-  - HTTP Strict Transport Security (HSTS).
-  - X-Content-Type-Options: `nosniff`.
-  - X-Frame-Options: `DENY` (Clickjacking defense).
-- **Cross-Origin Resource Sharing (CORS)**:
-  - Restricted strictly to explicitly allowlisted web application domains.
-  - Wildcard (`*`) CORS origins are prohibited in production.
-- **Input Validation**:
-  - NestJS global `ValidationPipe` with `whitelist: true` and `forbidNonWhitelisted: true`.
-- **Database Security (MongoDB Atlas)**:
-  - Enforced TLS 1.2+ for all database connections.
-  - Network IP allowlists and VPC peering.
-  - Dedicated least-privilege application database user.
-  - Automated continuous backups with point-in-time recovery.
+All security-sensitive operations are logged to the `audit_logs` collection:
+
+- **Audited Events**:
+  - Authentication successes, failures, and account lockouts
+  - User creation, role changes, and permission modifications
+  - Patient record creation, updates, and sensitive medical record reads
+  - Prescription issuance and pharmacy dispensing
+  - Invoice adjustments, discounts, and payments/refunds
+  - Tenant status modifications and SaaS plan updates
+- **Strict Data Sanitization Invariant**:
+  ```text
+  PROHIBITED IN LOGS & AUDIT PAYLOADS:
+  - Plaintext passwords or password hashes
+  - JWT tokens, bearer tokens, or session cookies
+  - Credit card numbers, CVVs, or bank credentials
+  - Raw unmasked clinical notes or HIV/sensitive diagnostic observations
+  ```
 
 ---
 
-## 9. Regulatory Notice
+## 11. OWASP API Security Compliance Alignment
 
-> [!IMPORTANT]
-> This system implements enterprise healthcare security and multi-tenant isolation best practices. However, do not claim formal compliance with HIPAA, GDPR, ISO 27001, or local digital health regulatory bodies without formal technical and legal audit verification by certified assessment authorities.
+The platform architecture directly addresses the OWASP API Security Top 10:
+
+1. **API1: Broken Object Level Authorization (BOLA)** -> Addressed by mandatory `{ tenantId, _id }` scoped queries on all entity lookups.
+2. **API2: Broken Authentication** -> Addressed by bcryptjs (work factor 12), account lockouts, secure JWTs, and HttpOnly cookies.
+3. **API3: Broken Object Property Level Authorization** -> Addressed by DTO whitelisting (`ValidationPipe` strips untrusted properties).
+4. **API4: Unrestricted Resource Consumption** -> Addressed by Redis-backed rate limiting and mandatory pagination limits (max 100 items/page).
+5. **API5: Broken Function Level Authorization (BFLA)** -> Addressed by `@Roles` and `@RequirePermissions` guards on all controller routes.
+6. **API6: Unrestricted Access to Sensitive Business Flows** -> Addressed by step-by-step state machines for queue management, pharmacy dispensing, and billing.
+7. **API7: Server Side Request Forgery (SSRF)** -> Addressed by prohibiting user-controlled outbound URL fetching in the API.
+8. **API8: Security Misconfiguration** -> Addressed by hardened Helmet headers, disabled verbose stack traces in production, and CORS whitelisting.
+9. **API9: Improper Inventory Management** -> Addressed by single canonical REST API versioned under `/api/v1` with OpenAPI/Swagger specifications.
+10. **API10: Unsafe Consumption of APIs** -> Addressed by strict schema validation of all third-party webhook and integration payloads.

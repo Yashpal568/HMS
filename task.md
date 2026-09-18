@@ -1,125 +1,173 @@
-# Hospital Management System — Master Task & Work State
+# Hospital Management System — Master Execution Tracker
 
-## Project
-Hospital Management System (HMS MedCore) — Multi-Tenant SaaS
+**SOURCE-OF-TRUTH OWNER**: `task.md` (CURRENT EXECUTION STATE)  
+**Classification**: Operational Tracker  
 
-## Current Milestone
-Milestone 04 — Appointments & OPD Queue (`docs/milestones/M04_APPOINTMENTS_OPD_QUEUE.md`) *(Awaiting user authorization)*
-
-## Status
-MILESTONE 03 COMPLETE
-
-## Completed
-- **Project Setup & Monorepo Infrastructure**: Next.js 16 (React 19), NestJS 12 (Node 22), TypeScript 5.8, Tailwind CSS v4, pnpm workspaces, ESLint, OxLint, Vitest.
-- **MongoDB Atlas Integration**: Live connection to MongoDB Atlas cluster (`cluster0.u0fr4ag.mongodb.net/hms_dev`) with connection monitoring and `/api/v1/health` readiness reporting.
-- **Milestone 01 — Authentication, RBAC & Security Foundation**:
-  - `User`, `Role`, `Permission`, `AuditLog` Mongoose schemas with `tenantId`/`hospitalId` compound indexing.
-  - Salted password hashing via `bcryptjs` (cost 12), 15-minute account lockout on 5 failed attempts.
-  - JWT token issuance, HttpOnly `SameSite=lax` session cookies, Passport strategy.
-  - Reusable execution guards: `JwtAuthGuard`, `RolesGuard`, `PermissionsGuard`, `@RequirePermissions()`, `@Roles()`, `@CurrentUser()`.
-  - Initial seed data: 9 hospital roles, 30 granular enterprise permissions, default Super Admin (`admin@hms.local`).
-  - Redacted security audit logging (`LOGIN_SUCCESS`, `LOGIN_FAILED`, `LOGOUT`).
-  - Enterprise login UI (`/login`) with error feedback and accessibility.
-- **Milestone 02 — Application Shell & Dashboard**:
-  - Reusable `AppShell` wrapping authenticated views and enforcing session checks.
-  - Categorized `Sidebar` navigation matching `docs/DESIGN.md` with upcoming milestone notice dialogs.
-  - Header bar with breadcrumbs, Atlas connection indicator, user profile dropdown, and logout trigger.
-  - Reusable UI state components: `Skeleton`, `CardSkeleton`, `TableSkeleton`, `EmptyState`, `ErrorState`.
-  - Backend `DashboardModule` with `GET /api/v1/dashboard` querying real user metrics, database readiness, uptime, and recent audit trail.
-  - Zero-Fake-Data compliance: Clinical metrics for unbuilt modules return genuine empty states (`count: 0`).
-  - Dynamic root route (`/`) redirecting authenticated users to `/dashboard` and unauthenticated to `/login`.
-  - 23 unit tests + 2 e2e tests passing in `apps/api`.
-  - Live browser testing verified.
-- **SaaS Architecture Migration**:
-  - Formalized product model as **Multi-Tenant SaaS Product** on MongoDB Atlas.
-  - Decoupled Platform Super Admin (SaaS provider) from Hospital Admin (customer tenant).
-  - Architected Tenant Context Resolution Pipeline (`req.user.tenantId`) with zero-trust client tenant identifier policy.
-  - Established 3-tier collection classification: Global/Platform-Owned, Tenant-Owned, and System-Owned.
-  - Configured tenant-scoped compound indexes (e.g. `{ tenantId: 1, uhid: 1 }` unique) across all clinical and operational domain entities.
-  - Drafted dedicated specifications: `multi-tenancy.md`, `tenant-isolation.md`, `subscriptions.md`.
-  - Purged legacy references to PostgreSQL/Prisma.
-- **Milestone 03 — Patient Management**:
-  - `counter` schema with atomic annual sequence tracking (`{ tenantId: 1, year: 1 }` unique) generating sequential zero-padded UHID identifiers (`UHID-YYYY-NNNNNN`).
-  - `patient` schema with compound multi-tenant indexes: `{ tenantId: 1, uhid: 1 }` unique, `{ tenantId: 1, 'contacts.phone': 1, dateOfBirth: 1 }`, `{ tenantId: 1, status: 1, createdAt: -1 }`.
-  - Duplicate detection engine checking matching phone + date of birth in tenant scope via `/api/v1/patients/check-duplicate`.
-  - REST API endpoints (`POST /`, `GET /`, `GET /:id`, `PATCH /:id`) guarded with `@RequirePermissions()` and `tenantId` session isolation.
-  - Uniform `404 Not Found` existence masking for cross-tenant IDOR probes.
-  - Security and clinical audit logging (`PATIENT_CREATE`, `PATIENT_ACCESS`, `PATIENT_UPDATE`).
-  - Patient Directory UI (`/patients`) with debounced search, status filter tabs, paginated table, and empty states.
-  - 4-section Patient Registration Form (`/patients/register`) with live duplicate warning modal.
-  - Comprehensive Patient Profile (`/patients/[id]`) with clinical header banner, UHID copy tool, blood group tag, severe allergy alerts, demographics tabs, and authentic upcoming-milestone states (Appointments, EMR, IPD, Billing).
-  - Demographic edit form (`/patients/[id]/edit`) with persistence and tenant isolation.
-  - 31 backend unit tests passing (including 8 comprehensive patient tests).
-  - Zero TypeScript errors across monorepo (`pnpm typecheck`).
-  - Zero linter warnings/errors across monorepo (`pnpm lint`).
-  - Production build cleanly passes (`pnpm build`).
-  - Live browser testing verified with real patient registration and UHID verification.
-- **UI Redesign & Shadcn Studio Polish**:
-  - Comprehensive theme foundations and CSS custom property design tokens in `globals.css` with shimmer animations and anti-aliasing.
-  - Reusable UI component library (`apps/web/src/components/ui/`): polymorphic `Button`, clinical semantic `Badge`, modular `Card` system, shimmer `Skeleton`, and global quick-search `CommandPalette` (`⌘K`).
-  - Responsive collapsible sidebar with desktop collapse toggle (`PanelLeftClose`), persistent `localStorage` preference, `⌘B` keyboard shortcut, and mobile drawer.
-  - Shadcn Studio navbar (`apps/web/src/components/layout/header.tsx`): interactive breadcrumbs, quick search trigger, MongoDB Atlas live status pill, facility badge, notifications bell with popover, and user profile avatar dropdown.
-  - Complete dashboard UI redesign (`apps/web/src/app/dashboard/page.tsx`): hero banner with quick actions, authentic live telemetry cards, department overview cards, live MongoDB Atlas audit trail, and Phase 1 Architecture Matrix.
-  - 100% verified with 0 TypeScript errors, 0 ESLint warnings/errors, clean production build, and live browser test session.
-- **Executive Dashboard Analytics & Profile Redesign**:
-  - Live patient census analytics pipeline aggregating intake velocity, gender breakdown, blood group prevalence, and documented allergies from MongoDB Atlas.
-  - 4 High-Impact KPI metric cards with live count badges and cloud uptime telemetry.
-  - Interactive SVG 7-Day Patient Registration Velocity Area Chart with hover tooltips and daily metrics.
-  - Segmented tab navigation (`Overview Cockpit`, `Patient Analytics`, `Department Census`, `Security Ledger`).
-  - Executive Profile Dropdown Popover (`w-88` / 340px) with dark gradient banner, active facility context, copyable Sovereign Tenant ID, and security badges.
-  - Comprehensive `UserProfileModal` with tabbed inspection of identity, searchable clinical privileges, and security posture.
-  - 32/32 backend unit tests passing, zero TypeScript errors, zero ESLint warnings/errors, and end-to-end browser subagent verification.
-
-## In Progress
-None. Milestone 03 and UI Redesign are complete and verified. Awaiting explicit user instruction before starting Milestone 04.
-
-## Next Milestone
-Milestone 04 — Appointments & OPD Queue (`docs/milestones/M04_APPOINTMENTS_OPD_QUEUE.md`)
+## CURRENT MILESTONE
+**Milestone 12 — Super Admin Platform & Subscription Engine** (`docs/milestones/M12_SUPER_ADMIN_PLATFORM.md`)
 
 ---
 
-## Milestone Index
+## COMPLETED
 
-| # | Milestone Specification | Target Phase | Status |
-|---|---|---|---|
-| 01 | [M01_AUTHENTICATION_RBAC_SECURITY.md](file:///e:/FluBird/docs/milestones/M01_AUTHENTICATION_RBAC_SECURITY.md) | Phase 1 Core | **COMPLETE** |
-| 02 | [M02_APPLICATION_SHELL_DASHBOARD.md](file:///e:/FluBird/docs/milestones/M02_APPLICATION_SHELL_DASHBOARD.md) | Phase 1 Core | **COMPLETE** |
-| -- | **SaaS Architecture Migration** | Architecture & Docs | **COMPLETE** |
-| 03 | [M03_PATIENT_MANAGEMENT.md](file:///e:/FluBird/docs/milestones/M03_PATIENT_MANAGEMENT.md) | Phase 1 Core | **COMPLETE** |
-| 04 | [M04_APPOINTMENTS_OPD_QUEUE.md](file:///e:/FluBird/docs/milestones/M04_APPOINTMENTS_OPD_QUEUE.md) | Phase 1 Core | **NOT STARTED (NEXT)** |
-| 05 | [M05_EMR_CLINICAL_CONSULTATION.md](file:///e:/FluBird/docs/milestones/M05_EMR_CLINICAL_CONSULTATION.md) | Phase 1 Core | **NOT STARTED** |
-| 06 | [M06_IPD_BED_MANAGEMENT.md](file:///e:/FluBird/docs/milestones/M06_IPD_BED_MANAGEMENT.md) | Phase 1 Core | **NOT STARTED** |
-| 07 | [M07_LABORATORY_INFORMATION_SYSTEM.md](file:///e:/FluBird/docs/milestones/M07_LABORATORY_INFORMATION_SYSTEM.md) | Phase 1 Core | **NOT STARTED** |
-| 08 | [M08_PHARMACY_DISPENSING.md](file:///e:/FluBird/docs/milestones/M08_PHARMACY_DISPENSING.md) | Phase 1 Core | **NOT STARTED** |
-| 09 | [M09_INVENTORY_PROCUREMENT.md](file:///e:/FluBird/docs/milestones/M09_INVENTORY_PROCUREMENT.md) | Phase 1 Core | **NOT STARTED** |
-| 10 | [M10_BILLING_INVOICING_PAYMENTS.md](file:///e:/FluBird/docs/milestones/M10_BILLING_INVOICING_PAYMENTS.md) | Phase 1 Core | **NOT STARTED** |
-| 11 | [M11_REPORTS_ANALYTICS_AUDIT_CENTER.md](file:///e:/FluBird/docs/milestones/M11_REPORTS_ANALYTICS_AUDIT_CENTER.md) | Phase 1 Core | **NOT STARTED** |
-| 12 | [M12_PRODUCTION_HARDENING_SECURITY_BACKUP.md](file:///e:/FluBird/docs/milestones/M12_PRODUCTION_HARDENING_SECURITY_BACKUP.md) | Phase 1 Core | **NOT STARTED** |
-| 13 | [M13_PHASE_2_AI_INTELLIGENCE.md](file:///e:/FluBird/docs/milestones/M13_PHASE_2_AI_INTELLIGENCE.md) | Phase 2 AI | **NOT STARTED** |
-| 14 | [M14_ELECTRON_DESKTOP_PACKAGING.md](file:///e:/FluBird/docs/milestones/M14_ELECTRON_DESKTOP_PACKAGING.md) | Phase 2 Desktop | **NOT STARTED** |
+### Milestone 0: Project Foundation & Architecture Upgrade (COMPLETED)
+- **Monorepo Topology & 4-Application Ecosystem**:
+  - `apps/server/` (NestJS canonical backend shared across all frontends, migrated from `apps/api`).
+  - `apps/hms-client/` (Dedicated Next.js Hospital & Doctor workstation application, migrated from `apps/web`).
+  - `apps/patient-app/` (Autonomous Next.js mobile-first patient healthcare platform).
+  - `apps/super-admin/` (Dedicated Next.js SaaS platform owner console).
+- **Shared Packages Foundation**:
+  - `packages/ui/` (Design tokens, shadcn/ui primitives, buttons, cards, skeletons, command palette).
+  - `packages/types/` (Shared TypeScript domain contracts, DTOs, and enums).
+  - `packages/config/` (Shared ESLint, Tailwind, and TypeScript configurations).
+  - `packages/auth/` (Shared JWT payload interfaces, session context decoders, surface helpers).
+- **Database & Cache Baseline**:
+  - MongoDB Atlas live connection with schema validation.
+  - Redis cache and rate limiter configuration with tenant-namespaced key patterns.
+- **Master Documentation Suite (14 Authoritative Specifications)**:
+  - `docs/PRD.md` — v3.0.0 Master Product Requirements Document.
+  - `docs/ARCHITECTURE.md` — 4-tier application ecosystem & request pipeline.
+  - `docs/DATABASE.md` — 26 collections data dictionary, compound indexes, financial decimal precision.
+  - `docs/SECURITY.md` — Zero-trust multi-tenancy, RBAC guards, OWASP API Top 10 alignment.
+  - `docs/FRONTEND.md` — Architecture for `hms-client`, `patient-app`, `super-admin`, and shared packages.
+  - `docs/BACKEND.md` — NestJS modular monolith, tenant scoping, Redis queues, and error envelopes.
+  - `docs/DESIGN.md` — Design tokens, typography, HSL palettes, and real-time queue visual guidelines.
+  - `docs/SAAS.md` — Commercial tiers, subscription lifecycle state machine, and quota enforcement.
+  - `docs/PATIENT_PLATFORM.md` — Mobile-first discovery, 5-step booking wizard, live OPD queue tracker, PHR vault.
+  - `docs/AI_ARCHITECTURE.md` — Phase 2 AI Gateway topology, 18 specialized healthcare agents catalog.
+  - `docs/DEPLOYMENT.md` — Cloud hybrid deployment (Render, Vercel, Cloudflare, Atlas, Redis) and CI/CD.
+  - `docs/DEVELOPMENT_RULES.md` — The 20 permanent Antigravity development rules.
+  - `docs/MILESTONES.md` — Roadmap for Milestones 0 through 13.
+  - `docs/DECISIONS.md` — Architectural Decision Records (ADR 001 to ADR 017).
+
+### Milestone 01 — Authentication + Multi-Tenancy + RBAC (COMPLETED)
+- Implemented enterprise multi-tenant identity governance, JWT authentication, and granular RBAC.
+- Password hashing using bcryptjs (work factor 12) with account lockout protection.
+- Guards: `JwtAuthGuard`, `RolesGuard`, `PermissionsGuard` and cryptographic tenant derivation.
+
+### Milestone 02 — Hospital + Departments + Doctors + Staff (COMPLETED)
+- Hospital organization structure, clinical departments, staff and doctor profiles.
+- Shift scheduling baseline and departmental routing.
+
+### Milestone 03 — Patient Management (COMPLETED)
+- Master Patient Index (MPI) with deterministic and probabilistic duplicate detection.
+- Sequential UHID generator with multi-tenant counter schema (`PAT-YYYY-NNNNNN`).
+- Patient registration, profile management, and comprehensive clinical allergy ledger.
+
+### Milestone 04 — Appointments & OPD Queue (COMPLETED)
+- Outpatient appointment scheduling engine with shift slot calculations.
+- Live token issuance (`#1`, `#2`, etc.) and queue state machine (`SCHEDULED`, `CHECKED_IN`, `IN_CONSULTATION`, `COMPLETED`, `CANCELLED`).
+- Doctor queue board and patient lookup in `apps/hms-client`.
+
+### Milestone 05 — Doctor Consultation & EMR (COMPLETED)
+- Encounter initialization from checked-in appointments; automatic appointment status advancement.
+- Real-time BMI calculator & categorization; active allergy contraindication engine.
+- Immutability lock for finalized encounters and audit logging via `AuditService`.
+- Full Physician Consultation Cockpit in `apps/hms-client` with SOAP notes, ICD-10 diagnoses, and prescription builder.
+
+### Milestone 06 — IPD & Bed Management (COMPLETED)
+- Inpatient admissions, ward/bed matrix, real-time census summary calculations.
+- Concurrency-safe atomic bed reservation, internal transfer with housekeeping release, and discharge summary workflow.
+
+### Milestone 07 — Laboratory Information System (LIS) (COMPLETED)
+- Diagnostic test catalog browser with biological reference intervals and critical panic limits.
+- Electronic requisition wizard (`LAB-YYYY-NNNNN`), phlebotomy accessioning (`ACC-YYYY-NNNNN`), dual-bench technician worksheet, and pathologist verification sign-off seal.
+
+### Milestone 08 — Pharmacy & Dispensing (COMPLETED)
+- Formulary catalog, FEFO batch recommendation, atomic stock deduction, and dispensing workstation.
+- Medication instruction translator and thermal print label preview.
+
+### Milestone 09 — Inventory, Stock & Procurement (COMPLETED)
+- **Domain Contracts & Models**: `InventoryItem`, `Supplier`, `PurchaseOrder`, `PurchaseReceipt` (GRN), `StockMovement`.
+- **Core Logistics Workflows**:
+  - Item Master catalog with categorized hospital consumables and safety stock thresholds.
+  - Approved supplier directory with statutory tax identifiers (GST/VAT) and payment credit terms.
+  - Sequential purchase order requisition (`PO-YYYY-NNNNN`) and administrative approval lifecycle.
+  - GRN delivery workstation (`GRN-YYYY-NNNNN`) capturing manufacturer lot/expiry and atomic stock increment.
+  - Departmental transfers to clinical wards with concurrency-safe stock deduction.
+  - Physical audit adjustment engine with reason codes and immutable transaction history.
+- **Frontend & Currency Integration**:
+  - Executive inventory dashboard with live valuation, low-stock alerts, and fast reorder triggers.
+  - Global `CurrencyContext` and interactive header `CurrencySelector` defaulting to Indian Rupee (`₹ INR`).
+- **Automated Testing & Build**: 10 unit tests in `inventory.service.spec.ts`. All 13 test suites passed.
+
+### Milestone 10 — Billing, Invoicing & Payments (COMPLETED)
+- **Domain Contracts (`packages/types`)**:
+  - Enums: `ServiceCategory`, `InvoiceStatus`, `InvoiceItemType`, `PaymentMethod`, `PaymentStatus`, `RefundStatus`.
+  - Interfaces & DTOs: `HospitalService`, `InvoiceLineItem`, `Invoice`, `Payment`, `Refund`, `BillingSummaryMetrics`, `UnbilledChargeItem`.
+- **Backend Architecture (`apps/server/src/billing/`)**:
+  - Mongoose Collections: `services`, `invoices`, `payments`, `refunds` with tenant isolation and compound indexes.
+  - `BillingService`:
+    - Idempotent tariff seeder (10 standard clinical services across consultations, procedures, lab, radiology, and beds).
+    - Sequential numbering generators (`INV-YYYY-NNNNN`, `RCP-YYYY-NNNNN`, `RFD-YYYY-NNNNN`).
+    - Unbilled clinical charge scanner auto-aggregating OPD visits, lab orders, pharmacy dispenses, and bed charges.
+    - Atomic payment balance reconciliation with overpayment guard and immediate invoice status transition.
+    - Role-gated refund creation and approval engine.
+    - High-precision integer minor-unit arithmetic eliminating floating-point drift.
+    - Structured audit trail logging via `AuditService.record()`.
+  - `BillingController`: REST API secured with `@JwtAuthGuard`, `@RolesGuard`, and granular permissions (`billing.read`, `billing.create`, `billing.refund`).
+  - Unit Tests: 11 comprehensive tests in `billing.service.spec.ts`. All 14 server test suites passed (107/107 tests).
+- **Hospital Administrative Workstation (`apps/hms-client`)**:
+  - `sidebar.tsx`: Activated `Billing & Invoicing` with live status indicator.
+  - `/billing`: Executive revenue dashboard with KPI cards formatted in `₹ INR`, status filters, and invoice ledger.
+  - `/billing/invoices/new`: Universal invoice authoring wizard with patient selector, one-click unbilled charge import, tariff selector, line item editor, and live totals.
+  - `/billing/invoices/[id]`: Itemized invoice statement with payment modal, refund modal, transaction history, and official receipt thermal/A4 print preview.
+  - `/billing/payments`: Payments & receipts register with payment method breakdown and transaction search.
+  - `/billing/tariffs`: Service tariff master browser with category filters and Add Service modal.
+  - `/billing/refunds`: Permission-controlled refunds authorization queue with accountant approval modal.
+- **Verification & Validation**:
+  - Live Browser Audit: 7 visual checkpoints captured and documented (screenshots `50` through `56`).
+  - Monorepo Typecheck: `pnpm typecheck` passed with 0 errors across all 8 workspace projects.
+  - Monorepo Linter: `pnpm lint` passed with 0 warnings and 0 errors across all workspace projects.
+  - Server Unit Tests: 107/107 passed across 14 test suites (`vitest run`).
+  - Production Build: `pnpm --filter @hms/hms-client build` passed with 0 errors across all 33 routes.
+
+### Milestone 11 — Reports, Analytics & Master Audit Center (COMPLETED)
+- **Domain Contracts (`packages/types`)**:
+  - Domain Interfaces & DTOs: `CensusReport`, `FinancialReport`, `InventoryPharmacyReport`, `AuditLogEntry`, `AuditQueryParams`, `AuditQueryResponse`.
+- **Backend Architecture (`apps/server`)**:
+  - `AuditModule` & `AuditService`:
+    - Enhanced `AuditLog` schema with compound indexes: `{ tenantId: 1, timestamp: -1 }`, `{ tenantId: 1, action: 1 }`, `{ tenantId: 1, userId: 1 }`.
+    - Multi-criteria filtering, user profile enrichment, and RFC-4180 CSV export generator.
+    - `AuditController`: REST endpoints `GET /api/v1/audit` and `GET /api/v1/audit/export` secured with `@RequirePermissions('audit.read')`.
+  - `ReportsModule` & `ReportsService`:
+    - Multi-collection aggregation pipelines across `patients`, `appointments`, `admissions`, `beds`, `lab_orders`, `invoices`, `payments`, `refunds`, `medicines`, and `inventory_items`.
+    - Clinical census calculations: intake demographics, OPD clinic attendance & clinician workload, IPD ward bed occupancy %, ALOS (Average Length of Stay), and laboratory turnaround times (TAT).
+    - Financial revenue realization, cashier shift collections, departmental revenue attribution, and Accounts Receivable ageing buckets (0–30, 31–60, 61–90, >90 days overdue).
+    - Supply chain safety: near-expiry batch watch (≤90 days) and formulary stockout alerts.
+    - Structured audit logging via `AuditService.record()` emitting `REPORT_GENERATE` and `AUDIT_EXPORT`.
+    - `ReportsController`: `GET /api/v1/reports/census`, `GET /api/v1/reports/financial`, `GET /api/v1/reports/inventory`, `GET /api/v1/reports/export`.
+  - RBAC: Registered permissions `reports.read`, `reports.financial.read`, `audit.logs.read`.
+  - Unit Tests: 5 comprehensive tests in `reports.service.spec.ts`. All 15 server test suites passed (112/112 tests).
+- **Hospital Administrative Workstation (`apps/hms-client`)**:
+  - `sidebar.tsx`: Activated `Reports & Census` (`/reports`) and `Audit & Security` (`/audit`) with live status badges.
+  - `/reports`: Executive master reports hub with quick time period presets (`Today`, `Yesterday`, `Last 7 Days`, `Month to Date`, `Custom Range`), top KPI cards, and domain tabs.
+  - `/reports/census`: Operational census dashboard with bed occupancy bars, clinician consultation load ledger, and lab throughput.
+  - `/reports/financial`: Financial revenue dashboard with Accounts Receivable ageing matrix cards, payment methods breakdown, and cashier shift ledger in `₹ INR`.
+  - `/reports/pharmacy-inventory`: Supply chain risk governance dashboard with near-expiry batch monitoring and formulary stockout alerts.
+  - `/audit`: Master security & audit center with multi-criteria filters, search input, status pills, audit log ledger, and Detailed Audit Record Inspection modal with sanitized JSON payload view.
+- **Verification & Validation**:
+  - Live Browser Audit: 6 visual checkpoints captured and documented (screenshots `57` through `62`).
+  - Monorepo Typecheck: `pnpm typecheck` passed with 0 errors across all 8 workspace projects.
+  - Monorepo Linter: `pnpm lint` passed with 0 warnings and 0 errors across all workspace projects.
+  - Server Unit Tests: 112/112 passed across 15 test suites (`vitest run`).
+  - Production Build: `pnpm --filter @hms/hms-client build` passed with 0 errors across all 38 routes.
 
 ---
 
-## Milestone 03 Acceptance Criteria (Verified)
-- [x] Patient Mongoose schema created conforming strictly to `docs/DATABASE.md` with mandatory `tenantId: ObjectId` index.
-- [x] Sequential, collision-free UHID generation (`UHID-YYYY-NNNNNN`) unique per tenant (`{ tenantId: 1, uhid: 1 }`).
-- [x] Registration form validates demographics, contacts, emergency contact, and allergies.
-- [x] Duplicate detection flags matching phone + date of birth within tenant scope.
-- [x] Patient directory lists, searches, and paginates records strictly within caller's `tenantId`.
-- [x] Patient profile view displays clinical header banner with allergy warnings.
-- [x] Backend API endpoints protected by JWT and RBAC (`patients.create`, `patients.read`, `patients.update`).
-- [x] Cross-tenant IDOR probes return uniform `404 Not Found` without disclosing record existence.
-- [x] Audit logs recorded for patient operations without leaking secrets.
-- [x] Automated unit, integration, and tenant-isolation regression tests pass (31 passing tests).
-- [x] Monorepo build, lint, and typecheck pass with zero errors and zero warnings.
+## MILESTONES INDEX
 
----
-
-## Important Constraints & Rules
-- **Rule 1**: Operate strictly on the assigned milestone. NEVER begin Milestone 04 or any other milestone until Milestone 03 is complete and verified.
-- **Rule 2**: Read `AGENTS.md` and `docs/milestones/M03_PATIENT_MANAGEMENT.md` before coding.
-- **Rule 3**: Never invent clinical fields or workflows. Follow `docs/DATABASE.md` and `docs/PRD.md`.
-- **Rule 4**: Frontend must NEVER connect directly to MongoDB Atlas. Always query through NestJS REST API.
-- **Rule 5**: Never use fake patient statistics or numbers.
-- **Rule 6**: Enforce tenant isolation on every database query. Never perform unscoped queries.
-- **Rule 7**: STOP after completing Milestone 03. Do NOT automatically proceed to Milestone 04.
+- [x] Milestone 0: Foundation & Monorepo Setup
+- [x] Milestone 1: Multi-Tenancy & Auth
+- [x] Milestone 2: Hospital & Core Setup
+- [x] Milestone 3: Patient Management
+- [x] Milestone 4: Appointments & OPD Queue
+- [x] Milestone 5: Doctor Consultation & EMR
+- [x] Milestone 6: IPD & Bed Management
+- [x] Milestone 7: Laboratory & Diagnostics
+- [x] Milestone 8: Pharmacy & Dispensing
+- [x] Milestone 9: Inventory, Stock & Procurement
+- [x] Milestone 10: Billing, Invoicing & Payments
+- [x] Milestone 11: Reports, Analytics & Operational Census
+- [ ] Milestone 12: Super Admin Platform & Subscription Engine
+- [ ] Milestone 13: Patient Portal Web Application

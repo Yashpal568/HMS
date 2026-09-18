@@ -312,6 +312,7 @@ describe('AppointmentsService', () => {
       mockAppt._id.toString(),
     );
 
+    expect(result).toBeDefined();
     expect(mockAppt.status).toBe(AppointmentStatus.CHECKED_IN);
     expect(mockAppt.save).toHaveBeenCalled();
     expect(mockAuditService.record).toHaveBeenCalledWith(
@@ -337,7 +338,7 @@ describe('AppointmentsService', () => {
       save: vi.fn().mockResolvedValue(undefined),
     };
 
-    mockAppointmentModel.findOne = vi.fn().mockImplementation((filter?: any) => {
+    mockAppointmentModel.findOne = vi.fn().mockImplementation((_filter?: any) => {
       return {
         exec: vi.fn().mockResolvedValue(mockAppt),
         populate: vi.fn().mockReturnValue({
@@ -360,6 +361,7 @@ describe('AppointmentsService', () => {
       'Patient requested reschedule due to travel',
     );
 
+    expect(cancelled).toBeDefined();
     expect(mockAppt.status).toBe(AppointmentStatus.CANCELLED);
     expect(mockAuditService.record).toHaveBeenCalledWith(
       expect.objectContaining({

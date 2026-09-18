@@ -1,217 +1,191 @@
-# Hospital Management System — Master Architecture
+# HMS MedCore — System Architecture Specification
 
-**Product**: Hospital Management System (HMS MedCore)  
-**Deployment Model**: Multi-Tenant Software-as-a-Service (SaaS)  
-**Database**: MongoDB Atlas  
-**Architecture Style**: Modular Monolith  
-**Status**: Authoritative Architectural Standard  
-
----
-
-## 1. Architectural Strategy & Decision Record
-
-### Modular Monolith over Microservices
-The system is implemented as a **modular monolith** running on NestJS and Next.js. Microservices are explicitly prohibited.
-
-**Architectural Rationale**:
-- **Simplicity & Velocity**: High development velocity without network partition latency, distributed consensus overhead, or distributed transaction management.
-- **Strict Domain Boundaries**: Modular structure enforces clean boundaries through explicit NestJS module imports, DTO contracts, and service injection.
-- **Operational Efficiency**: Lower deployment complexity, centralized logging, and unified monitoring on MongoDB Atlas.
-- **Future Extraction Path**: If a domain module (such as Laboratory or Billing) warrants independent horizontal scaling in the future, its clean interfaces allow straightforward extraction into a standalone microservice.
+**SOURCE-OF-TRUTH OWNER**: `docs/ARCHITECTURE.md` (SYSTEM ARCHITECTURE)  
+**Classification**: Authoritative  
+**Version:** 3.0.0  
+**Pattern:** Modular Monolith API with Distributed Client Surfaces  
+**System of Record:** MongoDB Atlas  
+**In-Memory Cache & Queue:** Redis  
 
 ---
 
-## 2. Multi-Tenant SaaS High-Level Architecture
+## 1. Architectural Topology
 
-The primary deployment model is a **cloud-hosted, multi-tenant SaaS platform**:
+HMS MedCore is structured as a **Multi-Tenant Software-as-a-Service Platform** composed of four distinct application surfaces communicating with a unified backend:
 
 ```text
-               ┌─────────────────────────────────────────────────────────┐
-               │                      Client Tier                        │
-               │   • Web Browsers (Next.js / React 19 / TypeScript)      │
-               │   • [Phase 2] Windows Desktop Wrapper (Electron)        │
-               └────────────────────────────┬────────────────────────────┘
-                                            │ HTTPS / TLS 1.3
-                                            ▼
-               ┌─────────────────────────────────────────────────────────┐
-               │                     Edge & Network                      │
-               │   • Reverse Proxy / Cloudflare WAF / Helmet             │
-               │   • Rate Limiting & DDOS Protection                     │
-               └────────────────────────────┬────────────────────────────┘
-                                            │ Reverse Proxy
-                                            ▼
-               ┌─────────────────────────────────────────────────────────┐
-               │                   Application Tier                      │
-               │            NestJS 12 Modular Monolith                   │
-               │                                                         │
-               │  ┌───────────────────────┬───────────────────────────┐  │
-               │  │  Platform Level       │  Hospital Level           │  │
-               │  │  - Tenant Management  │  - Identity & RBAC        │  │
-               │  │  - Subscriptions      │  - Patient Registry       │  │
-               │  │  - Plans & Modules    │  - Appointments & OPD     │  │
-               │  │  - Global Telemetry   │  - Clinical EMR           │  │
-               │  │                       │  - IPD & Beds             │  │
-               │  │                       │  - Laboratory & Pharmacy  │  │
-               │  │                       │  - Billing & Invoicing    │  │
-               │  └───────────────────────┴───────────────────────────┘  │
-               │                                                         │
-               │   + Tenant Context Interceptor & Scoped Repositories    │
-               └────────────────────────────┬────────────────────────────┘
-                                            │ TLS 1.2+ Mongoose Driver
-                                            ▼
-               ┌─────────────────────────────────────────────────────────┐
-               │                      Data Tier                          │
-               │                 MongoDB Atlas Cluster                   │
-               │                                                         │
-               │  ┌─────────────────────────┬─────────────────────────┐  │
-               │  │ Global Collections      │ Tenant Collections      │  │
-               │  │ - tenants               │ - users (tenantId)      │  │
-               │  │ - subscriptions         │ - patients (tenantId)   │  │
-               │  │ - plans                 │ - appointments (tenant) │  │
-               │  │ - platform_users        │ - encounters (tenantId) │  │
-               │  └─────────────────────────┴─────────────────────────┘  │
-               │                                                         │
-               │   • Automated Multi-AZ Replication                      │
-               │   • Point-in-Time Recovery Backups                      │
-               │   • Encryption at Rest & In-Transit                     │
-               └─────────────────────────────────────────────────────────┘
+┌───────────────────────────┐  ┌───────────────────────────┐  ┌───────────────────────────┐
+│     Hospital HMS Client   │  │   Patient Mobile Portal   │  │     SaaS Super Admin      │
+│      (apps/hms-client)    │  │    (apps/patient-app)     │  │    (apps/super-admin)     │
+│   Next.js 16 (App Router) │  │  Next.js 16 (Mobile-First)│  │  Next.js 16 (Dark Theme)  │
+└─────────────┬─────────────┘  └─────────────┬─────────────┘  └─────────────┬─────────────┘
+              │                              │                              │
+              │ (HTTPS / JSON REST API)      │                              │
+              └──────────────────────────────┼──────────────────────────────┘
+                                             │
+                                             ▼
+                              ┌─────────────────────────────┐
+                              │     Cloudflare WAF / CDN    │
+                              │    (DDoS, SSL Termination)  │
+                              └──────────────┬──────────────┘
+                                             │
+                                             ▼
+                              ┌─────────────────────────────┐
+                              │   Canonical Shared Backend  │
+                              │        (apps/server)        │
+                              │   NestJS Modular Monolith   │
+                              │    Node 22 / TypeScript     │
+                              └───────┬─────────────┬───────┘
+                                      │             │
+                    ┌─────────────────┘             └─────────────────┐
+                    ▼                                                 ▼
+     ┌──────────────────────────────┐                  ┌──────────────────────────────┐
+     │        MongoDB Atlas         │                  │         Managed Redis        │
+     │   Cloud System of Record     │                  │  Cache, Rate-Limits, Queues  │
+     │(Multi-Tenant Scoped Cluster) │                  │  (Tenant-Scoped Key Prefix)  │
+     └──────────────────────────────┘                  └──────────────────────────────┘
 ```
 
 ---
 
-## 3. The Tenant Context & Isolation Pipeline
+## 2. The Four Application Surfaces
 
-Tenant isolation is enforced by an authoritative pipeline on every incoming request. The client is never trusted to specify its tenant context.
+### 1. `apps/server` (Shared Canonical Backend)
+- **Role:** The solitary backend and system-of-record gatekeeper for all frontends.
+- **Framework:** NestJS 12, Express platform, Node 22, TypeScript 5.8.
+- **Pattern:** Modular Monolith organized by bounded domain contexts.
+- **Key Modules:**
+  - `AuthModule`: Multi-tenant credentials verification, password hashing (`bcryptjs` cost 12), token lifecycle, account lockout.
+  - `TenantModule`: Tenant provisioning, organization metadata, subscription entitlement checks.
+  - `RolesModule`: Role registry, granular permission catalogs, RBAC guards.
+  - `PatientsModule`: Patient demographics, sequence generator (`counters`), duplicate detection engine.
+  - `AppointmentsModule`: Doctor schedule rosters, slot calculation, sequential token generation, OPD queue board, check-in, cancellation.
+  - `EmrModule`: Clinical encounters, chief complaints, vitals, ICD-coded diagnoses, e-prescriptions.
+  - `IpdModule`: Bed allocation, ward transfers, inpatient tracking, nursing stations.
+  - `LaboratoryModule`: Diagnostic test catalog, orders, sample accessioning, result verification.
+  - `PharmacyModule`: Medicine Master catalog, batch management, FEFO dispensing.
+  - `InventoryModule`: Consumable catalog, suppliers, purchase orders, stock ledger.
+  - `BillingModule`: Tariff masters, itemized invoices, payment recording, credit notes.
+  - `AuditModule`: Centralized immutable security and clinical audit logger (`audit_logs`).
+  - `AiGatewayModule`: Phase 2 abstracted AI Gateway, tool registry, and policy engine.
+
+### 2. `apps/hms-client` (Hospital & Clinical Operations)
+- **Role:** Comprehensive management interface for hospital staff.
+- **Framework:** Next.js 16 (App Router), React 19, Tailwind CSS v4.
+- **Key Roles Served:**
+  - Hospital Administrators (Settings, Staff, Subscriptions, Billing, Audit).
+  - Doctors & Specialists (Consultation Workspace, OPD Queue, EMR, Prescriptions, Lab Orders).
+  - Receptionists & Nursing Staff (Patient Intake, OPD Check-In, Ward Admissions, Vitals).
+  - Pharmacists & Lab Technicians (Dispensing, Batch Tracking, Test Processing).
+
+### 3. `apps/patient-app` (Patient Healthcare Portal)
+- **Role:** Standalone consumer healthcare application designed mobile-first.
+- **Framework:** Next.js 16 (App Router), React 19, Tailwind CSS v4.
+- **Key Features:**
+  - Hospital Discovery & Search (facilities, specialties, accreditation, directions).
+  - Doctor Discovery (profiles, specialties, consultation hours, fees).
+  - Appointment Booking Wizard with live slot picker.
+  - Real-Time OPD Queue Tracking (Assigned token, serving token, patients ahead, estimated wait).
+  - Personal Health Records (Prescriptions, lab reports, discharge summaries, bills).
+  - Strict privacy: Patient records are never publicly searchable.
+
+### 4. `apps/super-admin` (SaaS Platform Owner Console)
+- **Role:** Centralized command center for the SaaS product owner.
+- **Framework:** Next.js 16 (App Router), React 19, Tailwind CSS v4.
+- **Key Features:**
+  - Tenant Management (Create, provision, configure, activate/suspend hospital tenants).
+  - Plan & Subscription Governance (Tiers, bed/doctor/storage limits, feature flags).
+  - Platform Telemetry (Active tenants, system load, API latency, MongoDB Atlas health).
+  - Platform Security Ledger (Cross-tenant security logs, admin action audits).
+  - Zero Clinical Access: Platform Super Admins CANNOT view private patient records.
+
+---
+
+## 3. Request Lifecycle & Multi-Tenant Pipeline
+
+Every incoming HTTP request traverses a strict, sequential pipeline:
 
 ```text
-Client Request
-      │
-      ▼
-1. Authentication (JwtAuthGuard)
-   - Validates cryptographic JWT signature.
-   - Extracts claims: { sub: userId, tenantId: string, role: string }.
-      │
-      ▼
-2. Tenant Context Resolution (TenantContextInterceptor)
-   - Extracts verified tenantId from JWT payload.
-   - Binds tenant context to request execution object (`req.user.tenantId`).
-   - Ignores or rejects any client-supplied `tenantId` in request headers or body.
-      │
-      ▼
-3. Authorization & RBAC (RolesGuard & PermissionsGuard)
-   - Evaluates caller's role and granular permissions (`patients.create`, etc.).
-   - Confirms role validity within the caller's tenant boundary.
-      │
-      ▼
-4. Tenant-Scoped Application Service
-   - Application service receives caller's verified `tenantId`.
-   - Injects `tenantId` into entity create payloads.
-   - Attaches `tenantId` to all query criteria.
-      │
-      ▼
-5. Tenant-Scoped Repository / Data Access Layer
-   - Executes Mongoose operations with mandatory `{ tenantId }` predicate.
-   - Leverages compound index `{ tenantId: 1, ... }`.
-      │
-      ▼
-MongoDB Atlas (Isolated Tenant Dataset)
+1. Network Ingestion (Cloudflare HTTPS / TLS Termination)
+      ↓
+2. Global Middlewares (Helmet, CORS, CookieParser)
+      ↓
+3. Authentication Guard (JwtAuthGuard)
+   - Validates Bearer JWT signature, issuer, expiration
+   - Decodes claims into req.user: { id, email, role, tenantId, surface }
+      ↓
+4. Tenant Resolution Interceptor
+   - Extracts tenantId exclusively from verified req.user.tenantId
+   - Sets execution context AsyncLocalStorage: TenantContext
+   - Rejects unauthenticated or unscoped tenant requests with 401/403
+      ↓
+5. Authorization Guards (@RequirePermissions(), @Roles())
+   - Evaluates required permissions against user's verified privileges
+      ↓
+6. Input Validation (ValidationPipe with class-validator & class-transformer)
+   - Strips unwhitelisted properties, enforces strict DTO types
+      ↓
+7. Domain Service Execution
+   - Queries executed against MongoDB with mandatory filter: { tenantId: user.tenantId, ... }
+      ↓
+8. Security Audit Recording (AuditService)
+   - Sanitized audit log entry committed to audit_logs collection
+      ↓
+9. Response Serialization (Uniform ApiResponse envelope)
 ```
 
 ---
 
-## 4. Platform Level vs. Hospital Level Separation
+## 4. Database Architecture (MongoDB Atlas)
 
-The system maintains a rigid boundary between SaaS platform management and hospital healthcare operations:
-
-```text
-┌───────────────────────────────────────────────────────────────────────────┐
-│                        PLATFORM LEVEL BOUNDARY                            │
-├───────────────────────────────────────────────────────────────────────────┤
-│ Target Users: SaaS Operations & Engineering Team                          │
-│ Permissions: Platform Super Admin                                        │
-│ Core Responsibilities:                                                    │
-│ - Onboard, activate, suspend, or terminate hospital tenants               │
-│ - Configure subscription plans, feature flags, and module allocations     │
-│ - Monitor global cluster health, error rates, and resource utilization    │
-│ Security Constraint: Zero access to patient medical records or PHI        │
-└───────────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     ▼ (Strict Security Boundary)
-┌───────────────────────────────────────────────────────────────────────────┐
-│                        HOSPITAL LEVEL BOUNDARY                            │
-├───────────────────────────────────────────────────────────────────────────┤
-│ Target Users: Hospital Staff (Doctors, Nurses, Receptionists, Admins)     │
-│ Permissions: Hospital-scoped roles (Hospital Admin, Doctor, Nurse, etc.)  │
-│ Core Responsibilities:                                                    │
-│ - Patient care: registration, OPD queue, clinical EMR, IPD beds          │
-│ - Ancillary services: Laboratory orders, pharmacy dispensing, inventory   │
-│ - Financials: Billing, tariffs, payments, receipts                        │
-│ Security Constraint: Strictly bound to own hospital (Zero cross-hospital) │
-└───────────────────────────────────────────────────────────────────────────┘
-```
+- **System of Record:** MongoDB Atlas Cloud Database Cluster (replica set with automatic failover).
+- **Driver:** Mongoose 9 ODM with TypeScript typing.
+- **Collection Classification:**
+  1. **Platform-Owned Collections:** `tenants`, `subscriptions`, `plans`, `platform_audit_logs`. Managed exclusively by Platform Super Admins.
+  2. **Tenant-Owned Collections:** `users`, `roles`, `patients`, `appointments`, `doctor_schedules`, `encounters`, `prescriptions`, `medicines`, `medicine_batches`, `invoices`, `admissions`, `lab_orders`, `audit_logs`. Every document contains an indexed `tenantId: ObjectId`.
+  3. **System Sequence Collections:** `counters` for atomic sequential number generation (`UHID-YYYY-NNNNNN`, daily OPD tokens, invoice numbers).
+- **Index Strategy:** Compound multi-tenant indexes (e.g., `{ tenantId: 1, uhid: 1 }` unique, `{ tenantId: 1, scheduledAt: 1, doctorId: 1 }`).
 
 ---
 
-## 5. Phase 2 AI-Ready Architecture
+## 5. Caching & Queue Architecture (Redis)
 
-The HMS architecture is built from Phase 1 to be **AI-ready**, while all actual AI model integrations and intelligent agents are scheduled for **Phase 2**.
+Redis is deployed as an in-memory acceleration and background orchestration layer:
 
 ```text
-Clinician / User
-       │
-       ▼
-Next.js Application UI
-       │ HTTPS / REST
-       ▼
-AI Gateway / Orchestrator (Phase 2)
-       ├── PII Data Minimization & Token Redaction
-       ├── Tool Execution Allowlists
-       └── Prompt Safety & Anti-Injection Guardrails
-       │
-       ▼
-Controlled HMS REST APIs (Inherits Auth & Tenant Context)
-       ├── Authentication & Tenant Resolution
-       ├── RBAC Permissions Verification
-       └── Tenant-Scoped Domain Services
-       │
-       ▼
-MongoDB Atlas (Audited & Scoped Access)
-       │
-       ▼
-Generated Draft (Clinical Note / Summary / Prediction)
-       │
-       ▼
-Mandatory Human Clinician Review & Explicit Sign-off
+┌────────────────────────────────────────────────────────┐
+│                      Redis Tier                        │
+├──────────────────────────┬─────────────────────────────┤
+│ Cache Acceleration       │ Session & Rate Limiting     │
+│ - Doctor Schedules       │ - IP Rate Limits            │
+│ - Hospital Catalog       │ - Failed Login Lockout      │
+│ - Medicine Master        │ - Temporary OTP State       │
+├──────────────────────────┼─────────────────────────────┤
+│ Queue Orchestration      │ Worker Background State     │
+│ - OPD Queue Proximity    │ - Export Report Generation  │
+│ - Notification Dispatch  │ - Phase 2 AI Jobs           │
+└──────────────────────────┴─────────────────────────────┘
 ```
 
-### AI Architecture Rules
-1. **Zero Direct Database Exposure**: AI models never receive MongoDB connection strings or query permissions.
-2. **Inherited Tenancy**: AI accesses hospital data exclusively via authenticated HMS API endpoints and inherits the tenant context and RBAC permissions of the invoking clinician.
-3. **Draft Only / Human in the Loop**: AI never writes directly to finalized clinical records without human verification.
+- **Tenant-Aware Key Pattern:** All Redis keys are strictly namespaced:
+  - `tenant:{tenantId}:doctor:{doctorId}:schedule:{date}`
+  - `tenant:{tenantId}:opd:queue:{doctorId}:{date}`
+  - `tenant:{tenantId}:rate_limit:{ip}`
+- **Source of Truth Invariant:** MongoDB Atlas is the permanent source of truth. Redis data is transient.
 
 ---
 
-## 6. Future Desktop Architecture (Electron)
+## 6. Deployment & Infrastructure Target
 
-The project follows a **Web-First Strategy**:
 ```text
-Web Application First (Production Cloud SaaS)
-                   │
-                   ▼
-  Phase 2 Desktop Packaging (Electron Shell)
+Client Surfaces (Next.js)      Backend Platform (NestJS)      Data Persistence
+─────────────────────────      ─────────────────────────      ────────────────
+apps/hms-client  ──► Vercel    apps/server ──► Docker/Render  MongoDB Atlas (M10+)
+apps/patient-app ──► Vercel    Workers     ──► Docker/Render  Upstash / Redis Cloud
+apps/super-admin ──► Vercel
 ```
 
-### Electron Client Rules
-- **Code Reuse**: The desktop client packages the existing Next.js web application inside an Electron Chromium shell.
-- **Zero Local Database**: The Electron application connects exclusively over HTTPS to the NestJS cloud API.
-- **No Direct MongoDB Access**: The desktop client never connects directly to MongoDB Atlas.
-- **No Parallel Desktop Codebase**: Business logic and UI components are shared 100% between web and desktop.
-
----
-
-## 7. Reliability, Auditability & Operational Continuity
-
-1. **System Health Probes**: Centralized `/api/v1/health` endpoint verifies MongoDB Atlas replica set connectivity and server uptime.
-2. **Immutable Audit Logging**: All authentication events, cross-tenant security probes, clinical chart modifications, and financial transactions are recorded in the `audit_logs` collection with sanitized payloads.
-3. **Financial Precision**: All monetary values are represented as `Decimal128` or integer minor units to eliminate floating-point drift.
-4. **Automated Recovery**: MongoDB Atlas multi-AZ automated failover and continuous point-in-time backups.
+- **Frontends:** Deployed on Vercel with automatic edge routing and Next.js Turbopack builds.
+- **Backend API:** Dockerized container deployed on Render with health checks on `/api/v1/health`.
+- **DNS & Security:** Cloudflare provides DNS management, SSL termination, DDoS mitigation, and WAF rules.
+- **Continuous Integration:** GitHub Actions runs automated lint, typecheck, unit tests, and production builds on every pull request.

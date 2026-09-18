@@ -8,8 +8,17 @@ export class AuditLog {
   @Prop({ type: String, required: false, index: true })
   hospitalId?: string;
 
+  @Prop({ type: String, required: false, index: true })
+  tenantId?: string;
+
   @Prop({ required: true, index: true })
   userId!: string;
+
+  @Prop({ type: String, required: false })
+  userEmail?: string;
+
+  @Prop({ type: String, required: false })
+  userName?: string;
 
   @Prop({ required: true, index: true })
   action!: string;
@@ -36,4 +45,7 @@ export class AuditLog {
 export const AuditLogSchema = SchemaFactory.createForClass(AuditLog);
 
 AuditLogSchema.index({ hospitalId: 1, timestamp: -1 });
-AuditLogSchema.index({ userId: 1, timestamp: -1 });
+AuditLogSchema.index({ tenantId: 1, timestamp: -1 });
+AuditLogSchema.index({ tenantId: 1, action: 1, timestamp: -1 });
+AuditLogSchema.index({ tenantId: 1, userId: 1, timestamp: -1 });
+

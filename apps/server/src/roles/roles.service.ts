@@ -27,14 +27,24 @@ export const INITIAL_PERMISSIONS = [
   { slug: 'nursing.create', description: 'Record nursing notes and tasks', module: 'nursing' },
   { slug: 'lab.read', description: 'View laboratory tests and orders', module: 'lab' },
   { slug: 'lab.update', description: 'Enter and verify lab test results', module: 'lab' },
+  { slug: 'lab.orders.create', description: 'Create laboratory orders', module: 'lab' },
+  { slug: 'lab.orders.read', description: 'View laboratory orders', module: 'lab' },
+  { slug: 'lab.orders.update', description: 'Update laboratory orders and samples', module: 'lab' },
+  { slug: 'lab.results.enter', description: 'Enter laboratory test results', module: 'lab' },
+  { slug: 'lab.results.verify', description: 'Approve and sign laboratory results', module: 'lab' },
+  { slug: 'lab.tests.read', description: 'View diagnostic test catalog', module: 'lab' },
+  { slug: 'lab.tests.manage', description: 'Manage diagnostic test catalog', module: 'lab' },
   { slug: 'pharmacy.read', description: 'View pharmacy stock and orders', module: 'pharmacy' },
   { slug: 'pharmacy.dispense', description: 'Dispense medications', module: 'pharmacy' },
+  { slug: 'pharmacy.manage', description: 'Manage medication catalog and batch stock', module: 'pharmacy' },
   { slug: 'inventory.read', description: 'View inventory and stock', module: 'inventory' },
   { slug: 'inventory.manage', description: 'Manage inventory items and purchase orders', module: 'inventory' },
   { slug: 'billing.read', description: 'View invoices and receipts', module: 'billing' },
   { slug: 'billing.create', description: 'Generate invoices and record payments', module: 'billing' },
   { slug: 'billing.refund', description: 'Process billing refunds', module: 'billing' },
-  { slug: 'reports.read', description: 'View operational and financial reports', module: 'reports' },
+  { slug: 'reports.read', description: 'View operational and clinical reports', module: 'reports' },
+  { slug: 'reports.financial.read', description: 'View financial and revenue analytics', module: 'reports' },
+  { slug: 'audit.logs.read', description: 'Query and export security audit logs', module: 'audit' },
 ];
 
 export const INITIAL_ROLES = [
@@ -50,11 +60,18 @@ export const INITIAL_ROLES = [
       'users.read', 'users.create', 'users.update',
       'roles.read',
       'audit.read',
+      'audit.logs.read',
       'hospital.manage',
       'patients.read', 'patients.create', 'patients.update',
       'appointments.read', 'appointments.create', 'appointments.update',
-      'billing.read',
+      'emr.read',
+      'ipd.read', 'ipd.manage',
+      'lab.read', 'lab.update', 'lab.orders.create', 'lab.orders.read', 'lab.orders.update', 'lab.results.enter', 'lab.results.verify', 'lab.tests.read', 'lab.tests.manage',
+      'pharmacy.read', 'pharmacy.dispense', 'pharmacy.manage',
+      'inventory.read', 'inventory.manage',
+      'billing.read', 'billing.create', 'billing.refund',
       'reports.read',
+      'reports.financial.read',
     ],
   },
   {
@@ -64,8 +81,10 @@ export const INITIAL_ROLES = [
       'patients.read',
       'appointments.read', 'appointments.update',
       'emr.read', 'emr.create', 'emr.update',
-      'lab.read',
+      'ipd.read', 'ipd.manage',
+      'lab.read', 'lab.update', 'lab.orders.create', 'lab.orders.read', 'lab.results.verify', 'lab.tests.read',
       'pharmacy.read',
+      'reports.read',
     ],
   },
   {
@@ -76,7 +95,8 @@ export const INITIAL_ROLES = [
       'appointments.read',
       'emr.read',
       'nursing.create',
-      'ipd.read',
+      'ipd.read', 'ipd.manage',
+      'lab.read', 'lab.orders.read',
     ],
   },
   {
@@ -85,7 +105,9 @@ export const INITIAL_ROLES = [
     permissions: [
       'patients.read', 'patients.create', 'patients.update',
       'appointments.read', 'appointments.create', 'appointments.update',
-      'billing.read',
+      'ipd.read',
+      'lab.orders.create', 'lab.orders.read', 'lab.tests.read',
+      'billing.read', 'billing.create',
     ],
   },
   {
@@ -93,7 +115,7 @@ export const INITIAL_ROLES = [
     description: 'Laboratory technician processing test orders and results',
     permissions: [
       'patients.read',
-      'lab.read', 'lab.update',
+      'lab.read', 'lab.update', 'lab.orders.read', 'lab.orders.update', 'lab.results.enter', 'lab.tests.read',
     ],
   },
   {
@@ -101,7 +123,7 @@ export const INITIAL_ROLES = [
     description: 'Hospital pharmacist dispensing medications and checking stock',
     permissions: [
       'patients.read',
-      'pharmacy.read', 'pharmacy.dispense',
+      'pharmacy.read', 'pharmacy.dispense', 'pharmacy.manage',
       'inventory.read',
     ],
   },
@@ -111,6 +133,7 @@ export const INITIAL_ROLES = [
     permissions: [
       'billing.read', 'billing.create', 'billing.refund',
       'reports.read',
+      'reports.financial.read',
     ],
   },
   {
@@ -156,7 +179,10 @@ export class RolesService implements OnModuleInit {
     for (const r of INITIAL_ROLES) {
       await this.roleModel.updateOne(
         { name: r.name },
-        { $setOnInsert: { ...r, isSystem: true } },
+        {
+          $setOnInsert: { description: r.description, isSystem: true },
+          $addToSet: { permissions: { $each: r.permissions } },
+        },
         { upsert: true },
       );
     }

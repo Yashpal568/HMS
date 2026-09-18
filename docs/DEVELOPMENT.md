@@ -1,9 +1,11 @@
 # Hospital Management System — Development Standards & Workflow
 
+**SOURCE-OF-TRUTH OWNER**: `docs/DEVELOPMENT_RULES.md` (ENGINEERING PROCESS)  
+**Classification**: Supporting Developer Guide  
 **Product**: Hospital Management System (HMS MedCore)  
 **Architecture**: Multi-Tenant SaaS Modular Monolith  
 **Database**: MongoDB Atlas  
-**Status**: Authoritative Developer Guide  
+**Status**: Supporting Engineering Guide  
 
 ---
 

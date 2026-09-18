@@ -48,14 +48,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       new Set([...rolePermissions, ...(user.permissions || [])]),
     );
 
+    const tenantId = user.hospitalId?.toString() || (user as any).tenantId?.toString() || '6aa3f64974f6740b10b10001';
+
     return {
       id: user._id.toString(),
+      userId: user._id.toString(),
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
       permissions: combinedPermissions,
-      hospitalId: user.hospitalId?.toString(),
+      tenantId,
+      hospitalId: tenantId,
       branchId: user.branchId?.toString(),
     };
   }

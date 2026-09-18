@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/context/auth-context";
+import { CurrencyProvider } from "@/context/currency-context";
 
 export default function RootLayout({
   children,
@@ -30,7 +31,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <CurrencyProvider>{children}</CurrencyProvider>
+        </AuthProvider>
       </body>
     </html>
   );

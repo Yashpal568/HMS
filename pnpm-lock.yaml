@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@eslint/js':
+        specifier: ^10.0.1
+        version: 10.0.1(eslint@8.57.1(supports-color@7.2.0))
       eslint:
         specifier: ^8.0.0
         version: 8.57.1(supports-color@7.2.0)
@@ -18,7 +21,90 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
-  apps/api:
+  apps/hms-client:
+    dependencies:
+      lucide-react:
+        specifier: ^1.44.0
+        version: 1.44.0(react@19.2.8)
+      next:
+        specifier: 16.3.4
+        version: 16.3.4(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.3.3
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.3.0(@types/react@19.3.0)
+      eslint:
+        specifier: ^9
+        version: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
+      eslint-config-next:
+        specifier: 16.3.4
+        version: 16.3.4(@typescript-eslint/parser@8.70.0(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
+      tailwindcss:
+        specifier: ^4
+        version: 4.3.3
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  apps/patient-app:
+    dependencies:
+      '@hms/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      lucide-react:
+        specifier: ^1.44.0
+        version: 1.44.0(react@19.2.8)
+      next:
+        specifier: 16.3.4
+        version: 16.3.4(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.3.3
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.3.0(@types/react@19.3.0)
+      eslint:
+        specifier: ^9
+        version: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
+      eslint-config-next:
+        specifier: 16.3.4
+        version: 16.3.4(@typescript-eslint/parser@8.70.0(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
+      tailwindcss:
+        specifier: ^4
+        version: 4.3.3
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  apps/server:
     dependencies:
       '@hms/types':
         specifier: workspace:*
@@ -133,8 +219,11 @@ importers:
         specifier: ^4.1.2
         version: 4.1.11(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.4)(jiti@2.7.0))
 
-  apps/web:
+  apps/super-admin:
     dependencies:
+      '@hms/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       lucide-react:
         specifier: ^1.44.0
         version: 1.44.0(react@19.2.8)
@@ -171,6 +260,16 @@ importers:
         version: 4.3.3
       typescript:
         specifier: ^5
+        version: 5.9.3
+
+  packages/auth:
+    dependencies:
+      '@hms/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
         version: 5.9.3
 
   packages/config: {}
@@ -328,6 +427,15 @@ packages:
   '@eslint/eslintrc@3.3.7':
     resolution: {integrity: sha512-F42g89Qd5oAWtp0k0nnSrjziAKza7w8SVT4mStc18LZMaRb4J1HQAHLCalEtDCxrTuksx7NU9qsmeLwpOfPqWw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@eslint/js@10.0.1':
+    resolution: {integrity: sha512-zeR9k5pd4gxjZ0abRoIaxdc7I3nDktoXZk2qOv9gCNWx3mVwEn32VRhyLaRsDiJjTs0xq/T8mfPtyuXu7GWBcA==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+    peerDependencies:
+      eslint: ^10.0.0
+    peerDependenciesMeta:
+      eslint:
+        optional: true
 
   '@eslint/js@8.57.1':
     resolution: {integrity: sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==}
@@ -4267,6 +4375,10 @@ snapshots:
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
+
+  '@eslint/js@10.0.1(eslint@8.57.1(supports-color@7.2.0))':
+    optionalDependencies:
+      eslint: 8.57.1(supports-color@7.2.0)
 
   '@eslint/js@8.57.1': {}
 

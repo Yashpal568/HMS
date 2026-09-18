@@ -9,6 +9,13 @@ import { AuthModule } from './auth/auth.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { PatientsModule } from './patients/patients.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
+import { EmrModule } from './emr/emr.module.js';
+import { IpdModule } from './ipd/ipd.module.js';
+import { LaboratoryModule } from './laboratory/laboratory.module.js';
+import { PharmacyModule } from './pharmacy/pharmacy.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
+import { BillingModule } from './billing/billing.module.js';
+import { ReportsModule } from './reports/reports.module.js';
 import databaseConfig from './config/database.config.js';
 
 @Module({
@@ -26,6 +33,13 @@ import databaseConfig from './config/database.config.js';
     DashboardModule,
     PatientsModule,
     AppointmentsModule,
+    EmrModule,
+    IpdModule,
+    LaboratoryModule,
+    PharmacyModule,
+    InventoryModule,
+    BillingModule,
+    ReportsModule,
     HealthModule,
   ],
 })

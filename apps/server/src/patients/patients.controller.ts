@@ -115,6 +115,6 @@ export class PatientsController {
       return new Types.ObjectId(rawId);
     }
     // Default tenant anchor for single-site development / platform super admin
-    return new Types.ObjectId('65f1a1a1a1a1a1a1a1a1a1a1');
+    return new Types.ObjectId('6aa3f64974f6740b10b10001');
   }
 }

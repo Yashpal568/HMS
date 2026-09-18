@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   User,
   HeartPulse,
+  FlaskConical,
+  Pill,
 } from 'lucide-react';
 import { Patient, AllergySeverity, PatientStatus } from '@hms/types';
 import { AllergyBadgeList } from './allergy-badge-list';
@@ -87,15 +89,33 @@ export function PatientHeader({ patient }: PatientHeaderProps) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      {/* High Alert Ribbon for Severe Allergies */}
-      {severeAllergies.length > 0 && (
-        <div className="bg-red-600 text-white px-4 py-1.5 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
-          <AlertTriangle className="w-4 h-4 shrink-0 animate-bounce" aria-hidden="true" />
-          <span>Clinical Safety Warning: Patient has documented severe allergy risks ({severeAllergies.map((a) => a.allergen).join(', ')})</span>
-        </div>
-      )}
-
       <div className="p-5 sm:p-6">
+        {/* High Alert Banner for Severe Allergies */}
+        {severeAllergies.length > 0 && (
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-3 text-xs text-rose-900 shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-1.5 rounded-lg bg-rose-600 text-white shrink-0 shadow-xs">
+                <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <div className="leading-relaxed">
+                <strong className="font-bold uppercase tracking-wider text-rose-700 mr-1.5">
+                  Clinical Safety Alert:
+                </strong>
+                <span>
+                  Patient has documented severe allergy to{' '}
+                  <strong className="font-bold text-rose-950 underline decoration-rose-400">
+                    {severeAllergies.map((a) => a.allergen).join(', ')}
+                  </strong>
+                  . Double-check all active prescriptions and clinical orders.
+                </span>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wider shrink-0">
+              Severe Risk
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           {/* Main Patient Identifier & Demographics */}
           <div className="flex items-start gap-4">
@@ -167,45 +187,54 @@ export function PatientHeader({ patient }: PatientHeaderProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 lg:self-center">
+          <div className="flex flex-wrap items-center gap-2 lg:self-center">
             <Link
-              href={`/patients/${patient.id}/edit`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              href={`/appointments/book?patientId=${patient.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <Edit3 className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
-              Edit Profile
+              <Calendar className="w-3.5 h-3.5 text-teal-600" aria-hidden="true" />
+              Book OPD
             </Link>
 
-            {/* Next Milestone Action Placeholders with Authentic Tooltips */}
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed opacity-80"
-              title="OPD Queue & Appointments scheduled for Milestone 4"
+            <Link
+              href="/emr"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
-              Book OPD (M04)
-            </button>
+              <Stethoscope className="w-3.5 h-3.5 text-teal-600" aria-hidden="true" />
+              Consultation
+            </Link>
 
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed opacity-80"
-              title="Doctor Consultation & EMR scheduled for Milestone 5"
+            <Link
+              href={`/ipd/admissions/new?patientId=${patient.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <Stethoscope className="w-3.5 h-3.5" aria-hidden="true" />
-              Consultation (M05)
-            </button>
+              <Bed className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+              Admit IPD
+            </Link>
 
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed opacity-80"
-              title="IPD Bed Management scheduled for Milestone 6"
+            <Link
+              href={`/laboratory/orders/new?patientId=${patient.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <Bed className="w-3.5 h-3.5" aria-hidden="true" />
-              Admit IPD (M06)
-            </button>
+              <FlaskConical className="w-3.5 h-3.5 text-purple-600" aria-hidden="true" />
+              Order Lab
+            </Link>
+
+            <Link
+              href={`/pharmacy?patientId=${patient.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <Pill className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+              Pharmacy
+            </Link>
+
+            <Link
+              href={`/patients/${patient.id}/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+              Edit Profile
+            </Link>
           </div>
         </div>
 
