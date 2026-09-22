@@ -124,14 +124,46 @@ The platform explicitly separates four specialized application surfaces that all
   7. **Privacy Guarantee:** Patient medical data is cryptographically protected and never publicly discoverable.
 
 ### Surface 4: `apps/super-admin` (SaaS Platform Owner Console)
-- **Technology:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Dark Theme Console Aesthetics.
-- **Audience:** SaaS Platform Super Admins, DevOps, Platform Support Operations.
-- **Key Modules:**
-  1. **Tenant Governance:** Create and onboard hospital tenants, activate/deactivate hospitals, configure tenant-specific domains and hospital metadata.
-  2. **Subscription & Plan Engine:** Define plan tiers (Trial, Clinic, Hospital, Enterprise Network), set bed/doctor/storage quotas, toggle feature flags, and manage subscription lifecycles.
-  3. **Platform Telemetry:** Monitor system-wide active tenant census, MongoDB Atlas connection health, Redis queue latency, and global request volume.
-  4. **Platform Security Ledger:** Audit platform administrative actions, monitor cross-tenant security anomalies, and track administrative logins.
-  5. **Global Support & System Announcements:** Broadcast maintenance notices and manage tenant support escalations.
+- **Technology:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Lucide Icons, Dark-Themed Executive Aesthetics.
+- **Audience & User Personas:**
+  1. **SaaS Platform Owner / Founder:** Executive monitoring of Monthly Recurring Revenue (MRR), total active hospital networks, platform growth rate, and customer churn.
+  2. **Platform Operations / DevOps Engineer:** Infrastructure telemetry, MongoDB Atlas cluster health, Redis queue performance, global error tracking, and emergency maintenance controls.
+  3. **Commercial Billing & Account Manager:** Managing custom hospital enterprise contracts, quota allowances, billing cycle extensions, and subscription invoice lifecycles.
+  4. **Platform Support Specialist:** Tenant onboarding verification, domain mapping, hospital technical assistance, and system-wide broadcast management.
+
+- **Key Functional Modules:**
+  1. **Tenant Provisioning & Lifecycle Management:**
+     - **Tenant Registration Wizard:** Register hospital organization legal entity, corporate registration number, tax identifiers (GST/VAT), primary domain, and assigned tenant slug (e.g. `apollo-health`).
+     - **Automated Tenant Initialization:** Automatically creates the root hospital facility, provisions the initial Primary Hospital Administrator account with secure onboarding invite, seeds standard clinical service tariffs, and seeds standard laboratory test catalogs.
+     - **Lifecycle State Machine:** Manage tenant operational status transitions: `TRIAL` -> `ACTIVE` -> `PAST_DUE` -> `SUSPENDED` -> `CANCELLED` -> `EXPIRED`.
+     - **Administrative Lockout & Reinstatement:** Immediate tenant-wide suspension with mandatory reason logging (e.g. non-payment, regulatory audit). Suspended tenants are blocked from writing records via backend interceptors.
+     - **Custom Domain & Branding:** Configure hospital white-label subdomains (`hospitalname.hmsmedcore.com`) or verified custom domains with automated SSL validation status.
+  2. **Commercial Plan & Entitlement Catalog (`plans`):**
+     - **Commercial Tier Governance:** Authoring and maintaining standard plans: `FREE_TRIAL`, `STARTER_CLINIC`, `GROWTH_HOSPITAL`, `ENTERPRISE_NETWORK`.
+     - **Quota Definition:** Configure hard and soft capacity limits per plan:
+       - Physician consultation seats (`maxDoctors`).
+       - Clinical and administrative staff accounts (`maxStaff`).
+       - Registered inpatient bed capacity (`maxBeds`).
+       - Cloud document and diagnostic image storage (`maxStorageGb`).
+     - **Dynamic Feature Flags:** Enable or disable discrete modules per plan or tenant override (e.g., `lis_module`, `pharmacy_module`, `ipd_module`, `inventory_module`, `advanced_analytics`, `phase2_ai_beta`).
+  3. **Subscription Engine & Billing Lifecycle (`subscriptions`):**
+     - **Contract Management:** Bind tenants to plans, configure monthly/annual billing schedules, set payment renewal dates, and manage trial expiration countdowns.
+     - **Grace Period Policies:** Automated 7-day operational grace period upon payment failure before triggering administrative service suspension.
+     - **Manual Quota Overrides:** Ability for commercial account managers to grant temporary resource bursts (e.g. +5 emergency beds during epidemic surges) without altering plan definitions.
+  4. **Platform-Wide Operational Telemetry:**
+     - **Executive Platform Dashboard:** Real-time counters showing total active hospital tenants, total clinicians, total patient visits served platform-wide, and aggregate revenue metrics.
+     - **Database & Cluster Health:** Live telemetry reflecting MongoDB Atlas roundtrip ping latency (ms), active connection pool size, total collection document counts, and memory RSS footprint.
+     - **Platform Rate Limiting & Breach Tracker:** Monitoring global throttler violations, brute-force login attempts, and suspicious cross-tenant request rejections.
+  5. **Platform Security Ledger & Master Administrative Audit:**
+     - Immutable, searchable platform-tier audit trail recording all super admin actions: `TENANT_CREATE`, `TENANT_SUSPEND`, `TENANT_REINSTATE`, `PLAN_CREATE`, `PLAN_UPDATE`, `QUOTA_OVERRIDE`, `SUPER_ADMIN_LOGIN`, `BROADCAST_ANNOUNCE`.
+  6. **Emergency Controls & System Announcements:**
+     - **Global Maintenance Mode:** Safe-mode kill switch disabling non-essential mutations across tenants during scheduled database upgrades.
+     - **System-Wide Broadcast Alerts:** Publish informational, warning, or maintenance alert banners displayed across all active `apps/hms-client` sessions.
+
+- **The Strict Zero-PHI Invariant (Non-Negotiable Legal & Architectural Boundary):**
+  - **Zero Access to Clinical Records:** Platform Super Admins have **zero technical or operational access** to Protected Health Information (PHI).
+  - The Super Admin surface has **zero API routes** to patient demographics, medical history, consultations, doctor notes, lab test results, prescriptions, or hospital clinical charts.
+  - Platform administrators manage the hospital as a commercial tenant and technical entity, **never** the patient as a healthcare subject.
 
 ---
 
@@ -139,7 +171,7 @@ The platform explicitly separates four specialized application surfaces that all
 
 | Module | Scope & Responsibilities | Core Entities |
 |---|---|---|
-| **Multi-Tenancy & Platform** | Strict tenant context resolution, tenant provisioning, sovereign isolation. | `tenants`, `subscriptions`, `plans` |
+| **SaaS Platform & Tenant Governance** | Sovereign tenant provisioning, subscription contract state machine, commercial plan catalog, quota enforcement, platform telemetry, zero-PHI audit logging. | `tenants`, `subscriptions`, `plans`, `feature_flags`, `audit_logs` |
 | **Authentication & RBAC** | JWT authentication, bcryptjs (cost 12), lockout policies, role & permission guards. | `users`, `roles`, `permissions`, `audit_logs` |
 | **Facility Management** | Hospital branches, medical departments, wards, rooms, and operational beds. | `hospitals`, `departments`, `wards`, `beds` |
 | **Patient Foundation** | Universal Health ID (`UHID-YYYY-NNNNNN`), demographics, duplicate detection, allergy registry. | `patients`, `counters` |

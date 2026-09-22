@@ -90,34 +90,77 @@ HMS MedCore is structured as a **Multi-Tenant Software-as-a-Service Platform** c
   - Strict privacy: Patient records are never publicly searchable.
 
 ### 4. `apps/super-admin` (SaaS Platform Owner Console)
-- **Role:** Centralized command center for the SaaS product owner.
-- **Framework:** Next.js 16 (App Router), React 19, Tailwind CSS v4.
-- **Key Features:**
-  - Tenant Management (Create, provision, configure, activate/suspend hospital tenants).
-  - Plan & Subscription Governance (Tiers, bed/doctor/storage limits, feature flags).
-  - Platform Telemetry (Active tenants, system load, API latency, MongoDB Atlas health).
-  - Platform Security Ledger (Cross-tenant security logs, admin action audits).
-  - Zero Clinical Access: Platform Super Admins CANNOT view private patient records.
+- **Role:** Sovereign central command center for the SaaS platform owner, operations engineers, and commercial account managers.
+- **Framework:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Lucide Icons, High-contrast Dark Theme.
+- **Key Modules & Architecture:**
+  - **Tenant Provisioning Engine:** Onboard new hospital organizations (`tenants`), generate slugs, configure domain routing, and execute automated initial facility and database seeding.
+  - **Commercial Plan Catalog (`plans`):** Maintain plan tiers (`FREE_TRIAL`, `STARTER_CLINIC`, `GROWTH_HOSPITAL`, `ENTERPRISE_NETWORK`), configure quotas (doctors, staff, beds, cloud storage), and control module entitlement flags.
+  - **Subscription Lifecycle Engine (`subscriptions`):** Manage billing cycles, trial expirations, payment renewal tracking, grace periods, and suspension state machines.
+  - **Platform-Wide Operations Telemetry:** Aggregated cross-tenant health dashboards: active tenant count, daily OPD appointment throughput, database cluster latency, connection pool utilization, and memory footprint.
+  - **Platform Security & Audit Center:** Immutable logging of all platform administrative interventions (`TENANT_SUSPEND`, `PLAN_UPDATE`, `QUOTA_OVERRIDE`, etc.).
+  - **Emergency Maintenance & Global Broadcasts:** Platform-wide announcements and maintenance mode kill switches.
+  - **The Strict Zero-PHI Boundary:** The console has zero clinical endpoints, zero patient data visibility, and zero medical chart access. Platform admins manage hospital organizations, not patients.
 
 ---
 
-## 3. Request Lifecycle & Multi-Tenant Pipeline
+## 3. Dual-Plane Architecture & Request Pipeline
+
+The architecture strictly segregates the system into two operational planes:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                 PLATFORM CONTROL PLANE (apps/super-admin)              │
+│       Tenant Management • Plan Catalog • Subscriptions • Telemetry     │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    │ Platform APIs: /api/v1/super-admin/*
+                                    │ (Guarded by: @Roles(SUPER_ADMIN) + @RequirePermissions('platform.*'))
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   CANONICAL BACKEND (apps/server)                      │
+│                                                                        │
+│   ┌────────────────────────────────┐  ┌────────────────────────────┐   │
+│   │ Platform Control Services      │  │ Tenant Clinical Services   │   │
+│   │ (PlatformContext: tenantId=null│  │ (TenantContext:            │   │
+│   │  or managing specific tenant)  │  │  tenantId=user.tenantId)   │   │
+│   └────────────────────────────────┘  └────────────────────────────┘   │
+│                   │                                 │                  │
+│                   │                                 ▼                  │
+│                   │                   ┌────────────────────────────┐   │
+│                   │                   │ Zero-PHI Security Barrier  │   │
+│                   │                   │ (SUPER_ADMIN rejected with │   │
+│                   │                   │  403 on clinical routes)   │   │
+│                   │                   └────────────────────────────┘   │
+└───────────────────┼─────────────────────────────────┼──────────────────┘
+                    │                                 │
+                    ▼                                 ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   TENANT DATA PLANE (apps/hms-client)                  │
+│      Patients • OPD Queue • Consultations • IPD • Pharmacy • Billing   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Request Pipeline & Execution Context:
 
 Every incoming HTTP request traverses a strict, sequential pipeline:
 
 ```text
 1. Network Ingestion (Cloudflare HTTPS / TLS Termination)
       ↓
-2. Global Middlewares (Helmet, CORS, CookieParser)
+2. Global Middlewares (Helmet CSP/HSTS, CorrelationIdMiddleware, Cache-Control, CORS)
       ↓
 3. Authentication Guard (JwtAuthGuard)
    - Validates Bearer JWT signature, issuer, expiration
    - Decodes claims into req.user: { id, email, role, tenantId, surface }
       ↓
-4. Tenant Resolution Interceptor
-   - Extracts tenantId exclusively from verified req.user.tenantId
-   - Sets execution context AsyncLocalStorage: TenantContext
-   - Rejects unauthenticated or unscoped tenant requests with 401/403
+4. Execution Context & Tenant Resolution
+   - If Surface == 'SUPER_ADMIN':
+     - Binds PlatformContext (global scope, no tenant constraint for platform entities).
+     - SurfaceGuard strictly blocks access to clinical endpoints (/patients, /emr, /ipd, etc.) -> HTTP 403 Forbidden.
+   - If Surface == 'HOSPITAL' | 'PATIENT':
+     - Extracts tenantId exclusively from verified req.user.tenantId.
+     - Binds TenantContext (AsyncLocalStorage) scoped strictly to that tenantId.
+     - Rejects unauthenticated or unscoped tenant requests -> HTTP 401/403.
       ↓
 5. Authorization Guards (@RequirePermissions(), @Roles())
    - Evaluates required permissions against user's verified privileges
@@ -126,12 +169,13 @@ Every incoming HTTP request traverses a strict, sequential pipeline:
    - Strips unwhitelisted properties, enforces strict DTO types
       ↓
 7. Domain Service Execution
-   - Queries executed against MongoDB with mandatory filter: { tenantId: user.tenantId, ... }
+   - Control Plane: Operates on platform collections (tenants, plans, subscriptions, platform telemetry).
+   - Data Plane: Queries executed against MongoDB with mandatory filter: { tenantId: user.tenantId, ... }
       ↓
 8. Security Audit Recording (AuditService)
-   - Sanitized audit log entry committed to audit_logs collection
+   - Platform actions logged with platform metadata; clinical actions logged with tenantId.
       ↓
-9. Response Serialization (Uniform ApiResponse envelope)
+9. Response Serialization (Uniform ApiResponse envelope with correlationId)
 ```
 
 ---

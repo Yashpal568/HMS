@@ -59,6 +59,18 @@ export class User {
   @Prop({ type: Date, required: false })
   lockUntil?: Date;
 
+  @Prop({ type: String, required: false, trim: true })
+  department?: string;
+
+  @Prop({ type: String, required: false, trim: true })
+  specialization?: string;
+
+  @Prop({ type: String, required: false, trim: true })
+  phone?: string;
+
+  @Prop({ type: Boolean, default: false })
+  mustChangePassword!: boolean;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

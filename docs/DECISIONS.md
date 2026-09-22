@@ -25,6 +25,9 @@
 - [Decision 014: AI Ready in Phase 1; AI Implementation in Phase 2](#decision-014-ai-ready-in-phase-1-ai-implementation-in-phase-2)
 - [Decision 015: Shared Medicine Master Across Inventory, Pharmacy & Billing](#decision-015-shared-medicine-master-across-inventory-pharmacy--billing)
 - [Decision 016: Immutable Finalized Clinical Encounters & Active Allergy Contraindication Engine](#decision-016-immutable-finalized-clinical-encounters--active-allergy-contraindication-engine)
+- [Decision 017: FEFO Automated Batch Selection & Concurrency-Safe Stock Deduction](#decision-017-fefo-automated-batch-selection--concurrency-safe-stock-deduction)
+- [Decision 018: Multi-Tier Throttling, Zero-Leakage Exceptions & Disaster Recovery Tooling](#decision-018-multi-tier-throttling-zero-leakage-exceptions--disaster-recovery-tooling)
+- [Decision 019: Sovereign SaaS Platform Owner Control Plane & Strict Zero-PHI Boundary](#decision-019-sovereign-saas-platform-owner-control-plane--strict-zero-phi-boundary)
 
 ---
 
@@ -165,6 +168,34 @@
 - **Decision**: The pharmacy system automatically sorts available batches by `expiryDate ASC` and pre-selects the earliest non-expired batch (`isFefoRecommended: true`). All stock deductions are performed using atomic MongoDB operators (`findOneAndUpdate({ _id: batchId, tenantId, currentQuantity: { $gte: quantity } }, { $inc: { currentQuantity: -quantity } })`).
 - **Rationale**: FEFO (First Expiry, First Out) minimizes pharmaceutical shrinkage, while atomic conditional updates eliminate race conditions without requiring coarse-grained distributed table locks.
 - **Consequences**: Expired batches (`daysToExpiry <= 0`) are disqualified from dispensing and return `400 Bad Request`. Every movement is audited in `pharmacy_transactions` with running `balanceAfter`.
+
+---
+
+### Decision 018: Multi-Tier Throttling, Zero-Leakage Exceptions & Disaster Recovery Tooling
+- **Context**: Production hospital deployments face volumetric brute-force attacks on authentication, potential scraping of financial records, and operational risks from unhandled server exceptions leaking database connection strings or stack traces. Furthermore, regulatory continuity demands verified point-in-time disaster recovery tools and runbooks.
+- **Decision**:
+  1. Implement multi-tier rate limiting using `@nestjs/throttler` (Global: 100 req/min, Auth: 5 req/min, Financial/Reports: 10 req/min) with a custom `AppThrottlerGuard` logging security alerts with client IP and path.
+  2. Implement hardened Helmet headers (strict CSP, HSTS, frameguard) and HTTP Cache-Control headers (`no-store, no-cache, must-revalidate`) preventing browser caching of clinical data.
+  3. Deploy `CorrelationIdMiddleware` (`x-request-id`) and a sanitized `GlobalExceptionFilter` returning uniform error envelopes while keeping internal stack traces strictly in server logs.
+  4. Implement deep operational health telemetry (`GET /api/v1/health/deep`) measuring database ping latency, pool size, memory RSS/heap, and system uptime.
+  5. Provide automated disaster recovery scripts (`backup-atlas.ts` and `restore-verify.ts`) with SHA-256 cryptographic verification and immutable audit logging, along with an authoritative Disaster Recovery Runbook (`docs/DISASTER_RECOVERY_RUNBOOK.md`).
+- **Rationale**: Multi-tier throttling protects authentication and financial systems without hindering normal clinical chart review. Sanitized filters eliminate information disclosure vulnerabilities (OWASP A01/A05). Offline backup verification ensures rapid, validated recovery satisfying RTO (< 30 min) and RPO (< 5 min) targets.
+- **Consequences**: All client errors conform to standard `{ success: false, error: { statusCode, message, correlationId, timestamp } }`. Security breaches and DR drills are automatically committed to the `audit_logs` collection.
+
+---
+
+### Decision 019: Sovereign SaaS Platform Owner Control Plane & Strict Zero-PHI Boundary
+- **Context**: As the system transitions to multi-tenant commercial operations, the platform owner requires dedicated governance over tenant provisioning, tier catalogs, subscription lifecycle states, quota overrides, infrastructure telemetry, and platform broadcasts. However, regulations and hospital trust require an absolute guarantee that platform administrators cannot view or tamper with private patient medical charts, clinical encounter notes, diagnoses, or prescriptions.
+- **Decision**:
+  1. Establish a Dual-Plane Architecture segregating the system into the **Platform Control Plane** (`/api/v1/super-admin/*` and `apps/super-admin/`) and the **Tenant Data Plane** (`/api/v1/*` and `apps/hms-client/`).
+  2. Implement an unbridgeable **Zero-PHI Technical Invariant**: `SurfaceGuard` and `RolesGuard` strictly block any `SUPER_ADMIN` token attempting to access clinical endpoints (`/api/v1/patients`, `/api/v1/emr`, `/api/v1/prescriptions`, `/api/v1/lab`, `/api/v1/pharmacy`, `/api/v1/billing`) with `HTTP 403 Forbidden` (`TENANT_PHI_ACCESS_PROHIBITED`).
+  3. Model platform governance through dedicated global entities (`tenants`, `plans`, `subscriptions`) where `tenantId` is `null` for platform scope.
+  4. Enforce platform-specific permissions (`platform.tenants.manage`, `platform.plans.manage`, `platform.telemetry.read`, etc.), mandatory MFA/TOTP, and aggressive 15-minute session timeouts for all Super Admin accounts.
+  5. Prevent self-registration: Super Admin accounts must be initialized strictly via secure deployment seeds or break-glass CLI tooling.
+- **Rationale**: Strict dual-plane segregation provides hospital executives and compliance auditors definitive proof that SaaS platform operators have no backdoors into Protected Health Information, while simultaneously empowering the SaaS owner with full commercial and operational control over tenant health, billing plans, and system uptime.
+- **Consequences**: Super Admin operations are isolated from clinical codebases; cross-plane access attempts trigger high-severity audit alerts; `apps/super-admin` can be built and deployed independently without bundling any clinical or EMR components.
+
+
 
 
 

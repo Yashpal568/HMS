@@ -48,7 +48,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       new Set([...rolePermissions, ...(user.permissions || [])]),
     );
 
-    const tenantId = user.hospitalId?.toString() || (user as any).tenantId?.toString() || '6aa3f64974f6740b10b10001';
+    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+    const tenantId = isSuperAdmin
+      ? null
+      : user.hospitalId?.toString() || (user as any).tenantId?.toString() || '6aa3f64974f6740b10b10001';
 
     return {
       id: user._id.toString(),
@@ -57,9 +60,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      department: (user as any).department,
+      specialization: (user as any).specialization,
+      phone: (user as any).phone,
       permissions: combinedPermissions,
       tenantId,
       hospitalId: tenantId,
+      surface: isSuperAdmin ? 'SUPER_ADMIN' : 'HOSPITAL',
       branchId: user.branchId?.toString(),
     };
   }

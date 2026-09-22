@@ -10,6 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { Throttle } from '@nestjs/throttler';
 import { BillingService } from './billing.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
@@ -184,6 +185,7 @@ export class BillingController {
   }
 
   @Post('payments')
+  @Throttle({ financial: { limit: 10, ttl: 60000 } })
   @RequirePermissions('billing.create')
   @HttpCode(HttpStatus.CREATED)
   async processPayment(

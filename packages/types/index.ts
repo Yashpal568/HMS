@@ -1593,3 +1593,244 @@ export interface AuditQueryResponse {
   totalPages: number;
 }
 
+// ==========================================
+// Staff Onboarding & Role-Based Workstations
+// ==========================================
+
+export enum StaffRole {
+  DOCTOR = 'DOCTOR',
+  NURSE = 'NURSE',
+  RECEPTIONIST = 'RECEPTIONIST',
+  LAB_TECHNICIAN = 'LAB_TECHNICIAN',
+  PHARMACIST = 'PHARMACIST',
+  ACCOUNTANT = 'ACCOUNTANT',
+  INVENTORY_MANAGER = 'INVENTORY_MANAGER',
+  HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
+}
+
+export interface InviteStaffPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: StaffRole;
+  department?: string;
+  specialization?: string;
+  phone?: string;
+}
+
+export interface InviteStaffResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  department?: string;
+  specialization?: string;
+  temporaryPassword?: string;
+  emailDispatched: boolean;
+  message: string;
+}
+
+export interface StaffUserSummary {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  department?: string;
+  specialization?: string;
+  phone?: string;
+  status: string;
+  lastLoginAt?: string;
+  createdAt: string;
+}
+
+// ============================================================================
+// SaaS Platform & Super Admin Governance Contracts (Milestone 13)
+// ============================================================================
+
+export enum TenantStatus {
+  PROVISIONING = 'PROVISIONING',
+  TRIAL = 'TRIAL',
+  ACTIVE = 'ACTIVE',
+  PAST_DUE = 'PAST_DUE',
+  SUSPENDED = 'SUSPENDED',
+  OFFBOARDED = 'OFFBOARDED',
+}
+
+export enum SubscriptionTier {
+  FREE_TRIAL = 'FREE_TRIAL',
+  STARTER_CLINIC = 'STARTER_CLINIC',
+  GROWTH_HOSPITAL = 'GROWTH_HOSPITAL',
+  ENTERPRISE_NETWORK = 'ENTERPRISE_NETWORK',
+}
+
+export enum SubscriptionStatus {
+  TRIALING = 'TRIALING',
+  ACTIVE = 'ACTIVE',
+  PAST_DUE = 'PAST_DUE',
+  CANCELED = 'CANCELED',
+  UNPAID = 'UNPAID',
+}
+
+export interface TenantQuotas {
+  maxDoctors: number;
+  maxBeds: number;
+  maxStorageGb: number;
+}
+
+export interface TenantUsage {
+  doctorsCount: number;
+  bedsCount: number;
+  storageGbUsed: number;
+}
+
+export interface TenantBillingContact {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  subdomain: string;
+  customDomain?: string;
+  status: TenantStatus;
+  tier: SubscriptionTier;
+  planId?: string;
+  subscriptionId?: string;
+  billingContact: TenantBillingContact;
+  quotas: TenantQuotas;
+  usage: TenantUsage;
+  trialEndsAt?: string;
+  suspendedAt?: string;
+  suspensionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Plan {
+  id: string;
+  code: string;
+  name: string;
+  tier: SubscriptionTier;
+  description?: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  currency: string;
+  limits: TenantQuotas;
+  includedModules: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Subscription {
+  id: string;
+  tenantId: string;
+  tenantName?: string;
+  planId: string;
+  planName?: string;
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  limitsOverride?: Partial<TenantQuotas> & {
+    expiresAt?: string;
+    reason?: string;
+  };
+  billingCycle: 'MONTHLY' | 'ANNUAL';
+  amount: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformTelemetry {
+  databasePingMs: number;
+  activeConnections: number;
+  memoryRssMb: number;
+  memoryHeapMb: number;
+  uptimeSeconds: number;
+  totalTenants: number;
+  activeTenants: number;
+  totalUsers: number;
+  totalDoctors: number;
+  totalPatients: number;
+  systemTimestamp: string;
+}
+
+export interface PlatformAuditLog {
+  id: string;
+  action: string;
+  actorId: string;
+  actorEmail: string;
+  targetTenantId?: string;
+  targetTenantName?: string;
+  details?: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: string;
+}
+
+export interface PlatformBroadcast {
+  id: string;
+  title: string;
+  message: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  targetAudience: 'ALL' | 'HOSPITAL_ADMINS' | 'CLINICIANS';
+  active: boolean;
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export interface CreateTenantDto {
+  name: string;
+  subdomain: string;
+  customDomain?: string;
+  tier: SubscriptionTier;
+  planId?: string;
+  adminEmail: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminPassword?: string;
+  phone?: string;
+  city?: string;
+}
+
+export interface UpdateTenantStatusDto {
+  status: TenantStatus;
+  reason?: string;
+}
+
+export interface QuotaOverrideDto {
+  maxDoctors?: number;
+  maxBeds?: number;
+  maxStorageGb?: number;
+  expiresAt?: string;
+  reason?: string;
+}
+
+export interface CreatePlanDto {
+  code: string;
+  name: string;
+  tier: SubscriptionTier;
+  description?: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  currency: string;
+  limits: TenantQuotas;
+  includedModules: string[];
+}
+
+export interface CreateBroadcastDto {
+  title: string;
+  message: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  targetAudience: 'ALL' | 'HOSPITAL_ADMINS' | 'CLINICIANS';
+  expiresAt?: string;
+}
+
+

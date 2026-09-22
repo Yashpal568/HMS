@@ -8,6 +8,9 @@ export interface UserSummary {
   firstName: string;
   lastName: string;
   role: string;
+  department?: string;
+  specialization?: string;
+  phone?: string;
   permissions: string[];
   status?: string;
   hospitalId?: string;
@@ -132,13 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    if (user.role === 'SUPER_ADMIN' || user.permissions.includes('*')) return true;
+    if (user.role === 'HOSPITAL_ADMIN' || user.permissions.includes('*')) return true;
     return user.permissions.includes(permission);
   };
 
   const hasRole = (role: string): boolean => {
     if (!user) return false;
-    if (user.role === 'SUPER_ADMIN') return true;
     return user.role === role;
   };
 

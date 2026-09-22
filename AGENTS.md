@@ -63,6 +63,13 @@ This document is the authoritative, binding operational directive for every AI c
    - Cross-tenant IDOR probes must return uniform `404 Not Found` to prevent entity enumeration across hospitals.
    - Never commit environment files (`.env`) or cloud connection strings to source control.
 
+5. **SaaS Platform Owner Control Plane & Zero-PHI Technical Invariant**:
+   - The platform strictly enforces a dual-plane architecture:
+     - **Platform Control Plane** (`apps/super-admin/` and `/api/v1/super-admin/*`): Operated by `SUPER_ADMIN` (`tenantId: null`) for tenant lifecycle, subscription tiers, resource quotas, Atlas cluster telemetry, and global broadcasts.
+     - **Tenant Data Plane** (`apps/hms-client/` and `/api/v1/*`): Scoped strictly to individual hospital facilities (`tenantId: user.tenantId`).
+   - **Zero-PHI Technical Invariant**: Platform Super Admins have **ZERO access to Protected Health Information (PHI)**. Any attempt by a Super Admin session to invoke hospital clinical endpoints (`/patients`, `/emr`, `/lab`, `/pharmacy`, `/billing`) is permanently blocked at the guard layer with `403 Forbidden` (`TENANT_PHI_ACCESS_PROHIBITED`).
+   - Platform actions must be immutably recorded in the platform audit trail (`audit_logs` where `tenantId: null`).
+
 ---
 
 ## 2. Mandatory Development Cycle
@@ -163,4 +170,5 @@ STOP
 - ❌ DO NOT introduce unapproved npm packages without technical justification.
 - ❌ DO NOT commit `.env` or sensitive credentials to Git.
 - ❌ DO NOT claim regulatory certifications (HIPAA, GDPR, ISO 27001) without verified legal sign-off.
+- ❌ DO NOT allow Super Admin tokens to query patient clinical health records or consultation charts (Zero-PHI Invariant).
 - ❌ DO NOT start the next milestone automatically after completing the current one.

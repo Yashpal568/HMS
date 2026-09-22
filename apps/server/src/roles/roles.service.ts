@@ -45,13 +45,30 @@ export const INITIAL_PERMISSIONS = [
   { slug: 'reports.read', description: 'View operational and clinical reports', module: 'reports' },
   { slug: 'reports.financial.read', description: 'View financial and revenue analytics', module: 'reports' },
   { slug: 'audit.logs.read', description: 'Query and export security audit logs', module: 'audit' },
+  { slug: 'platform.tenants.read', description: 'View SaaS tenants and usage', module: 'platform' },
+  { slug: 'platform.tenants.manage', description: 'Provision and configure SaaS tenants', module: 'platform' },
+  { slug: 'platform.tenants.suspend', description: 'Suspend or reinstate SaaS tenants', module: 'platform' },
+  { slug: 'platform.plans.manage', description: 'Manage SaaS subscription pricing tiers', module: 'platform' },
+  { slug: 'platform.subscriptions.manage', description: 'Manage tenant subscriptions and quotas', module: 'platform' },
+  { slug: 'platform.telemetry.read', description: 'View platform cluster health and telemetry', module: 'platform' },
+  { slug: 'platform.audit.read', description: 'View platform security and audit trail', module: 'platform' },
+  { slug: 'platform.broadcast.manage', description: 'Publish and manage platform broadcast alerts', module: 'platform' },
 ];
 
 export const INITIAL_ROLES = [
   {
     name: 'SUPER_ADMIN',
-    description: 'System Super Administrator with all permissions',
-    permissions: ['*'],
+    description: 'SaaS Platform Super Administrator governing tenants, plans, and infrastructure',
+    permissions: [
+      'platform.tenants.read',
+      'platform.tenants.manage',
+      'platform.tenants.suspend',
+      'platform.plans.manage',
+      'platform.subscriptions.manage',
+      'platform.telemetry.read',
+      'platform.audit.read',
+      'platform.broadcast.manage',
+    ],
   },
   {
     name: 'HOSPITAL_ADMIN',

@@ -1,10 +1,10 @@
-# Milestone 13 — Phase 2 AI Intelligence (Controlled Clinical Copilot)
+# Milestone 15 — Phase 2 AI Intelligence (Controlled Clinical Copilot)
 
 ## Objective
-Implement controlled, audited, and secure AI capabilities following the strict architecture specified in `docs/ARCHITECTURE.md` and `docs/PRD.md`, ensuring that AI operates solely through approved HMS APIs with data minimization, tool allowlists, human-in-the-loop approval, and zero direct database access.
+Implement controlled, audited, and secure AI capabilities following the strict architecture specified in `docs/AI_ARCHITECTURE.md` and `docs/PRD.md`, ensuring that AI operates solely through approved HMS APIs with data minimization, tool allowlists, human-in-the-loop approval, and zero direct database access.
 
 ## Scope
-- AI Gateway & Orchestration Architecture (`AiModule` in `apps/api/src/ai/`):
+- AI Gateway & Orchestration Architecture (`AiModule` in `apps/server/src/ai/`):
   - Strictly operates through authenticated and authorized HMS application service interfaces.
   - Zero direct MongoDB credentials or query execution rights.
   - Data minimization filter: Strips unnecessary Personally Identifiable Information (PII) before LLM prompt construction.
@@ -27,7 +27,7 @@ Implement controlled, audited, and secure AI capabilities following the strict a
 - Replacing clinical staff decision-making.
 
 ## Prerequisites
-- Phase 1 HMS Core (Milestones 01 through 12) 100% complete, verified, and officially signed off.
+- Phase 1 HMS Core (Milestones 01 through 14) 100% complete, verified, and officially signed off.
 - Hospital Institutional Review Board (IRB) / Clinical Governance committee approval.
 
 ## User Workflows
@@ -92,7 +92,7 @@ Implement controlled, audited, and secure AI capabilities following the strict a
   - Verify full workflow from raw doctor notes to finalized encounter with tenant scoping.
 
 ## Acceptance Criteria
-- [ ] AI Gateway architecture strictly follows `docs/ARCHITECTURE.md`.
+- [ ] AI Gateway architecture strictly follows `docs/AI_ARCHITECTURE.md`.
 - [ ] Zero direct MongoDB access for AI services.
 - [ ] AI requests inherit tenant context and enforce tenant isolation.
 - [ ] Data minimization verifies PII redaction.
@@ -101,8 +101,8 @@ Implement controlled, audited, and secure AI capabilities following the strict a
 - [ ] Comprehensive AI audit trail records all transactions.
 
 ## Dependencies
-- Upstream: Phase 1 HMS Core (Milestones 01 to 12).
-- Downstream: Milestone 14 (Electron Desktop Packaging).
+- Upstream: Phase 1 HMS Core (Milestones 01 to 14).
+- Downstream: Milestone 16 (Electron Desktop Packaging).
 
 ## Implementation Notes
 - AI models should be configurable via environment variables (`AI_PROVIDER`, `AI_API_KEY`) to allow swapping approved model providers without codebase changes.

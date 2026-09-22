@@ -24,16 +24,17 @@
 
 ---
 
-## 2. Master Entity Catalog (26 Collections)
+## 2. Master Entity Catalog (27 Collections)
 
-The database schema models 26 distinct entities grouped by domain and tenancy tier:
+The database schema models 27 distinct entities grouped by domain and tenancy tier:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           DATABASE DOMAIN TAXONOMY                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 1. PLATFORM & SAAS OPERATIONS                                               │
-│    • tenants           • subscriptions     • feature_flags                  │
+│    • tenants           • plans             • subscriptions                  │
+│    • feature_flags                                                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2. IDENTITY, ACCESS & HOSPITAL STRUCTURE                                    │
 │    • users             • roles             • permissions                    │
@@ -66,20 +67,93 @@ The database schema models 26 distinct entities grouped by domain and tenancy ti
 #### 1. `tenants`
 - **Scope**: Global / Platform-Owned (Zero `tenantId` field)
 - **Description**: Sovereign hospital organization, clinic, or medical network.
-- **Fields**: `_id`, `name`, `slug` (unique), `registrationNumber`, `status` (`TRIAL`, `ACTIVE`, `SUSPENDED`, `CANCELLED`), `contactEmail`, `contactPhone`, `address`, `settings` (timezone, currency, dateFormat, branding), `createdAt`, `updatedAt`.
-- **Indexes**: `{ slug: 1 }` (unique), `{ status: 1 }`.
+- **Fields**:
+  - `_id`: ObjectId
+  - `name`: String (legal business entity title)
+  - `slug`: String (unique identifier, e.g. `apollo-health`)
+  - `subdomain`: String (unique subdomain: `https://{subdomain}.hmsmedcore.com`)
+  - `customDomain`?: String (verified custom CNAME mapping)
+  - `registrationNumber`: String (statutory hospital registration number)
+  - `taxId`?: String (GSTIN / VAT identifier)
+  - `status`: String enum (`TRIAL`, `ACTIVE`, `SUSPENDED`, `CANCELLED`, `EXPIRED`)
+  - `onboardingStatus`: String enum (`PENDING`, `PROVISIONED`, `ACTIVE`)
+  - `contactEmail`: String
+  - `contactPhone`: String
+  - `billingContact`: `{ name: String, email: String, phone: String }`
+  - `address`: `{ street: String, city: String, state: String, postalCode: String, country: String }`
+  - `subscriptionId`: ObjectId (ref `subscriptions`)
+  - `settings`: `{ timezone: String, currency: String, dateFormat: String, brandingLogoUrl?: String }`
+  - `suspendedAt`?: Date
+  - `suspensionReason`?: String
+  - `createdAt`: Date
+  - `updatedAt`: Date
+- **Indexes**:
+  - `{ slug: 1 }` (unique)
+  - `{ subdomain: 1 }` (unique, sparse)
+  - `{ customDomain: 1 }` (unique, sparse)
+  - `{ status: 1 }`
 
-#### 2. `subscriptions`
+#### 2. `plans`
+- **Scope**: Global / Platform-Owned (Zero `tenantId` field)
+- **Description**: Authoritative commercial tier definitions maintained by the Platform Super Admin.
+- **Fields**:
+  - `_id`: ObjectId
+  - `code`: String enum (`FREE_TRIAL`, `STARTER_CLINIC`, `GROWTH_HOSPITAL`, `ENTERPRISE_NETWORK`) (unique)
+  - `name`: String (e.g. "Growth Hospital Plan")
+  - `description`: String
+  - `tier`: String enum (`TRIAL`, `STANDARD`, `PREMIUM`, `ENTERPRISE`)
+  - `pricing`: `{ monthlyPrice: Number, annualPrice: Number, currency: String }`
+  - `limits`: `{ maxDoctors: Number, maxStaff: Number, maxBeds: Number, maxStorageGb: Number }`
+  - `includedModules`: `[String]` (e.g. `['opd', 'emr', 'ipd', 'pharmacy', 'lab', 'inventory', 'billing', 'reports']`)
+  - `isActive`: Boolean (default `true`)
+  - `createdAt`: Date
+  - `updatedAt`: Date
+- **Indexes**:
+  - `{ code: 1 }` (unique)
+  - `{ isActive: 1 }`
+
+#### 3. `subscriptions`
 - **Scope**: Global / Platform-Owned
 - **Description**: Commercial subscription contract binding a tenant to a commercial tier.
-- **Fields**: `_id`, `tenantId` (unique ref to `tenants`), `planCode` (`FREE_TRIAL`, `STARTER_CLINIC`, `GROWTH_HOSPITAL`, `ENTERPRISE_NETWORK`), `status` (`TRIAL`, `ACTIVE`, `PAST_DUE`, `SUSPENDED`, `CANCELLED`, `EXPIRED`), `billingCycle` (`MONTHLY`, `ANNUAL`), `currentPeriodStartsAt`, `currentPeriodEndsAt`, `trialEndsAt`, `limits` (`maxDoctors`, `maxBeds`, `maxStaff`, `maxStorageGb`), `createdAt`, `updatedAt`.
-- **Indexes**: `{ tenantId: 1 }` (unique), `{ status: 1, currentPeriodEndsAt: 1 }`.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (unique ref `tenants`)
+  - `planId`: ObjectId (ref `plans`)
+  - `planCode`: String enum (`FREE_TRIAL`, `STARTER_CLINIC`, `GROWTH_HOSPITAL`, `ENTERPRISE_NETWORK`)
+  - `status`: String enum (`TRIAL`, `ACTIVE`, `PAST_DUE`, `SUSPENDED`, `CANCELLED`, `EXPIRED`)
+  - `billingCycle`: String enum (`MONTHLY`, `ANNUAL`)
+  - `autoRenew`: Boolean (default `true`)
+  - `trialStartsAt`?: Date
+  - `trialEndsAt`?: Date
+  - `currentPeriodStartsAt`: Date
+  - `currentPeriodEndsAt`: Date
+  - `lastPaymentDate`?: Date
+  - `nextBillingDate`?: Date
+  - `gatewayCustomerId`?: String (Stripe / Razorpay Customer ID)
+  - `gatewaySubscriptionId`?: String
+  - `limits`: `{ maxDoctors: Number, maxStaff: Number, maxBeds: Number, maxStorageGb: Number }`
+  - `limitsOverride`?: `{ maxDoctors?: Number, maxStaff?: Number, maxBeds?: Number, maxStorageGb?: Number, expiresAt?: Date, reason?: String }`
+  - `createdAt`: Date
+  - `updatedAt`: Date
+- **Indexes**:
+  - `{ tenantId: 1 }` (unique)
+  - `{ status: 1, currentPeriodEndsAt: 1 }`
+  - `{ planCode: 1 }`
 
-#### 3. `feature_flags`
+#### 4. `feature_flags`
 - **Scope**: Global / Tenant-Overridable
 - **Description**: Feature toggles and module access rules governed by SaaS tier or individual tenant override.
-- **Fields**: `_id`, `key` (e.g. `pharmacy_module`, `ipd_module`, `ai_documentation_copilot`), `description`, `isGlobalEnabled`, `tenantOverrides`: `[{ tenantId: ObjectId, enabled: Boolean, expiresAt?: Date }]`, `createdAt`, `updatedAt`.
-- **Indexes**: `{ key: 1 }` (unique), `{ 'tenantOverrides.tenantId': 1 }`.
+- **Fields**:
+  - `_id`: ObjectId
+  - `key`: String (e.g. `pharmacy_module`, `ipd_module`, `ai_documentation_copilot`) (unique)
+  - `description`: String
+  - `isGlobalEnabled`: Boolean
+  - `tenantOverrides`: `[{ tenantId: ObjectId, enabled: Boolean, expiresAt?: Date }]`
+  - `createdAt`: Date
+  - `updatedAt`: Date
+- **Indexes**:
+  - `{ key: 1 }` (unique)
+  - `{ 'tenantOverrides.tenantId': 1 }`
 
 ---
 
@@ -279,14 +353,29 @@ The database schema models 26 distinct entities grouped by domain and tenancy ti
   - `{ tenantId: 1, patientId: 1, category: 1 }`
   - `{ tenantId: 1, storageKey: 1 }` (unique)
 
-#### 26. `audit_logs`
-- **Scope**: Tenant-Owned (or Platform-Owned if `tenantId` is null)
+#### 27. `audit_logs`
+- **Scope**: Hybrid (Tenant-Owned for hospital operations, Platform-Owned where `tenantId` is null for SaaS Super Admin actions)
 - **Description**: Immutable append-only operational and security audit log. Passwords, secrets, and raw PHI are automatically stripped.
-- **Fields**: `_id`, `tenantId` (optional for platform actions), `userId` (ref `users`), `userRole`, `action` (e.g. `USER_LOGIN`, `PATIENT_RECORD_VIEW`, `PRESCRIPTION_CREATE`, `INVOICE_VOID`), `entity` (e.g. `Patient`, `Invoice`), `entityId` (String), `ipAddress`, `userAgent`, `status` (`SUCCESS`, `DENIED`, `FAILURE`), `metadata` (sanitized key-value JSON), `timestamp`.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`?: ObjectId (present for hospital tenant operations; `null` or omitted for platform-level Super Admin governance)
+  - `userId`: ObjectId (ref `users`)
+  - `userRole`: String (`SUPER_ADMIN`, `HOSPITAL_ADMIN`, `DOCTOR`, etc.)
+  - `action`: String enum encompassing:
+    - **Platform Control Plane Actions**: `SUPER_ADMIN_LOGIN`, `TENANT_PROVISION`, `TENANT_ACTIVATE`, `TENANT_SUSPEND`, `TENANT_REINSTATE`, `PLAN_CREATE`, `PLAN_UPDATE`, `QUOTA_OVERRIDE`, `BROADCAST_ANNOUNCE`, `DISASTER_RECOVERY_TEST`
+    - **Tenant Hospital Operations**: `USER_LOGIN`, `PATIENT_CREATE`, `APPOINTMENT_CREATE`, `APPOINTMENT_CHECKIN`, `ENCOUNTER_FINALIZE`, `PRESCRIPTION_CREATE`, `SAMPLE_COLLECT`, `LAB_RESULT_ENTER`, `LAB_RESULT_VERIFY`, `MEDICINE_DISPENSE`, `INVOICE_CREATE`, `PAYMENT_PROCESS`, `REFUND_APPROVE`
+  - `entity`: String (e.g. `Tenant`, `Plan`, `Subscription`, `Patient`, `Encounter`, `Invoice`)
+  - `entityId`: String
+  - `ipAddress`: String
+  - `userAgent`: String
+  - `status`: String enum (`SUCCESS`, `DENIED`, `FAILURE`)
+  - `metadata`: Object (sanitized key-value JSON)
+  - `timestamp`: Date
 - **Indexes**:
   - `{ tenantId: 1, timestamp: -1 }`
   - `{ tenantId: 1, userId: 1, timestamp: -1 }`
   - `{ tenantId: 1, action: 1 }`
+  - `{ action: 1, timestamp: -1 }` (for platform-wide security queries)
 
 ---
 

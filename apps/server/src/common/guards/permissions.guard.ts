@@ -27,9 +27,23 @@ export class PermissionsGuard implements CanActivate {
       });
     }
 
-    // Super Admin with wildcard has all permissions
+    // Super Admin is bound strictly to platform permissions and has Zero PHI access
+    if (user.role === 'SUPER_ADMIN') {
+      const isClinicalOrTenant = requiredPermissions.some((p) => !p.startsWith('platform.'));
+      if (isClinicalOrTenant) {
+        throw new ForbiddenException({
+          success: false,
+          error: {
+            code: 'TENANT_PHI_ACCESS_PROHIBITED',
+            message: 'Access denied: Platform Super Admin is prohibited from accessing tenant clinical data plane.',
+          },
+        });
+      }
+    }
+
+    // Wildcard permissions for hospital administrators within tenant boundary
     const userPermissions: string[] = user.permissions || [];
-    if (user.role === 'SUPER_ADMIN' || userPermissions.includes('*')) {
+    if (user.role !== 'SUPER_ADMIN' && userPermissions.includes('*')) {
       return true;
     }
 

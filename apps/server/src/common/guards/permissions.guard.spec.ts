@@ -28,9 +28,21 @@ describe('PermissionsGuard', () => {
     expect(guard.canActivate(context)).toBe(true);
   });
 
-  it('should allow access if user is SUPER_ADMIN', () => {
+  it('should allow access if user is SUPER_ADMIN with platform permission', () => {
+    reflector.getAllAndOverride = () => ['platform.tenants.manage'];
+    const context = createMockContext({ role: 'SUPER_ADMIN', permissions: ['platform.tenants.manage'] });
+    expect(guard.canActivate(context)).toBe(true);
+  });
+
+  it('should throw ForbiddenException if user is SUPER_ADMIN attempting to access clinical permissions (Zero-PHI)', () => {
+    reflector.getAllAndOverride = () => ['patients.read'];
+    const context = createMockContext({ role: 'SUPER_ADMIN', permissions: ['platform.*'] });
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+  });
+
+  it('should allow access if hospital user has wildcard permission', () => {
     reflector.getAllAndOverride = () => ['patients.read', 'billing.refund'];
-    const context = createMockContext({ role: 'SUPER_ADMIN', permissions: ['*'] });
+    const context = createMockContext({ role: 'HOSPITAL_ADMIN', permissions: ['*'] });
     expect(guard.canActivate(context)).toBe(true);
   });
 

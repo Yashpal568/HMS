@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/context/auth-context";
 import { CurrencyProvider } from "@/context/currency-context";
+import { SessionTimeoutModal } from "@/components/security/session-timeout-modal";
+import { OfflineBanner } from "@/components/security/offline-banner";
 
 export default function RootLayout({
   children,
@@ -32,7 +34,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <AuthProvider>
-          <CurrencyProvider>{children}</CurrencyProvider>
+          <CurrencyProvider>
+            <OfflineBanner />
+            <SessionTimeoutModal />
+            {children}
+          </CurrencyProvider>
         </AuthProvider>
       </body>
     </html>

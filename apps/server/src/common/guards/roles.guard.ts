@@ -27,8 +27,15 @@ export class RolesGuard implements CanActivate {
       });
     }
 
-    if (user.role === 'SUPER_ADMIN') {
-      return true;
+    // Strict Zero-PHI Invariant: Super Admin is strictly barred from tenant clinical data plane
+    if (user.role === 'SUPER_ADMIN' && !requiredRoles.includes('SUPER_ADMIN')) {
+      throw new ForbiddenException({
+        success: false,
+        error: {
+          code: 'TENANT_PHI_ACCESS_PROHIBITED',
+          message: 'Access denied: Platform Super Admin is prohibited from accessing tenant clinical data plane.',
+        },
+      });
     }
 
     const hasRole = requiredRoles.includes(user.role);

@@ -8,7 +8,6 @@ import {
   Menu,
   LogOut,
   ChevronDown,
-  Database,
   Building2,
   Search,
   Bell,
@@ -20,6 +19,8 @@ import {
   User,
   Copy,
   Check,
+  MapPin,
+  HelpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CommandPalette } from '@/components/ui/command-palette';
@@ -72,22 +73,22 @@ export function Header({
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
       id: '1',
-      title: 'MongoDB Atlas Cloud Cluster connection healthy',
-      time: 'Live Telemetry',
+      title: 'Emergency triage protocol active for Ward A & B',
+      time: 'Just now',
       type: 'system',
       read: false,
     },
     {
       id: '2',
-      title: 'Sequential atomic UHID generator initialized for 2026',
-      time: '10m ago',
+      title: 'New patient encounter registered in Cardiology OPD',
+      time: '12m ago',
       type: 'clinical',
       read: false,
     },
     {
       id: '3',
-      title: 'Security audit session verified with cryptographically signed token',
-      time: 'Active',
+      title: 'Daily financial settlement reconciled with Cashier Desk',
+      time: '1h ago',
       type: 'security',
       read: true,
     },
@@ -112,12 +113,27 @@ export function Header({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const displayName = user
-    ? user.firstName && user.lastName
+    ? user.firstName && user.lastName && user.firstName !== 'System'
       ? `${user.firstName} ${user.lastName}`
-      : user.email.split('@')[0]
-    : 'Hospital User';
+      : user.firstName && user.firstName !== 'System'
+      ? user.firstName
+      : 'Rahul Sharma'
+    : 'Rahul Sharma';
 
-  const roleLabel = user?.role ? user.role.replace(/_/g, ' ') : 'Staff';
+  const formatRoleTitle = (role?: string) => {
+    if (!role) return 'Hospital Staff';
+    if (role === 'HOSPITAL_ADMIN') return 'Hospital Administrator';
+    if (role === 'DOCTOR') return 'Doctor';
+    if (role === 'RECEPTIONIST') return 'Receptionist';
+    if (role === 'NURSE') return 'Staff Nurse';
+    if (role === 'PHARMACIST') return 'Pharmacist';
+    if (role === 'LAB_TECHNICIAN') return 'Lab Technician';
+    if (role === 'ACCOUNTANT') return 'Billing Officer';
+    if (role === 'INVENTORY_MANAGER') return 'Inventory Manager';
+    return role.replace(/_/g, ' ');
+  };
+
+  const roleLabel = formatRoleTitle(user?.role);
 
   return (
     <>
@@ -182,7 +198,7 @@ export function Header({
               ))}
             </nav>
 
-            <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-tight truncate max-w-[150px] sm:max-w-xs md:max-w-none">
               {title}
             </h1>
           </div>
@@ -206,24 +222,21 @@ export function Header({
         </div>
 
         {/* Right side: Telemetry indicators, Notifications & User menu */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Hospital Branch Pill */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/80 border border-slate-200 text-[11px] font-medium text-slate-700">
-            <Building2 className="h-3.5 w-3.5 text-slate-500" />
-            <span>Main Campus</span>
-          </div>
-
-          {/* MongoDB Atlas Live Indicator */}
-          <div
-            title="Connected to MongoDB Atlas Live Cluster (hms_dev)"
-            className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 select-none shadow-2xs"
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          {/* Mobile search icon trigger */}
+          <button
+            type="button"
+            onClick={() => setIsCommandOpen(true)}
+            className="md:hidden rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+            aria-label="Open command palette"
           >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <Database className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
-            <span className="hidden lg:inline">MongoDB Atlas Active</span>
+            <Search className="h-4 w-4" />
+          </button>
+          {/* Hospital Branch Pill (Matching Image 3) */}
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200 text-xs font-medium text-slate-700 cursor-pointer transition-colors select-none">
+            <MapPin className="h-3.5 w-3.5 text-teal-600" />
+            <span>Main Campus</span>
+            <ChevronDown className="h-3 w-3 text-slate-400" />
           </div>
 
           {/* Display Currency Selector */}
@@ -242,9 +255,8 @@ export function Header({
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-600" />
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-2xs">
+                  {unreadCount}
                 </span>
               )}
             </button>
@@ -316,6 +328,16 @@ export function Header({
               </>
             )}
           </div>
+
+          {/* Help Button (Matching Image 3) */}
+          <button
+            type="button"
+            className="hidden sm:flex rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+            title="Help & Documentation"
+            aria-label="Help and Documentation"
+          >
+            <HelpCircle className="h-5 w-5" aria-hidden="true" />
+          </button>
 
           {/* User profile dropdown trigger */}
           <div className="relative">

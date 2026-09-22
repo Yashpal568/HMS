@@ -34,10 +34,16 @@ describe('RolesGuard', () => {
     expect(guard.canActivate(context)).toBe(true);
   });
 
-  it('should always allow SUPER_ADMIN', () => {
-    reflector.getAllAndOverride = () => ['PHARMACIST'];
+  it('should allow access if route requires SUPER_ADMIN and user is SUPER_ADMIN', () => {
+    reflector.getAllAndOverride = () => ['SUPER_ADMIN'];
     const context = createMockContext({ role: 'SUPER_ADMIN' });
     expect(guard.canActivate(context)).toBe(true);
+  });
+
+  it('should throw ForbiddenException if SUPER_ADMIN attempts to access clinical hospital routes (Zero-PHI)', () => {
+    reflector.getAllAndOverride = () => ['PHARMACIST'];
+    const context = createMockContext({ role: 'SUPER_ADMIN' });
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
   it('should throw ForbiddenException if user lacks required role', () => {

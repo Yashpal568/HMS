@@ -208,3 +208,79 @@ The platform architecture directly addresses the OWASP API Security Top 10:
 8. **API8: Security Misconfiguration** -> Addressed by hardened Helmet headers, disabled verbose stack traces in production, and CORS whitelisting.
 9. **API9: Improper Inventory Management** -> Addressed by single canonical REST API versioned under `/api/v1` with OpenAPI/Swagger specifications.
 10. **API10: Unsafe Consumption of APIs** -> Addressed by strict schema validation of all third-party webhook and integration payloads.
+
+---
+
+## 12. SaaS Platform Owner & Super Admin Security Profile
+
+To preserve tenant sovereignty and medical privacy across multi-tenant SaaS operations, the system enforces a cryptographically segregated security profile for the SaaS Platform Owner (`SUPER_ADMIN`).
+
+### 12.1. Dual-Plane Separation & Identity Segregation
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                   PLATFORM CONTROL PLANE (apps/super-admin)             │
+│   Identity: Role = SUPER_ADMIN | tenantId = null | surface = SUPER_ADMIN│
+│   Endpoints: /api/v1/super-admin/*                                     │
+│   Scope: Tenants, Plans, Subscriptions, Platform Telemetry, Audit Logs │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                         STRICT ARCHITECTURAL FIREWALL
+                        (SurfaceGuard & RolesGuard: 403)
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                    TENANT DATA PLANE (apps/hms-client)                 │
+│   Identity: Role = HOSPITAL_ADMIN/DOCTOR/NURSE | tenantId = <hospital> │
+│   Endpoints: /api/v1/patients, /api/v1/emr, /api/v1/billing, etc.      │
+│   Scope: PHI, Encounters, Diagnoses, Prescriptions, Financials         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Identity Segregation**:
+   - Super Admin users exist in the platform namespace with `tenantId: null` and `role: 'SUPER_ADMIN'`.
+   - JWT tokens issued for Super Admin sessions explicitly stamp `surface: 'SUPER_ADMIN'` and `tenantId: null`.
+2. **Control Plane Route Binding**:
+   - All SaaS management operations are strictly confined to the `/api/v1/super-admin/*` route prefix.
+   - Routes within this prefix require `@Roles('SUPER_ADMIN')` and specific `platform.*` permission tokens.
+
+### 12.2. Strict Zero-PHI Access Invariant (Technical Enforcement)
+
+- **Absolute Prohibition**: Platform Super Admins, DevOps engineers, and support staff have **ZERO access to Protected Health Information (PHI)** or tenant clinical operations.
+- **Enforcement Mechanism**:
+  - Any request bearing a `SUPER_ADMIN` token sent to clinical endpoints (`/api/v1/patients/*`, `/api/v1/emr/*`, `/api/v1/lab/*`, `/api/v1/pharmacy/*`, `/api/v1/billing/*`) is intercepted and rejected with `HTTP 403 Forbidden` (`TENANT_PHI_ACCESS_PROHIBITED`).
+  - No database query in the platform control plane includes Mongoose models for `Patient`, `Encounter`, `Prescription`, `LabOrder`, or `Invoice`.
+  - The Super Admin client application (`apps/super-admin`) contains zero clinical UI components, zero medical record views, and zero patient data hooks.
+
+### 12.3. Platform Permission Tokens
+
+Platform operations are gated by fine-grained platform-level permission tokens:
+
+| Permission Token | Description | Assigned Roles |
+|---|---|---|
+| `platform.tenants.read` | View tenant list, operational status, tier, license usage, and aggregated stats. | `SUPER_ADMIN`, `SUPPORT_LEAD` |
+| `platform.tenants.manage` | Provision new hospital tenants, update subdomains, configure custom domains. | `SUPER_ADMIN` |
+| `platform.tenants.suspend` | Suspend or reinstate hospital tenant access due to non-payment or breach. | `SUPER_ADMIN` |
+| `platform.plans.manage` | Create, update, or archive subscription pricing tiers, limits, and modules. | `SUPER_ADMIN`, `BILLING_ADMIN` |
+| `platform.subscriptions.manage` | Modify subscription statuses, apply custom quota bursts, reconcile billing. | `SUPER_ADMIN`, `BILLING_ADMIN` |
+| `platform.telemetry.read` | View real-time cluster health, active user counts, throughput, and error rates. | `SUPER_ADMIN`, `DEVOPS` |
+| `platform.audit.read` | Inspect immutable platform-tier security, governance, and audit trails. | `SUPER_ADMIN` |
+| `platform.broadcast.manage` | Publish and revoke platform-wide maintenance banners and critical notices. | `SUPER_ADMIN` |
+
+### 12.4. Authentication & Session Hardening for Super Admins
+
+Because the SaaS Platform Owner possesses platform-level controls, enhanced identity safeguards are mandatory:
+
+1. **Prohibition of Self-Registration**:
+   - Super Admin accounts cannot be created via public registration or tenant invitation endpoints.
+   - Accounts can only be provisioned via break-glass seed scripts or direct database initialization by authorized DevOps leads.
+2. **Mandatory Multi-Factor Authentication (MFA/TOTP)**:
+   - Super Admin accounts require RFC 6238 Time-based One-Time Password (TOTP) verification.
+   - Access tokens are only issued after successful secondary factor verification.
+3. **Short Session Lifetimes & Aggressive Timeouts**:
+   - Idle session timeout is strictly capped at 15 minutes.
+   - Refresh tokens have a maximum lifetime of 12 hours and require re-authentication.
+4. **Session IP & User-Agent Binding**:
+   - Super Admin session tokens are tied to client IP and User-Agent fingerprint hashes in Redis; token replay from differing networks triggers automatic session invalidation and alert logging.
+5. **Comprehensive Platform Audit Logging**:
+   - All mutations on tenants, plans, and subscription quotas are recorded in `audit_logs` with `tenantId: null`, actor role `SUPER_ADMIN`, client IP, and target tenant metadata.
+

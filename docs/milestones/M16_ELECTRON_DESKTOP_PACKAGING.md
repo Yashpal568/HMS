@@ -1,4 +1,4 @@
-# Milestone 14 — Windows Desktop Electron Packaging
+# Milestone 16 — Windows Desktop Electron Packaging
 
 ## Objective
 Package the existing Next.js web application into an enterprise Windows desktop application (`.exe` / `.msi`) using Electron, isolating desktop-specific capabilities behind a clean adapter layer while maintaining strict connection solely through the NestJS REST API conforming to `docs/ARCHITECTURE.md` and `docs/FRONTEND.md`.
@@ -26,7 +26,7 @@ Package the existing Next.js web application into an enterprise Windows desktop 
 - macOS or Linux packaging (Windows hospital workstation focus).
 
 ## Prerequisites
-- Milestone 01 through Milestone 12 (Stable, tested Phase 1 Web HMS).
+- Milestone 01 through Milestone 14 (Stable, tested Phase 1 Web HMS, Super Admin, and Patient App).
 
 ## User Workflows
 1. **Hospital Workstation Launch**: Nurse turns on nursing station desktop PC, double-clicks "HMS MedCore" desktop shortcut. Electron shell launches full-screen, checks backend connectivity, and renders the standard secure login screen.
@@ -89,7 +89,7 @@ Package the existing Next.js web application into an enterprise Windows desktop 
 - [ ] Windows installer `.exe` / `.msi` generated successfully.
 
 ## Dependencies
-- Upstream: Phase 1 HMS (Milestones 01 to 12).
+- Upstream: Phase 1 HMS (Milestones 01 to 14).
 - Downstream: Enterprise workstation deployment.
 
 ## Implementation Notes

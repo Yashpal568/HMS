@@ -148,7 +148,7 @@ export default function LoginPage() {
           {/* Quick Demo Credentials for Reviewers */}
           <div className="mt-6 pt-5 border-t border-slate-100">
             <p className="text-xs text-slate-500 text-center mb-2">
-              Seeded Super Admin Credentials:
+              Seeded Hospital Admin Credentials:
             </p>
             <button
               type="button"

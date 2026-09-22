@@ -6,6 +6,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { ReportsService } from './reports.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
@@ -83,6 +84,7 @@ export class ReportsController {
   }
 
   @Get('export')
+  @Throttle({ financial: { limit: 10, ttl: 60000 } })
   @RequirePermissions('reports.read')
   async exportReportCsv(
     @CurrentUser() user: RequestUser,

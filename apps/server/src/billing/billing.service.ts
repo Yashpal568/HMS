@@ -333,6 +333,8 @@ export class BillingService implements OnModuleInit {
 
     if (userId) {
       await this.auditService.record({
+        tenantId: tenantId.toString(),
+        hospitalId: tenantId.toString(),
         userId: userId.toString(),
         action: 'TARIFF_CREATE',
         resource: 'HospitalService',
@@ -425,6 +427,8 @@ export class BillingService implements OnModuleInit {
     });
 
     await this.auditService.record({
+      tenantId: tenantId.toString(),
+      hospitalId: tenantId.toString(),
       userId: userId.toString(),
       action: 'INVOICE_CREATE',
       resource: 'Invoice',
@@ -583,6 +587,8 @@ export class BillingService implements OnModuleInit {
     });
 
     await this.auditService.record({
+      tenantId: tenantId.toString(),
+      hospitalId: tenantId.toString(),
       userId: cashierId.toString(),
       action: 'PAYMENT_PROCESS',
       resource: 'Payment',
@@ -692,6 +698,8 @@ export class BillingService implements OnModuleInit {
     });
 
     await this.auditService.record({
+      tenantId: tenantId.toString(),
+      hospitalId: tenantId.toString(),
       userId: requestedBy.toString(),
       action: 'REFUND_REQUEST',
       resource: 'Refund',
@@ -770,6 +778,8 @@ export class BillingService implements OnModuleInit {
     await refund.save();
 
     await this.auditService.record({
+      tenantId: tenantId.toString(),
+      hospitalId: tenantId.toString(),
       userId: approverId.toString(),
       action: 'REFUND_APPROVE',
       resource: 'Refund',
