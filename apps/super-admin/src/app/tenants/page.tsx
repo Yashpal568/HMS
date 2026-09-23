@@ -198,11 +198,13 @@ export default function TenantsDirectoryPage() {
                   const bedQuota = tenant.quotas?.maxBeds ?? 1;
                   const bedPercent = Math.min(100, Math.round((bedUsage / bedQuota) * 100));
 
+                  const tenantId = tenant.id || (tenant as any)._id;
+
                   return (
-                    <tr key={tenant.id} className="hover:bg-slate-800/30 transition-colors">
+                    <tr key={tenantId} className="hover:bg-slate-800/30 transition-colors">
                       <td className="py-3.5 px-4">
                         <Link
-                          href={`/tenants/${tenant.id}`}
+                          href={`/tenants/${tenantId}`}
                           className="font-bold text-slate-100 hover:text-indigo-400 transition-colors block text-sm"
                         >
                           {tenant.name}

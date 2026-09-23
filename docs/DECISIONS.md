@@ -28,6 +28,8 @@
 - [Decision 017: FEFO Automated Batch Selection & Concurrency-Safe Stock Deduction](#decision-017-fefo-automated-batch-selection--concurrency-safe-stock-deduction)
 - [Decision 018: Multi-Tier Throttling, Zero-Leakage Exceptions & Disaster Recovery Tooling](#decision-018-multi-tier-throttling-zero-leakage-exceptions--disaster-recovery-tooling)
 - [Decision 019: Sovereign SaaS Platform Owner Control Plane & Strict Zero-PHI Boundary](#decision-019-sovereign-saas-platform-owner-control-plane--strict-zero-phi-boundary)
+- [Decision 020: Decoupling Appointments, Clinical Encounters, and Enterprise OPD Queue Engine](#decision-020-decoupling-appointments-clinical-encounters-and-enterprise-opd-queue-engine)
+- [Decision 021: Atomic Document-Level Concurrency Dequeue vs Distributed Locks](#decision-021-atomic-document-level-concurrency-dequeue-vs-distributed-locks)
 
 ---
 
@@ -194,6 +196,88 @@
   5. Prevent self-registration: Super Admin accounts must be initialized strictly via secure deployment seeds or break-glass CLI tooling.
 - **Rationale**: Strict dual-plane segregation provides hospital executives and compliance auditors definitive proof that SaaS platform operators have no backdoors into Protected Health Information, while simultaneously empowering the SaaS owner with full commercial and operational control over tenant health, billing plans, and system uptime.
 - **Consequences**: Super Admin operations are isolated from clinical codebases; cross-plane access attempts trigger high-severity audit alerts; `apps/super-admin` can be built and deployed independently without bundling any clinical or EMR components.
+
+---
+
+### Decision 020: Decoupling Appointments, Clinical Encounters, and Enterprise OPD Queue Engine
+- **Context**: In high-throughput hospital environments (10,000–20,000+ patient visits per day), treating outpatient workflow as simply a "list of appointments" fails completely. Many patients arrive as walk-ins or urgent referrals without pre-booked appointments, while booked appointments may suffer cancellations, delays, or emergency preemption. Furthermore, appointments represent calendar scheduling, while clinical encounters represent confidential medical documentation, and queues represent real-time physical waiting lines.
+- **Decision**:
+  1. Formally decouple the workflow into three distinct, specialized domain abstractions:
+     - **Appointment**: Future calendar reservation (`appointments` collection).
+     - **QueueEntry**: Real-time physical waiting line state (`queue_entries` collection) governed by an explicit state machine (`WAITING` -> `CALLED` -> `IN_CONSULTATION` -> `COMPLETED` / `SKIPPED`).
+     - **Encounter**: Confidential clinical documentation (`encounters` collection) capturing chief complaints, vitals, diagnoses, and orders.
+  2. Make `appointmentId` optional in `encounters` and `queue_entries` to natively support unscheduled walk-ins and emergency arrivals.
+  3. Scope queues strictly by `{ tenantId, hospitalId, department, doctorId, date, session }` rather than maintaining an unscalable, hospital-wide queue.
+- **Rationale**: Clean domain boundaries allow each subsystem to optimize for its specific access pattern. Calendar booking handles schedule conflicts; queue engines handle high-frequency atomic status transitions; clinical EMR handles medical records and immutable audit sealing.
+- **Consequences**: Frontends interact with the specialized `/api/v1/queue` endpoints for live waitboards while referencing canonical `/api/v1/emr/encounters` for medical history.
+
+---
+
+### Decision 021: Atomic Document-Level Concurrency Dequeue vs Distributed Locks
+- **Context**: When a clinician clicks "CALL NEXT PATIENT" in a busy outpatient department, multiple concurrent HTTP requests (e.g. rapid double-clicks, browser tab reloads, or multiple assisting nursing workstations) could race to claim the next patient, potentially assigning the same patient to two clinicians or advancing two tokens simultaneously.
+- **Decision**:
+  1. Implement concurrency-safe atomic dequeue via MongoDB document-level atomic operations using `findOneAndUpdate`:
+     ```typescript
+     const nextEntry = await this.queueEntryModel.findOneAndUpdate(
+       { tenantId, doctorId, date, status: QueueEntryStatus.WAITING },
+       { $set: { status: QueueEntryStatus.CALLED, calledAt: new Date() } },
+       { sort: { priorityWeight: -1, tokenNumber: 1 }, new: true }
+     );
+     ```
+  2. Rely on MongoDB Atlas atomic write serialization at document granularity with compound index `{ tenantId: 1, doctorId: 1, date: 1, status: 1, priorityWeight: -1, tokenNumber: 1 }`.
+  3. Avoid heavyweight Redis distributed locks (Redlock) for primary queue dequeue, while reserving Redis for pub/sub real-time event broadcasting.
+- **Rationale**: MongoDB's single-document atomic update natively serializes write requests on the matched document with zero network round-trip overhead of distributed lock acquisition, TTL lease renewals, or lock release failures if the Node process crashes mid-request.
+- **Consequences**: Zero duplicate patient claims under high concurrency; optimal database throughput; resilient against network partition failures.
+
+---
+
+### Decision 022: Segregation of Workforce Records (Employee) from Authentication Accounts (User)
+- **Context**: In enterprise hospital operations, thousands of healthcare personnel (orderlies, maintenance staff, rotating residents, visiting consultants, nursing interns) require institutional scheduling, attendance tracking, department/team attribution, and credential verification, but only a fraction require active login accounts to the software platform. Conflating human staff with user login records leads to account licensing waste, credential bloat, security vulnerabilities, and fragile HR onboarding workflows.
+- **Decision**:
+  1. Decouple personnel into two distinct models:
+     - `Employee`: Institutional HR workforce record (`employees` collection) with sequential `employeeId` (`EMP-YYYY-NNNN`), staff category (`DOCTOR`, `NURSE`, `ADMIN`, etc.), employment status (`ACTIVE`, `ON_LEAVE`, `TERMINATED`, `PROBATION`), assigned department and sub-team, contact details, and optional linked `userId`.
+     - `User`: Cryptographically secured authentication principal (`users` collection) with email, hashed credentials, roles, granular permissions, session tokens, and optional `employeeId` reference.
+  2. Support staff creation without mandatory user accounts, allowing HR admins to register the complete hospital workforce immediately.
+  3. Provide an explicit account linking operation (`POST /api/v1/workforce/employees/:id/link-user`) to associate a login account when digital workstation access is granted.
+- **Rationale**: Strict separation provides accurate organizational census without creating dormant user credentials. It aligns with enterprise HR practices and ensures that terminating an employee automatically disables their linked user account and unassigns shift rosters.
+- **Consequences**: Scheduling, attendance, and leave management reference `employeeId` rather than `userId`. Shift schedules and attendance ledgers function seamlessly for non-login staff.
+
+---
+
+### Decision 023: Asynchronous Bulk Inventory Migration Pipeline with Reversible Opening Balance Ledger
+- **Context**: Onboarding an existing hospital requires migrating 10,000 to 50,000+ medicine SKUs, batch numbers, expiry dates, purchase costs, and initial warehouse stock levels from disparate legacy systems (Excel, CSV, legacy HIS). Executing this synchronously via HTTP request bodies causes gateway timeouts (504), memory exhaustion, and partial failures that corrupt hospital inventory ledgers.
+- **Decision**:
+  1. Implement a 4-stage asynchronous bulk migration pipeline:
+     - **Stage 1 (UPLOAD)**: Ingest raw CSV, auto-detect encoding, validate file size, and store job record (`inventory_import_jobs` collection) with raw sample rows.
+     - **Stage 2 (MAPPING)**: Auto-match column headers using fuzzy aliases (`Generic Name`, `Salt`, `Batch No`, `Expiry`, etc.) with user confirmation or manual overrides.
+     - **Stage 3 (VALIDATION)**: Validate rows asynchronously against validation rules (date formats, numeric quantities, required fields), detecting duplicate batches and returning granular error reports.
+     - **Stage 4 (EXECUTION)**: One-click administrative execution processing rows in atomic chunks: upserting `Medicine` catalog master, creating `MedicineBatch` records, and writing immutable `StockMovement` ledger entries of type `OPENING_BALANCE`.
+  2. Every imported item links to the `importJobId` for complete traceability and audit compliance.
+- **Rationale**: Staged asynchronous migration ensures zero HTTP timeouts, provides clinicians and inventory managers visibility into validation errors before committing financial stock, and guarantees accounting auditability through opening balance ledger movements.
+- **Consequences**: Legacy inventory migrations of up to 50,000 records execute smoothly without manual data entry; inventory valuation and stock ledgers remain mathematically exact.
+
+---
+
+### Decision 024: Dynamic Workspace Configuration Engine & User Workspace Resolution Service
+- **Context**: Healthcare personnel often hold cross-functional responsibilities (e.g. a Senior Doctor who also manages a Clinical Department, or a Nurse who acts as Ward Incharge and Shift Coordinator). Hardcoding front-end workspace views to static role names creates rigid user experiences and blocks custom operational workflows.
+- **Decision**:
+  1. Introduce a catalog of standardized Workspace Templates (`HOSPITAL_ADMIN`, `DOCTOR`, `RECEPTIONIST`, `NURSE`, `PHARMACIST`, `LAB_TECHNICIAN`, `ACCOUNTANT`, `INVENTORY_MANAGER`, `DEPARTMENT_MANAGER`) defining default navigation links, action items, widgets, and default resource scopes.
+  2. Implement `WorkspacesService.resolveUserWorkspaces()` that computes a user's eligible workspaces based on their roles, staff type, and assigned departments/teams.
+  3. Expose `GET /api/v1/workspaces/my-workspaces` returning all permissible workspaces and the recommended default workspace for the authenticated session.
+- **Rationale**: Dynamic workspace resolution enables flexible, multi-role workstations while preserving least-privilege security boundaries. Users switch seamlessly between clinical and administrative contexts without logging out or altering JWT tokens.
+- **Consequences**: Frontends render tailored cockpits based on backend-resolved workspace configurations rather than client-side role heuristics.
+
+---
+
+### Decision 025: Dual-Key Scope Resolution & Granular Resource Scopes
+- **Context**: In multi-specialty hospitals, data visibility must be restricted not only by tenant isolation, but also within the hospital: doctors in Cardiology should not manage rosters in Orthopedics, and team leads should only view their assigned teams.
+- **Decision**:
+  1. Introduce explicit `ResourceScope` levels: `HOSPITAL`, `DEPARTMENT`, `TEAM`, `ASSIGNED_ONLY`.
+  2. Implement dual-key scoping: queries must check both the cryptographic `tenantId` (tenant isolation boundary) and the user's assigned departmental/team scope (`departmentId`, `teamId`, or `assignedId`).
+  3. Super Admins remain at platform scope (`tenantId: null`), while Hospital Admins operate at `HOSPITAL` scope. Department Heads and Clinicians default to `DEPARTMENT` or `ASSIGNED_ONLY` scopes.
+- **Rationale**: Dual-key scoping prevents horizontal privilege escalation within a facility while upholding absolute multi-tenant database isolation.
+- **Consequences**: Services query documents using compound filters matching `{ tenantId, departmentId }` when the user's scope is restricted.
+
 
 
 

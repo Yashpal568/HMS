@@ -233,3 +233,155 @@ apps/super-admin ──► Vercel
 - **Backend API:** Dockerized container deployed on Render with health checks on `/api/v1/health`.
 - **DNS & Security:** Cloudflare provides DNS management, SSL termination, DDoS mitigation, and WAF rules.
 - **Continuous Integration:** GitHub Actions runs automated lint, typecheck, unit tests, and production builds on every pull request.
+
+---
+
+## 7. Enterprise Patient Journey & Hospital Operational Workflow
+
+A large hospital (designed for 10,000–20,000+ daily visits) requires clear decoupling between scheduled appointments, clinical encounters, live queue entries, and financial billing statements.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   END-TO-END PATIENT LIFECYCLE                                         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  1. PATIENT REGISTRATION / MPI LOOKUP
+     ├── Deterministic Search (UHID, Phone)
+     └── Demographics, Emergency Contacts, Allergy Ledger
+        ↓
+  2. INTAKE ROUTING
+     ├── Advance Online/Portal Booking ──► Appointment (SCHEDULED) ──► Check-In
+     └── Walk-In / Emergency Arrival   ──► Direct Check-In
+        ↓
+  3. QUEUE INTAKE & TRIAGE
+     ├── Nurse Triage: Vitals, Acuity Level (NORMAL, URGENT, EMERGENCY)
+     ├── Queue Allocation: Doctor/Department Queue Session
+     └── Sequential Token Issuance (e.g. C-021) ──► QueueEntry (WAITING)
+        ↓
+  4. CLINICAL ENCOUNTER (Doctor Consultation Cockpit)
+     ├── Clinician Dequeue: Atomic CALL NEXT ──► QueueEntry (CALLED)
+     ├── Patient Enters Chamber ──► QueueEntry (IN_CONSULTATION)
+     ├── Encounter Initialization: Encounter (DRAFT / IN_PROGRESS)
+     ├── Clinical Charting: Chief complaints, ICD-10 diagnoses, clinical notes
+     └── Clinical Orders Pipeline:
+         ├── e-Prescription (Rx) ──► Pharmacy Queue (FEFO Batch Allocation)
+         ├── Laboratory Requisition ──► LIS Specimen Worklist (Accessioning)
+         └── Inpatient Admission Order (if required) ──► IPD Bed Matrix
+        ↓
+  5. CONSULTATION SEALING
+     ├── Clinician Signs & Finalizes Encounter ──► Encounter (FINALIZED, Immutable)
+     └── Queue Status Transition ──► QueueEntry (COMPLETED)
+        ↓
+  6. FINANCIAL SETTLEMENT & PHARMACY DISPENSING
+     ├── Pharmacy Counter: FEFO batch dispense & barcode verification
+     ├── Central Billing: Itemized Invoice (Consultation + Pharmacy + Lab)
+     └── Cashier Settlement: UPI / Cash / Card / Insurance TPA ──► Payment Receipt
+        ↓
+  7. ARCHIVAL & HISTORICAL MEDICAL RECORD
+     ├── Longitudinal EMR timeline aggregation
+     └── Nightly Materialized Rollup ──► Daily Census & Revenue Summaries
+```
+
+---
+
+## 8. Decoupled Appointment vs Encounter vs OPD Queue Workflow
+
+```text
+┌─────────────────────────┐     1:1 or Walk-In      ┌─────────────────────────┐
+│       APPOINTMENT       │ ──────────────────────► │        ENCOUNTER        │
+│ (Calendar & Scheduling) │                         │  (Clinical Examination) │
+└───────────┬─────────────┘                         └────────────┬────────────┘
+            │ Generates                                          │
+            ▼                                                    ▼
+┌─────────────────────────┐       Concurrency-Safe       ┌─────────────────────────┐
+│       QUEUE ENTRY       │ ───────────────────────────► │   CONSULTATION CHART    │
+│ (Live Operational Flow) │    Atomic findOneAndUpdate   │ (Prescriptions & Orders)│
+└─────────────────────────┘                              └─────────────────────────┘
+```
+
+1. **Appointment**: Represents a calendar reservation or future time slot. Does NOT hold clinical documentation or diagnostic findings.
+2. **QueueEntry**: Represents a physical patient present at the clinic awaiting clinical service. Governed by a strict state machine (`WAITING` -> `CALLED` -> `IN_CONSULTATION` -> `COMPLETED`).
+3. **Encounter**: Represents the official clinical interaction between patient and clinician. Supports both advance-scheduled visits and unscheduled walk-in emergencies.
+4. **Concurrency Guarantee**: Two simultaneous "CALL NEXT PATIENT" requests cannot claim the same patient. The backend executes atomic document-level updates (`findOneAndUpdate`) on `QueueEntry` matching `{ status: WAITING }` sorted by priority weight, eliminating race conditions.
+
+---
+
+## 9. Real-Time Event Architecture for Queues & Command Centers
+
+To eliminate client polling across 10,000–20,000 patients, all queue state transitions emit domain events:
+
+- `queue.entry_checked_in`: Token assigned; updates receptionist dashboard and waiting census.
+- `queue.entry_called`: Broadcasts to Doctor Cockpit, Reception Waiting Room Display, and Patient Mobile App.
+- `queue.consultation_started`: Updates departmental room occupancy status.
+- `queue.consultation_completed`: Triggers automated billing item aggregation and frees clinician chamber.
+- `queue.entry_skipped`: Re-queues or archives absent patient without stalling OPD throughput.
+
+---
+
+## 10. Four-Stage Enterprise Scalability Roadmap
+
+The platform architecture is designed to scale across four distinct growth tiers without requiring high-risk architectural rewrites:
+
+```text
+STAGE 1: MODULAR MONOLITH BASELINE (Current Phase)
+├── NestJS Modular Monolith API
+├── MongoDB Atlas Primary Cluster (M10/M20) with strict compound indexes
+├── Basic Redis Rate Limiting & Session Invalidation
+├── Server-side cursor and offset pagination (capped at 100)
+└── Target: 500 – 2,500 visits/day
+
+STAGE 2: READ-OPTIMIZATION & ASYNC WORKERS
+├── Pre-computed Materialized Read Models (daily_operational_census, daily_revenue_summaries)
+├── Redis Distributed Caching for static catalogs (medicines, tariffs, doctor schedules)
+├── BullMQ Workers for async workloads (bulk imports, PDF generation, SMS/WhatsApp notifications)
+└── Target: 2,500 – 7,500 visits/day
+
+STAGE 3: HORIZONTAL STATELESS SCALING & READ-REPLICAS
+├── Multiple stateless NestJS server instances behind Cloudflare Load Balancer
+├── MongoDB Atlas Replica Sets with Secondary Read Preference for heavy reports (secondaryPreferred)
+├── Redis Pub/Sub / WebSocket Cluster for real-time OPD token boards
+└── Target: 7,500 – 15,000 visits/day
+
+STAGE 4: ENTERPRISE DATA PARTITIONING & SHARDING
+├── Dedicated worker clusters for batch imports and heavy background analytics
+├── MongoDB Atlas Zone-Based Sharding (partitioned by tenantId or geographic region)
+├── Targeted service extraction ONLY where specific domain bottlenecks are proven by metrics
+└── Target: 15,000 – 25,000+ visits/day
+```
+
+---
+
+## 11. Production-Readiness Framework: Architectural Preparedness vs Validation
+
+> [!IMPORTANT]
+> **Definitive Architectural Statement**:
+> The HMS platform is currently **ARCHITECTURALLY PREPARED** to evolve towards enterprise scale (10,000–20,000+ patient visits/day) through bounded domain decoupling, compound index indexing, concurrency-safe atomic operations, and materialized read models.
+> 
+> However, the system is **NOT CLAIMED TO BE PRODUCTION-VALIDATED** at 20,000 visits/day until formal load testing (Locust/k6 synthetic test suites), network latency profiling, memory leak audits, and stress testing are executed against dedicated cloud staging infrastructure.
+
+---
+
+## 12. Enterprise Hospital Foundation Subsystems
+
+### 12.1. Workforce & Institutional HR Architecture (`apps/server/src/workforce/`)
+- **Personnel Decoupling**: Separates institutional `Employee` records from digital `User` credentials. Hospital staff (interns, nurses, orderlies) are registered immediately with sequential IDs (`EMP-YYYY-NNNN`) without credential bloat.
+- **Roster & Overnight Shift Engine**: Calculates `isOvernight` flag automatically when shifts cross midnight (`22:00 -> 06:00`), ensuring continuous operational coverage across hospital wards.
+- **Attendance & Punctuality Ledger**: Automatically flags check-ins exceeding 15 minutes after shift start as `LATE`, tracks early departures, and enforces auditable two-person correction approvals.
+- **Leave Synchronization**: Multi-day leave approvals automatically sync with the daily attendance ledger, marking dates in the approval range as `ON_LEAVE`.
+
+### 12.2. Organization & Facility Onboarding (`apps/server/src/organization/`)
+- **Clinical & Operational Hierarchy**: Models `Department` and `Team` hierarchies with automatic tenant-scoped seeding of 12 standard healthcare services upon hospital provisioning.
+- **8-Step Onboarding State Machine**: Tracks facility configuration from initial hospital profile setup through workforce registration, bed mapping, tariff imports, and pharmacy onboarding (`hospital_onboardings` collection).
+
+### 12.3. Dynamic Workspace Resolution Engine (`apps/server/src/workspaces/`)
+- **Standard Workspace Catalog**: 9 standardized workspace templates (`HOSPITAL_ADMIN`, `DOCTOR`, `RECEPTIONIST`, `NURSE`, `PHARMACIST`, `LAB_TECHNICIAN`, `ACCOUNTANT`, `INVENTORY_MANAGER`, `DEPARTMENT_MANAGER`).
+- **Dynamic Resolution (`WorkspacesService.resolveUserWorkspaces`)**: Evaluates user roles, staff types, and department assignments to serve customized navigation trees, actions, and widgets without client-side role heuristics.
+
+### 12.4. Asynchronous Bulk Inventory Migration Pipeline (`apps/server/src/inventory-migration/`)
+- **4-Stage Ingestion Pipeline**: Ingests up to 50,000 legacy medicine/inventory rows via CSV with RFC 4180 parsing, intelligent column alias matching, pre-execution error validation, and chunked database execution.
+- **Ledger Invariant Guarantee**: Creates `Medicine` master records, `MedicineBatch` tracking, and writes immutable `StockMovement` records of type `OPENING_BALANCE` ensuring accounting reconciliation.
+
+### 12.5. Clinical Tasks & Enterprise Staff Notifications (`apps/server/src/communication/`)
+- **Context-Linked Healthcare Tasks**: Facilitates clinical task creation linked to specific entities (`PATIENT`, `ENCOUNTER`, `WARD`, `INVENTORY`) with priority tagging and threaded comments.
+- **In-App Real-Time Notifications**: Automatically dispatches targeted notifications upon task assignment, lab critical panic alerts, or near-expiry batch warnings with direct action deep-links.
+
+

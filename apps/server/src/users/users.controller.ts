@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Param,
   Body,
   Query,
   UseGuards,
@@ -87,6 +89,57 @@ export class UsersController {
         page: Number(query.page) || 1,
         limit: Number(query.limit) || 50,
       },
+    };
+  }
+
+  @Patch(':id/status')
+  @Roles('HOSPITAL_ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions('users.update')
+  async updateStatus(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() body: { status: any },
+  ) {
+    const tenantId = user.tenantId || user.hospitalId;
+    if (!tenantId) {
+      throw new BadRequestException('Session lacks hospital tenant context.');
+    }
+
+    const updated = await this.usersService.updateUserStatus(tenantId, id, body.status);
+    return {
+      success: true,
+      data: {
+        id: updated._id.toString(),
+        status: updated.status,
+      },
+      message: `User status updated to ${body.status}.`,
+    };
+  }
+
+  @Patch(':id/access')
+  @Roles('HOSPITAL_ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions('users.update')
+  async updateAccess(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() body: { role?: string; permissions?: string[]; department?: string; employeeId?: string },
+  ) {
+    const tenantId = user.tenantId || user.hospitalId;
+    if (!tenantId) {
+      throw new BadRequestException('Session lacks hospital tenant context.');
+    }
+
+    const updated = await this.usersService.updateUserAccess(tenantId, id, body);
+    return {
+      success: true,
+      data: {
+        id: updated._id.toString(),
+        role: updated.role,
+        permissions: updated.permissions,
+        department: updated.department,
+        employeeId: updated.employeeId?.toString(),
+      },
+      message: 'User access configuration updated successfully.',
     };
   }
 }

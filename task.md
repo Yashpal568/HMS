@@ -4,7 +4,7 @@
 **Classification**: Operational Tracker  
 
 ## CURRENT MILESTONE
-**AWAITING INSTRUCTION** — Milestone 13 Complete. Next: **Milestone 14 — Patient Discovery Platform (patient-app)** (`docs/milestones/M14_PATIENT_DISCOVERY_PLATFORM.md`)
+**AWAITING INSTRUCTION** — Phase 1 Complete Enterprise Hospital Foundation Complete. Next: **Milestone 14 — Patient Discovery Platform (patient-app)** (`docs/milestones/M14_PATIENT_DISCOVERY_PLATFORM.md`)
 
 ---
 
@@ -242,11 +242,98 @@
   - `Store & Inventory Management`: Critical low stock items with deficit bars, reorder PO actions, expiring stock, and real-time movement stream.
 - **Admin Workspace Preview Switcher**:
   - Added horizontal segmented workspace selector for `HOSPITAL_ADMIN` to test and preview all 8 healthcare workspaces seamlessly.
-- **Quality Gates & Verification**:
+### Enterprise HMS Architecture: Domain Model, Scale & Operational Foundations (COMPLETED)
+- **Domain Boundaries Decoupling**:
+  - Decoupled Appointment vs Encounter vs OPD Queue workflows.
+  - Upgraded `Encounter`: optional `appointmentId` (for walk-in and emergency visits), `encounterType` (`OPD`, `EMERGENCY`, `IPD`, `TELECONSULT`), `department`, and `startedAt`/`endedAt` timestamps.
+- **Enterprise OPD Queue Engine (`apps/server/src/queue/`)**:
+  - Implemented `Queue` and `QueueEntry` schemas with priority weights (`NORMAL`: 0, `URGENT`: 10, `EMERGENCY`: 50).
+  - Explicit State Machine: `WAITING` -> `CALLED` -> `IN_CONSULTATION` -> `COMPLETED` / `SKIPPED`.
+  - Concurrency-safe atomic dequeue (`callNextPatient`) via MongoDB atomic `findOneAndUpdate` with sort (`{ priorityWeight: -1, tokenNumber: 1 }`).
+  - Zero duplicate patient claim race conditions guaranteed under concurrent clinician clicks.
+- **High-Throughput Database Indexes & Scalability**:
+  - Documented compound index matrix in `docs/DATABASE.md` ensuring 0 unindexed queries (`COLLSCAN`).
+  - Designed Analytical Read Models: `daily_operational_census` and `daily_revenue_summaries` for pre-aggregated dashboard telemetry.
+- **Redis Invariants & Degradation Safety**:
+  - Documented exact Redis roles (rate limiting, temporary state, BullMQ queues, Pub/Sub events).
+  - Enforced zero data loss invariant: Redis is strictly transient; core clinical records and concurrency safety operate directly on MongoDB Atlas.
+- **Verification Gates**:
+  - Server unit tests: 133/133 passing across 18 test files (including new `queue.service.spec.ts`).
+  - Server E2E tests: 32/32 passing across 5 test suites.
   - Monorepo typecheck: 0 errors across all 8 workspace projects.
   - Monorepo lint: 0 warnings, 0 errors.
-  - Server unit tests: 126/126 passing across 17 test suites.
-  - Live DevTools visual inspection: Pixel-level match verified.
+- **Live Browser Interactive Verification**:
+  - **Super Admin SaaS Owner Panel (`http://localhost:3002`)**:
+    - Login flow with demo autofill, TOTP validation fix (`totpCode` added to `LoginDto`), successful JWT issuance and session initialization.
+    - `/dashboard`: ARR/MRR tickers, Active Tenants counter, MongoDB Atlas telemetry, active broadcasts ticker, recent platform audit stream.
+    - `/tenants`: Real-time tenant search, status filters (`ACTIVE`, `TRIAL`, `SUSPENDED`), tier filters, quota progress bars (Beds, Doctors, Storage), Quick action dropdowns.
+    - `/tenants/new`: Multi-step hospital provisioning wizard (Hospital Profile, Subdomain, Subscription Tier, Admin Account credentials).
+    - `/plans`: Subscription Plans catalog, "Create Custom Plan" CTA, Starter / Professional / Enterprise plan cards, Package Entitlements, Included Modules badges, Edit Plan modal with interactive inputs.
+    - `/subscriptions`: Billing cycle ledger, revenue MRR metrics, gateway status badges.
+    - `/telemetry`: Live MongoDB Atlas Telemetry Cockpit, ping latency gauge (38ms), active connection counter, memory allocation tracker, 10s auto-refresh toggle.
+    - `/audit`: Platform Audit Trail, Search & Actor filters, Event type filters, IP address tracking, timestamped event log.
+    - `/broadcasts`: System Broadcasts Center, New Broadcast CTA with modal dialog, audience targeting, severity indicators, dismiss action.
+  - **HMS Sub-User Dashboards (`http://localhost:3000`)**:
+    - **Hospital Admin**: 6 operational KPIs, Today's OPD Flow with live filter tabs, Live OPD Queue token board with "Currently Serving" callout card (`A-021` Rahul Kumar), Bed Occupancy circular donut gauge (80%), Pending Tasks checklist, Recent Activity stream.
+    - **Doctor Clinical Workspace**: Full EMR Board CTA, 4 clinical KPI cards, Current Patient callout (`A-021` Rahul Kumar, Chest Pain, MRN PAT-2026-000104) with "Start Consultation" CTA, Next Patient (`A-022` Priya Mehta), Today's Schedule Live Queue table with Open EMR links, Pending Clinical Items (Lab results, Follow-ups, SOAP documentation).
+    - **OPD Reception & Queue Hub**: Quick action buttons (`+ Register Patient`, `Book Appointment`, `Check In`, `Search Patient`), Live OPD Token board (`A-021` through `A-025`), Today's registration summary, Recent registrations ledger.
+    - **Inpatient Ward Station**: Ward Management CTA, 4 ward KPIs, Ward A Assigned Patients table (Bed `A-101`, Patient condition, Vitals schedule, Chart CTA), Recent urgent alerts (High BP alert, Doctor review requested), Nurse Quick Actions (`Record Vitals`, `Update Nursing Note`, `View Patient Chart`).
+    - **Pharmacy & Dispensary Center**: `+ Dispense e-Rx` CTA, 4 pharmacy metrics, Pending Prescriptions queue table with direct `Dispense` action, Stock Warnings (Paracetamol, Amoxicillin), Expiring pharmaceuticals tracker with countdowns.
+    - **Laboratory Diagnostic Station**: `+ New Requisition` CTA, 4 lab counters, Recent Lab Orders worksheet, Lab Quick Actions (`Enter Test Result`, `Upload Pathology Report`, `Mark Specimen Collected`, `Print Barcode Labels`), Equipment Telemetry status for automated analyzers (Sysmex, Cobas).
+    - **Billing & Cashier Command**: `+ Create Invoice` CTA, 4 billing KPIs, Amount Collected in `₹ INR`, Recent Invoices register (`INV-2026-00001`, `INV-2026-00002`), Payment Methods breakdown (Cash, UPI QR, Debit/Credit Card, TPA/Insurance), Pending settlements ledger with `Receive ->` action.
+    - **Store & Inventory Management**: `+ Add Stock / GRN` CTA, 4 inventory KPIs, Critical Low Stock table with deficit levels and `Reorder PO` CTAs, Store Quick Actions (`Add Stock (GRN Receipt)`, `Create Purchase Order`, `Physical Audit Adjustment`, `Manage Approved Suppliers`), Recent stock movements audit trail.
+
+### Phase 1: Complete Enterprise Hospital Foundation (COMPLETED)
+- **Workforce & Employee Management (`apps/server/src/workforce/`)**:
+  - Decoupled `Employee` institutional records from `User` authentication credentials.
+  - Auto-generated sequential employee numbering (`EMP-YYYY-NNNN`).
+  - Staff categories (`DOCTOR`, `NURSE`, `PHARMACIST`, `LAB_TECHNICIAN`, `RECEPTIONIST`, `ACCOUNTANT`, `INVENTORY_MANAGER`, `ADMIN_STAFF`, etc.) and lifecycle employment states (`ACTIVE`, `PROBATION`, `ON_LEAVE`, `TERMINATED`).
+  - Optional account linkage (`/api/v1/workforce/employees/:id/link-user`) enabling digital login when workstation access is provisioned.
+- **Shift Scheduling & Overnight Rollover Engine**:
+  - Flexible shift configuration (`MORNING`, `EVENING`, `NIGHT`, `ROTATING`, `ON_CALL`).
+  - Automated `isOvernight` calculation when shift spans midnight (`startHour > endHour`).
+  - Weekly recurring days assignment (`[0, 1, 2, 3, 4, 5, 6]`).
+- **Attendance & Punctuality Engine**:
+  - Real-time check-in/out with automated late detection (>15 minutes past scheduled start).
+  - Punctuality metrics tracking `lateMinutes` and `earlyDepartureMinutes`.
+  - Auditable attendance correction requests with two-person review workflow (`PENDING`, `APPROVED`, `REJECTED`).
+- **Leave Management & Automated Attendance Sync**:
+  - Multi-day leave requests across statutory categories (`CASUAL`, `SICK`, `EARNED`, `MATERNITY`, `PATERNITY`, `UNPAID`).
+  - On administrative approval, dates within the leave period automatically synchronize as `ON_LEAVE` on the daily attendance ledger.
+- **Organization Hierarchy & Onboarding State Machine (`apps/server/src/organization/`)**:
+  - Departments (`departments`) and Sub-teams (`teams`) with leader attribution.
+  - Automatic seeding of 12 standard clinical and operational departments (`OPD`, `EMERGENCY`, `CARDIO`, `ORTHO`, `PED`, `GYN`, `ICU`, `GENERAL_SURGERY`, `LAB`, `PHARMACY`, `RADIOLOGY`, `BILLING`) upon first access.
+  - 8-step `HospitalOnboarding` state machine tracking institutional setup progress.
+- **Dynamic Workspace Resolution Engine (`apps/server/src/workspaces/`)**:
+  - Standard catalog of 9 workspace templates (`HOSPITAL_ADMIN`, `DOCTOR`, `RECEPTIONIST`, `NURSE`, `PHARMACIST`, `LAB_TECHNICIAN`, `ACCOUNTANT`, `INVENTORY_MANAGER`, `DEPARTMENT_MANAGER`).
+  - Contextual resolution service (`resolveUserWorkspaces`) returning tailored navigation, actions, and resource scopes based on user roles and staff profile.
+- **Asynchronous Bulk Inventory Migration Pipeline (`apps/server/src/inventory-migration/`)**:
+  - 4-stage pipeline for migrating 10,000–50,000 legacy records:
+    1. **Upload**: RFC 4180 compliant CSV ingestion and job initialization (`inventory_import_jobs`).
+    2. **Mapping**: Intelligent column header alias matching (`brandName`, `genericName`, `batchNumber`, `expiryDate`, `quantity`, `unitPrice`).
+    3. **Validation**: Batch validation with granular per-row error reporting (`validationErrors`).
+    4. **Execution**: One-click chunked execution creating `Medicine` records, `MedicineBatch` tracking, and immutable `StockMovementType.OPENING_BALANCE` ledger entries.
+- **Clinical Tasks & Enterprise Notifications (`apps/server/src/communication/`)**:
+  - Multi-context task engine linking tasks directly to `PATIENT`, `ENCOUNTER`, `WARD`, or `INVENTORY`.
+  - Threaded task comments and priority tagging (`LOW`, `NORMAL`, `HIGH`, `URGENT`).
+  - Real-time internal staff notifications (`TASK_ASSIGNED`, `LAB_CRITICAL`, `INVENTORY_ALERT`, etc.) with unread counters.
+- **Hospital Administrative Workstation UI (`apps/hms-client`)**:
+  - `/employees`: Comprehensive Employee Directory with multi-section provisioning modal (Personal, Employment, Login Account & Workspaces), department/status filtering, and employee profile inspector.
+  - `/users`: User Accounts & Access Control Hub with "+ Invite Staff User" modal generating sovereign temporary credentials with one-click copy, "Edit Access" modal, and account active/inactive state toggling.
+  - `/roles`: Roles Management Hub with System vs Custom badges, privilege counts, "+ Create Custom Role" modal with domain-grouped permissions picker, and interactive privilege modification.
+  - `/permissions`: Permissions Explorer indexing all platform security privileges grouped by domain (`USERS`, `EMR`, `BILLING`, `WORKFORCE`, etc.) with search, domain filtering, and tenant-protection telemetry.
+  - `/workspaces`: Workspaces Catalog displaying all 9 pre-configured operational workspaces (`HOSPITAL_ADMIN`, `DOCTOR`, `RECEPTIONIST`, `NURSE`, `PHARMACIST`, `LAB_TECHNICIAN`, `ACCOUNTANT`, `INVENTORY_MANAGER`, `DEPARTMENT_MANAGER`) with inspection drawer and one-click workspace activation.
+  - `/workspace-assignments`: Workspace Authorization Matrix displaying staff members, assigned operational scopes (`HOSPITAL_WIDE`, `DEPARTMENT_ONLY`, etc.), authorized workspaces, and "+ Modify Workspaces" assignment dialog.
+  - `Dynamic Workspace Engine`: Real-time `WorkspaceContext` and `WorkspaceSelector` in the top header, dynamically reconfiguring the primary navigation sidebar based on the user's active workstation.
+  - `/staff`: Transformed into a 4-tab Workforce Command Hub (Staff Directory with filters/modal, Shift Rosters with overnight tags, Daily Attendance with live check-in and punctuality stats, and Leave Management with approval actions).
+  - `/departments`: Transformed into an Organization Command Center with live Department cards, Sub-teams grid, Create Department/Team modals, and 8-step Onboarding progress bar.
+  - `/inventory/import`: Comprehensive 4-stage Bulk Migration Center with drag-and-drop CSV upload, column auto-mapping, validation error summary, and one-click execution button.
+  - `/inventory`: Quick action banner directly linking to Bulk Catalog Import.
+- **Verification Gates & Monorepo Validation**:
+  - 149 server unit tests passed across 23 test suites (`vitest run`).
+  - Monorepo typecheck passed with 0 errors across 8 workspace packages (`pnpm typecheck`).
+  - Monorepo linter passed with 0 errors and 0 warnings (`pnpm lint`).
+  - Monorepo production build passed with 0 errors across all 4 applications and packages (`pnpm build`).
 
 ---
 

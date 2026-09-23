@@ -227,11 +227,23 @@ The database schema models 27 distinct entities grouped by domain and tenancy ti
 
 #### 13. `queues`
 - **Scope**: Tenant-Owned
-- **Description**: Real-time daily OPD consultation queue state per doctor/session.
-- **Fields**: `_id`, `tenantId`, `hospitalId`, `doctorId` (ref `doctors`), `date` (`YYYY-MM-DD`), `session` (`MORNING`, `EVENING`), `currentServingToken` (String), `currentServingAppointmentId` (ref `appointments`), `totalTokensIssued` (Number), `totalCompleted` (Number), `totalSkipped` (Number), `status` (`WAITING`, `ACTIVE`, `PAUSED`, `CLOSED`), `createdAt`, `updatedAt`.
+- **Description**: Real-time daily OPD consultation queue session per doctor/department.
+- **Fields**: `_id`, `tenantId`, `hospitalId`?, `department`, `doctorId` (ref `users`), `date` (`YYYY-MM-DD`), `session` (`MORNING`, `AFTERNOON`, `EVENING`, `NIGHT`), `status` (`ACTIVE`, `PAUSED`, `CLOSED`), `currentServingToken` (Number), `currentServingEntryId` (ref `queue_entries`), `totalTokensIssued` (Number), `totalCompleted` (Number), `totalSkipped` (Number), `createdAt`, `updatedAt`.
 - **Indexes**:
   - `{ tenantId: 1, doctorId: 1, date: 1, session: 1 }` (unique)
+  - `{ tenantId: 1, department: 1, date: 1, status: 1 }`
   - `{ tenantId: 1, date: 1, status: 1 }`
+
+#### 14. `queue_entries`
+- **Scope**: Tenant-Owned
+- **Description**: Operational queue entry representing a patient waiting for or undergoing consultation. Decoupled from static appointments to handle walk-ins and dynamic triage reordering.
+- **Fields**: `_id`, `tenantId`, `queueId` (ref `queues`), `patientId` (ref `patients`), `appointmentId`? (ref `appointments`), `encounterId`? (ref `encounters`), `doctorId` (ref `users`), `department`, `date` (`YYYY-MM-DD`), `tokenNumber` (Number), `formattedToken` (String, e.g. `C-021`), `priority` (`NORMAL`, `URGENT`, `EMERGENCY`), `priorityWeight` (Number: 0, 10, 50), `status` (`WAITING`, `CALLED`, `IN_CONSULTATION`, `COMPLETED`, `SKIPPED`, `CANCELLED`), `chiefComplaint`?, `triageNotes`?, `checkedInAt`, `calledAt`?, `consultationStartedAt`?, `completedAt`?, `skippedAt`?, `cancelledAt`?, `cancelledReason`?, `estimatedWaitMinutes`?, `createdAt`, `updatedAt`.
+- **Indexes**:
+  - `{ tenantId: 1, doctorId: 1, date: 1, status: 1, priorityWeight: -1, tokenNumber: 1 }` (Atomic Concurrency Dequeue Index)
+  - `{ tenantId: 1, queueId: 1, status: 1, tokenNumber: 1 }`
+  - `{ tenantId: 1, department: 1, date: 1, status: 1 }`
+  - `{ tenantId: 1, patientId: 1, date: 1 }`
+  - `{ tenantId: 1, appointmentId: 1 }` (unique, sparse)
 
 ---
 
@@ -440,3 +452,271 @@ The pharmaceutical supply chain is structured as a strict single-directional dep
      session.endSession();
    }
    ```
+
+---
+
+## 6. High-Frequency Database Access Patterns & Enterprise Index Strategy
+
+To support enterprise hospital workloads (scaling towards 10,000–20,000+ patient visits per day), all queries against high-volume operational collections must execute against compound indexes with zero in-memory collations or full collection scans (`COLLSCAN`).
+
+### 6.1. High-Frequency Query Index Matrix
+
+| Access Pattern | Target Collection | Compound Index Specification | Index Name / Type | Purpose |
+|---|---|---|---|---|
+| **Clinician Next Patient Dequeue** | `queue_entries` | `{ tenantId: 1, doctorId: 1, date: 1, status: 1, priorityWeight: -1, tokenNumber: 1 }` | `idx_queue_call_next` | Concurrency-safe atomic `$set` under `findOneAndUpdate` |
+| **Active Doctor Queue Board** | `queue_entries` | `{ tenantId: 1, doctorId: 1, date: 1, status: 1 }` | `idx_queue_doc_status` | Filtered queue views with pagination |
+| **Department Live Queue Telemetry** | `queues` | `{ tenantId: 1, department: 1, date: 1, status: 1 }` | `idx_queue_dept_status` | Aggregated OPD load per department |
+| **Patient MPI Lookup (Exact UHID)** | `patients` | `{ tenantId: 1, uhid: 1 }` | `idx_patients_uhid` (unique) | O(1) patient chart retrieval |
+| **Patient Phone Search** | `patients` | `{ tenantId: 1, 'contacts.phone': 1 }` | `idx_patients_phone` | Reception intake and caller ID lookup |
+| **Patient Name Prefix Search** | `patients` | `{ tenantId: 1, lastName: 1, firstName: 1 }` | `idx_patients_name` | Autocomplete directory search |
+| **Expiring Pharmaceutical Batches** | `medicine_batches` | `{ tenantId: 1, expiryDate: 1, currentStockQuantity: 1 }` | `idx_batches_fefo` | FEFO automated dispensing & expiry alerts |
+| **Pending Laboratory Worklist** | `lab_orders` | `{ tenantId: 1, orderStatus: 1, createdAt: -1 }` | `idx_lab_orders_worklist` | Specimen accessioning and test scheduling |
+| **Outstanding Inpatient/OPD Invoices** | `invoices` | `{ tenantId: 1, status: 1, dueDate: 1 }` | `idx_invoices_due` | Cashier settlement and aging receivables |
+| **Stock Movement Ledger Audit** | `stock_movements` | `{ tenantId: 1, itemId: 1, createdAt: -1 }` | `idx_movements_item` | Full provenance audit trail of supply chain |
+
+### 6.2. Query Safety & Pagination Invariant
+1. **No Unbounded Queries**: Any endpoint fetching collections without limit parameters is rejected. Maximum limit is capped at 100 records per page.
+2. **Lean Projections**: Operational queries projecting lists omit large text fields (`clinicalRemarks`, `historyOfPresentIllness`, `pdfDocumentId`) using `.select()`.
+3. **Cursor-Based Pagination**: For high-volume streaming endpoints (e.g. audit logs, stock ledger), keyset/cursor pagination based on `{ _id, createdAt }` is preferred over deep `.skip()` offsets.
+
+---
+
+## 7. Enterprise Analytical Read Models (Materialized Rollup Schemas)
+
+At 10,000–20,000+ daily visits, dynamic runtime aggregation (`$group`, `$facet`) over raw transactional collections (`invoices`, `appointments`, `encounters`) on executive dashboard requests causes catastrophic Atlas CPU spikes. The architecture decouples operational transaction queries from analytical queries using **Materialized Read Models**.
+
+### 7.1. `daily_operational_census`
+- **Scope**: Tenant-Owned
+- **Description**: Nightly/hourly pre-aggregated operational snapshot for hospital executive and department dashboards.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `date`: String (`YYYY-MM-DD`)
+  - `department`: String
+  - `totalRegistrations`: Number
+  - `totalOpdVisits`: Number
+  - `totalEmergencyVisits`: Number
+  - `totalAdmissions`: Number
+  - `totalDischarges`: Number
+  - `averageWaitTimeMinutes`: Number
+  - `averageConsultationTimeMinutes`: Number
+  - `bedOccupancyPercent`: Number
+  - `labOrdersCompleted`: Number
+  - `prescriptionsDispensed`: Number
+  - `createdAt`: Date
+- **Indexes**: `{ tenantId: 1, date: -1, department: 1 }`
+
+### 7.2. `daily_revenue_summaries`
+- **Scope**: Tenant-Owned
+- **Description**: Pre-aggregated daily financial ledger rollup consumed by finance executives and hospital administrators.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `date`: String (`YYYY-MM-DD`)
+  - `totalBilledAmount`: Decimal128
+  - `totalCollectedAmount`: Decimal128
+  - `totalOutstandingAmount`: Decimal128
+  - `totalDiscountsAmount`: Decimal128
+  - `totalRefundsAmount`: Decimal128
+  - `departmentRevenue`: `[{ department: String, billed: Decimal128, collected: Decimal128 }]`
+  - `serviceCategoryRevenue`: `{ opd: Decimal128, ipd: Decimal128, pharmacy: Decimal128, laboratory: Decimal128, radiology: Decimal128 }`
+  - `paymentMethodBreakdown`: `{ cash: Decimal128, upi: Decimal128, card: Decimal128, insurance: Decimal128 }`
+  - `createdAt`: Date
+- **Indexes**: `{ tenantId: 1, date: -1 }`
+
+---
+
+## 8. Enterprise Workforce, Organization & Migration Schemas
+
+### 8.1. `departments`
+- **Scope**: Tenant-Owned
+- **Description**: Clinical and administrative departments within the hospital facility with automatic seeding of 12 standard healthcare services.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `name`: String (e.g. `Cardiology`, `General OPD`, `Emergency Medicine`)
+  - `code`: String (e.g. `CARDIO`, `OPD`, `EMERGENCY`)
+  - `type`: String enum (`CLINICAL`, `DIAGNOSTIC`, `PHARMACY`, `ADMINISTRATIVE`, `SUPPORT`)
+  - `headOfDepartmentId`: ObjectId (ref `employees`, optional)
+  - `isActive`: Boolean (default `true`)
+  - `tags`: String array
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, code: 1 }` (unique), `{ tenantId: 1, isActive: 1 }`
+
+### 8.2. `teams`
+- **Scope**: Tenant-Owned
+- **Description**: Sub-departmental operational units and specialty clinical teams.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `departmentId`: ObjectId (ref `departments`)
+  - `name`: String (e.g. `Echocardiography Unit`, `Pathology Core Team`)
+  - `code`: String
+  - `leaderId`: ObjectId (ref `employees`, optional)
+  - `isActive`: Boolean (default `true`)
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, departmentId: 1 }`, `{ tenantId: 1, code: 1 }`
+
+### 8.3. `hospital_onboardings`
+- **Scope**: Tenant-Owned
+- **Description**: 8-step hospital facility setup and onboarding state machine tracking initialization progress.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`, unique)
+  - `currentStep`: String enum (`HOSPITAL_PROFILE`, `DEPARTMENTS_CONFIG`, `WORKFORCE_IMPORT`, `BEDS_WARS_SETUP`, `TARIFF_IMPORT`, `PHARMACY_INVENTORY_IMPORT`, `LAB_TESTS_CONFIG`, `FINAL_REVIEW`)
+  - `completedSteps`: String array of `OnboardingStep`
+  - `status`: String enum (`NOT_STARTED`, `IN_PROGRESS`, `COMPLETED`)
+  - `completedAt`: Date (optional)
+  - `metadata`: Mixed JSON object
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1 }` (unique)
+
+### 8.4. `employees`
+- **Scope**: Tenant-Owned
+- **Description**: Master institutional workforce registry for all hospital personnel, distinct from user credentials.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `employeeId`: String (format `EMP-YYYY-NNNN`, unique per tenant)
+  - `firstName`, `lastName`: String
+  - `email`: String (optional)
+  - `phone`: String (optional)
+  - `staffType`: String enum (`DOCTOR`, `NURSE`, `PHARMACIST`, `LAB_TECHNICIAN`, `RECEPTIONIST`, `ACCOUNTANT`, `INVENTORY_MANAGER`, `ADMIN_STAFF`, `MAINTENANCE`, `OTHER`)
+  - `employmentStatus`: String enum (`ACTIVE`, `PROBATION`, `ON_LEAVE`, `SUSPENDED`, `TERMINATED`)
+  - `departmentId`: ObjectId (ref `departments`, optional)
+  - `teamId`: ObjectId (ref `teams`, optional)
+  - `userId`: ObjectId (ref `users`, optional, linked authentication account)
+  - `designation`: String
+  - `specialization`: String (optional)
+  - `licenseNumber`: String (optional)
+  - `joiningDate`: Date
+  - `emergencyContact`: Object `{ name: String, relationship: String, phone: String }`
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, employeeId: 1 }` (unique), `{ tenantId: 1, staffType: 1 }`, `{ tenantId: 1, departmentId: 1 }`, `{ tenantId: 1, userId: 1 }`
+
+### 8.5. `workforce_schedules`
+- **Scope**: Tenant-Owned
+- **Description**: Institutional staff shift assignment rosters supporting overnight shifts spanning midnight.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `employeeId`: ObjectId (ref `employees`)
+  - `shiftType`: String enum (`MORNING`, `EVENING`, `NIGHT`, `ROTATING`, `ON_CALL`)
+  - `startTime`: String (`HH:mm`, e.g. `08:00`, `22:00`)
+  - `endTime`: String (`HH:mm`, e.g. `16:00`, `06:00`)
+  - `isOvernight`: Boolean (auto-calculated `startHour > endHour`)
+  - `daysOfWeek`: Number array (`[0, 1, 2, 3, 4, 5, 6]`)
+  - `effectiveFrom`: Date
+  - `effectiveTo`: Date (optional)
+  - `isActive`: Boolean (default `true`)
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, employeeId: 1, isActive: 1 }`, `{ tenantId: 1, effectiveFrom: 1 }`
+
+### 8.6. `attendance_records`
+- **Scope**: Tenant-Owned
+- **Description**: Daily attendance ledger tracking punctuality, late arrivals, early departures, and correction requests.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `employeeId`: ObjectId (ref `employees`)
+  - `date`: String (`YYYY-MM-DD`)
+  - `checkInTime`: Date (optional)
+  - `checkOutTime`: Date (optional)
+  - `status`: String enum (`PRESENT`, `LATE`, `HALF_DAY`, `ABSENT`, `ON_LEAVE`, `HOLIDAY`)
+  - `lateMinutes`: Number (default `0`)
+  - `earlyDepartureMinutes`: Number (default `0`)
+  - `method`: String enum (`MANUAL`, `BIOMETRIC`, `WEB_PORTAL`, `SYSTEM_AUTO`)
+  - `correction`: Subdocument `{ requestedCheckIn: Date, requestedCheckOut: Date, reason: String, status: String enum ('NONE', 'PENDING', 'APPROVED', 'REJECTED'), reviewedBy: ObjectId, reviewedAt: Date }`
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, employeeId: 1, date: 1 }` (unique), `{ tenantId: 1, date: 1, status: 1 }`
+
+### 8.7. `leave_requests`
+- **Scope**: Tenant-Owned
+- **Description**: Workforce leave applications with multi-day calculation, approval workflows, and automated daily attendance synchronization.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `employeeId`: ObjectId (ref `employees`)
+  - `leaveType`: String enum (`CASUAL`, `SICK`, `EARNED`, `MATERNITY`, `PATERNITY`, `UNPAID`, `COMPENSATORY`)
+  - `startDate`, `endDate`: String (`YYYY-MM-DD`)
+  - `daysCount`: Number
+  - `reason`: String
+  - `status`: String enum (`PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`)
+  - `reviewedBy`: ObjectId (ref `users`, optional)
+  - `reviewRemarks`: String (optional)
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, employeeId: 1, status: 1 }`, `{ tenantId: 1, startDate: 1, endDate: 1 }`
+
+### 8.8. `inventory_locations`
+- **Scope**: Tenant-Owned
+- **Description**: Warehouse bins, central stores, and departmental drug dispensaries for multi-location inventory tracking.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `name`: String (e.g. `Main Pharmacy Store`, `ICU Drug Cabinet`)
+  - `code`: String (e.g. `STORE-MAIN`, `ICU-CAB-1`)
+  - `type`: String enum (`CENTRAL_STORE`, `PHARMACY_DISPENSARY`, `WARD_STOCK`, `SUB_STORE`, `QUARANTINE`)
+  - `departmentId`: ObjectId (ref `departments`, optional)
+  - `isActive`: Boolean (default `true`)
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, code: 1 }` (unique), `{ tenantId: 1, isActive: 1 }`
+
+### 8.9. `inventory_import_jobs`
+- **Scope**: Tenant-Owned
+- **Description**: Asynchronous batch import job tracking up to 50,000 legacy medicine/inventory records through the 4-stage pipeline.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `fileName`: String
+  - `fileSizeBytes`: Number
+  - `stage`: String enum (`UPLOADED`, `MAPPED`, `VALIDATING`, `READY_FOR_APPROVAL`, `IMPORTING`, `COMPLETED`, `FAILED`)
+  - `totalRowsCount`: Number
+  - `validRowsCount`: Number
+  - `errorRowsCount`: Number
+  - `importedRowsCount`: Number
+  - `columnMapping`: Mixed JSON object mapping target fields (`brandName`, `genericName`, `batchNumber`, `expiryDate`, `quantity`, `unitPrice`) to CSV header indices
+  - `rawSampleRows`: Array of raw string rows
+  - `validationErrors`: Array of `{ rowNumber: Number, field: String, rawValue: String, message: String }`
+  - `initiatedBy`: ObjectId (ref `users`)
+  - `approvedBy`: ObjectId (ref `users`, optional)
+  - `completedAt`: Date (optional)
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, stage: 1 }`, `{ tenantId: 1, createdAt: -1 }`
+
+### 8.10. `hospital_tasks`
+- **Scope**: Tenant-Owned
+- **Description**: Clinical and operational task management with patient/encounter context linking and threaded comments.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `title`: String
+  - `description`: String (optional)
+  - `priority`: String enum (`LOW`, `NORMAL`, `HIGH`, `URGENT`)
+  - `status`: String enum (`PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`)
+  - `creatorId`: ObjectId (ref `users`)
+  - `assigneeId`: ObjectId (ref `users`, optional)
+  - `departmentId`: ObjectId (ref `departments`, optional)
+  - `contextType`: String enum (`PATIENT`, `ENCOUNTER`, `WARD`, `INVENTORY`, `GENERAL`)
+  - `contextId`: ObjectId (optional)
+  - `dueDate`: Date (optional)
+  - `completedAt`: Date (optional)
+  - `comments`: Array of `{ commentId: ObjectId, authorId: ObjectId, message: String, createdAt: Date }`
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, assigneeId: 1, status: 1 }`, `{ tenantId: 1, departmentId: 1 }`, `{ tenantId: 1, dueDate: 1 }`
+
+### 8.11. `hospital_notifications`
+- **Scope**: Tenant-Owned
+- **Description**: Real-time staff notifications for critical task assignments, lab panic alerts, and inventory stockouts.
+- **Fields**:
+  - `_id`: ObjectId
+  - `tenantId`: ObjectId (ref `tenants`)
+  - `recipientId`: ObjectId (ref `users`)
+  - `title`: String
+  - `message`: String
+  - `type`: String enum (`TASK_ASSIGNED`, `TASK_COMPLETED`, `SHIFT_REMINDER`, `INVENTORY_ALERT`, `LAB_CRITICAL`, `ANNOUNCEMENT`, `GENERAL`)
+  - `actionUrl`: String (optional)
+  - `isRead`: Boolean (default `false`)
+  - `readAt`: Date (optional)
+  - `createdAt`, `updatedAt`: Date
+- **Indexes**: `{ tenantId: 1, recipientId: 1, isRead: 1 }`, `{ tenantId: 1, createdAt: -1 }`
+

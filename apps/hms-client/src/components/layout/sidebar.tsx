@@ -13,7 +13,7 @@ import {
   Pill,
   Package,
   Receipt,
-  ShieldAlert,
+  ShieldCheck,
   FileSpreadsheet,
   Activity,
   X,
@@ -27,9 +27,16 @@ import {
   UserCheck,
   Headphones,
   Settings,
+  KeyRound,
+  UserCog,
+  Layers,
+  Briefcase,
+  UploadCloud,
+  CheckSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
+import { useWorkspace } from '@/context/workspace-context';
 
 export interface NavItem {
   name: string;
@@ -38,7 +45,6 @@ export interface NavItem {
   isReady: boolean;
   milestoneNotice?: string;
   badge?: string;
-  roles?: string[];
 }
 
 export interface NavSection {
@@ -46,125 +52,172 @@ export interface NavSection {
   items: NavItem[];
 }
 
-const NAVIGATION_SECTIONS: NavSection[] = [
-  {
-    title: 'Core Management',
-    items: [
-      {
-        name: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard,
-        isReady: true,
-      },
-      {
-        name: 'Patients',
-        href: '/patients',
-        icon: Users,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN'],
-      },
-      {
-        name: 'Appointments',
-        href: '/appointments',
-        icon: Calendar,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE'],
-      },
-      {
-        name: 'OPD & Queue',
-        href: '/appointments',
-        icon: Clock,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST'],
-      },
-      {
-        name: 'IPD & Wards',
-        href: '/ipd',
-        icon: Bed,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR', 'NURSE'],
-      },
-    ],
-  },
-  {
-    title: 'Clinical & Staff',
-    items: [
-      {
-        name: 'Doctors',
-        href: '/staff?role=DOCTOR',
-        icon: Stethoscope,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'RECEPTIONIST'],
-      },
-      {
-        name: 'Departments',
-        href: '/departments',
-        icon: Building2,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN'],
-      },
-      {
-        name: 'Staff Directory',
-        href: '/staff',
-        icon: UserCheck,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN'],
-      },
-    ],
-  },
-  {
-    title: 'Operations',
-    items: [
-      {
-        name: 'Laboratory',
-        href: '/laboratory',
-        icon: FlaskConical,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR', 'LAB_TECHNICIAN'],
-      },
-      {
-        name: 'Pharmacy',
-        href: '/pharmacy',
-        icon: Pill,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR', 'PHARMACIST'],
-      },
-      {
-        name: 'Inventory',
-        href: '/inventory',
-        icon: Package,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'PHARMACIST', 'INVENTORY_MANAGER'],
-      },
-    ],
-  },
-  {
-    title: 'Finance & Analytics',
-    items: [
-      {
-        name: 'Billing & Payments',
-        href: '/billing',
-        icon: Receipt,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'],
-      },
-      {
-        name: 'Reports & Analytics',
-        href: '/reports',
-        icon: FileSpreadsheet,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN', 'ACCOUNTANT', 'DOCTOR'],
-      },
-      {
-        name: 'Settings & Security',
-        href: '/audit',
-        icon: Settings,
-        isReady: true,
-        roles: ['HOSPITAL_ADMIN'],
-      },
-    ],
-  },
-];
+const getSectionsForWorkspace = (workspaceCode: string): NavSection[] => {
+  switch (workspaceCode) {
+    case 'DOCTOR':
+      return [
+        {
+          title: 'Clinical Cockpit',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'My Schedule', href: '/appointments', icon: Calendar, isReady: true },
+            { name: 'OPD Queue', href: '/appointments', icon: Clock, isReady: true },
+            { name: 'My Patients', href: '/patients', icon: Users, isReady: true },
+            { name: 'EMR & Encounters', href: '/emr', icon: Stethoscope, isReady: true },
+            { name: 'Lab Orders', href: '/laboratory', icon: FlaskConical, isReady: true },
+          ],
+        },
+        {
+          title: 'Collaboration',
+          items: [
+            { name: 'Shift Roster', href: '/staff?tab=schedules', icon: Calendar, isReady: true },
+            { name: 'Diagnostic Reports', href: '/reports', icon: FileSpreadsheet, isReady: true },
+          ],
+        },
+      ];
+
+    case 'PHARMACIST':
+      return [
+        {
+          title: 'Dispensary',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Prescriptions', href: '/pharmacy', icon: Pill, isReady: true },
+            { name: 'Dispensing Counter', href: '/pharmacy', icon: CheckSquare, isReady: true },
+          ],
+        },
+        {
+          title: 'Inventory & Stock',
+          items: [
+            { name: 'Batch Stock', href: '/inventory', icon: Package, isReady: true },
+            { name: 'Bulk Import', href: '/inventory/import', icon: UploadCloud, isReady: true },
+          ],
+        },
+      ];
+
+    case 'ACCOUNTANT':
+      return [
+        {
+          title: 'Finance & Cashier',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Billing & Invoices', href: '/billing', icon: Receipt, isReady: true },
+            { name: 'Financial Reports', href: '/reports', icon: FileSpreadsheet, isReady: true },
+          ],
+        },
+      ];
+
+    case 'INVENTORY_MANAGER':
+      return [
+        {
+          title: 'Store & Warehouse',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Stock Master', href: '/inventory', icon: Package, isReady: true },
+            { name: 'Bulk Migration', href: '/inventory/import', icon: UploadCloud, isReady: true },
+            { name: 'Valuation & Audit', href: '/reports', icon: FileSpreadsheet, isReady: true },
+          ],
+        },
+      ];
+
+    case 'RECEPTIONIST':
+      return [
+        {
+          title: 'OPD Reception',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Patient Registration', href: '/patients', icon: Users, isReady: true },
+            { name: 'Appointments & Tokens', href: '/appointments', icon: Calendar, isReady: true },
+            { name: 'OPD Queue', href: '/appointments', icon: Clock, isReady: true },
+            { name: 'Billing Counter', href: '/billing', icon: Receipt, isReady: true },
+          ],
+        },
+      ];
+
+    case 'NURSE':
+      return [
+        {
+          title: 'Inpatient Station',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'IPD Wards & Beds', href: '/ipd', icon: Bed, isReady: true },
+            { name: 'Assigned Patients', href: '/patients', icon: Users, isReady: true },
+            { name: 'EMR Charts', href: '/emr', icon: Stethoscope, isReady: true },
+          ],
+        },
+      ];
+
+    case 'LAB_TECHNICIAN':
+      return [
+        {
+          title: 'Diagnostic Station',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Specimen Orders', href: '/laboratory', icon: FlaskConical, isReady: true },
+            { name: 'Results Verification', href: '/laboratory', icon: CheckSquare, isReady: true },
+          ],
+        },
+      ];
+
+    case 'DEPARTMENT_MANAGER':
+      return [
+        {
+          title: 'Department Operations',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Department & Teams', href: '/departments', icon: Building2, isReady: true },
+            { name: 'Workforce Directory', href: '/employees', icon: Users, isReady: true },
+            { name: 'Shift Schedules', href: '/staff?tab=schedules', icon: Calendar, isReady: true },
+            { name: 'Daily Attendance', href: '/staff?tab=attendance', icon: UserCheck, isReady: true },
+            { name: 'Leave Approvals', href: '/staff?tab=leave', icon: CheckSquare, isReady: true },
+            { name: 'Operational Reports', href: '/reports', icon: FileSpreadsheet, isReady: true },
+          ],
+        },
+      ];
+
+    case 'HOSPITAL_ADMIN':
+    default:
+      return [
+        {
+          title: 'Core Management',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
+            { name: 'Patients', href: '/patients', icon: Users, isReady: true },
+            { name: 'Appointments', href: '/appointments', icon: Calendar, isReady: true },
+            { name: 'OPD & Queue', href: '/appointments', icon: Clock, isReady: true },
+            { name: 'IPD & Wards', href: '/ipd', icon: Bed, isReady: true },
+          ],
+        },
+        {
+          title: 'Clinical & Operations',
+          items: [
+            { name: 'Laboratory', href: '/laboratory', icon: FlaskConical, isReady: true },
+            { name: 'Pharmacy', href: '/pharmacy', icon: Pill, isReady: true },
+            { name: 'Inventory', href: '/inventory', icon: Package, isReady: true },
+            { name: 'Bulk Migration', href: '/inventory/import', icon: UploadCloud, isReady: true },
+            { name: 'Billing & Payments', href: '/billing', icon: Receipt, isReady: true },
+            { name: 'Reports & Analytics', href: '/reports', icon: FileSpreadsheet, isReady: true },
+          ],
+        },
+        {
+          title: 'Hospital Administration',
+          items: [
+            { name: 'Organization & Teams', href: '/departments', icon: Building2, isReady: true },
+            { name: 'Employees', href: '/employees', icon: Users, isReady: true },
+            { name: 'Users & Access', href: '/users', icon: UserCog, isReady: true },
+            { name: 'Roles', href: '/roles', icon: ShieldCheck, isReady: true },
+            { name: 'Permissions', href: '/permissions', icon: KeyRound, isReady: true },
+            { name: 'Workspaces', href: '/workspaces', icon: Layers, isReady: true },
+            { name: 'Workspace Assignments', href: '/workspace-assignments', icon: Briefcase, isReady: true },
+            { name: 'Schedules', href: '/staff?tab=schedules', icon: Calendar, isReady: true },
+            { name: 'Attendance', href: '/staff?tab=attendance', icon: UserCheck, isReady: true },
+            { name: 'Leave Management', href: '/staff?tab=leave', icon: CheckSquare, isReady: true },
+            { name: 'Audit & Security', href: '/audit', icon: Settings, isReady: true },
+          ],
+        },
+      ];
+  }
+};
 
 export interface SidebarProps {
   isOpen: boolean;
@@ -181,16 +234,10 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [scheduledNotice, setScheduledNotice] = useState<{ name: string; notice: string } | null>(null);
 
-  const visibleSections = NAVIGATION_SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => {
-      if (!item.roles || !user?.role) return true;
-      if (user.role === 'HOSPITAL_ADMIN') return true;
-      return item.roles.includes(user.role);
-    }),
-  })).filter((section) => section.items.length > 0);
+  const sections = getSectionsForWorkspace(activeWorkspace.code);
 
   const handleScheduledClick = (e: React.MouseEvent, item: NavItem) => {
     if (!item.isReady) {
@@ -222,21 +269,42 @@ export function Sidebar({
         />
       )}
 
-      {/* Sidebar container */}
+      {/* Scheduled feature modal notification */}
+      {scheduledNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-slate-100 space-y-3">
+            <div className="flex items-center gap-2.5 text-teal-700">
+              <Info className="h-5 w-5" />
+              <h3 className="font-semibold text-sm">{scheduledNotice.name}</h3>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {scheduledNotice.notice}
+            </p>
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setScheduledNotice(null)}
+                className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium cursor-pointer transition-colors shadow-xs"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main sidebar container */}
       <aside
         className={cn(
-          'fixed top-0 bottom-0 left-0 z-50 flex flex-col border-r border-slate-200/80 bg-white transition-all duration-300 ease-in-out',
-          // Desktop sizing
-          isCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64',
-          // Mobile translation
-          isOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-950 text-slate-300 transition-all duration-300 ease-in-out border-r border-slate-800/80 shadow-2xl',
+          isCollapsed ? 'w-18' : 'w-64',
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
-        aria-label="Main Navigation"
       >
-        {/* Brand Header (Matching Image 3) */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-4 bg-slate-900 text-white">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white shadow-sm shadow-teal-500/20">
+        {/* Brand header */}
+        <div className="flex h-16 items-center justify-between px-4 border-b border-slate-800/80">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 text-white shadow-md shadow-teal-900/30">
               <Activity className="h-5 w-5" aria-hidden="true" />
             </div>
             {(!isCollapsed || isOpen) && (
@@ -262,7 +330,7 @@ export function Sidebar({
           </button>
         </div>
 
-        {/* Facility Selector Card (Matching Image 3) */}
+        {/* Facility Selector Card */}
         {(!isCollapsed || isOpen) && (
           <div className="mx-3 mt-3 mb-1 p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-white flex items-center justify-between shadow-xs select-none">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -278,186 +346,120 @@ export function Sidebar({
                 <p className="text-[10px] text-slate-400 truncate">Main Campus</p>
               </div>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
           </div>
         )}
 
-        {/* Nav Items list */}
-        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-3 scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {visibleSections.map((section) => (
-            <div key={section.title} className="space-y-0.5">
-              {(!isCollapsed || isOpen) ? (
-                <h2 className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {section.title}
-                </h2>
-              ) : (
-                <div className="my-1 border-t border-slate-100" />
-              )}
+        {/* Active Workspace Indicator */}
+        {(!isCollapsed || isOpen) && (
+          <div className="mx-3 mt-1.5 mb-2 px-2.5 py-1.5 rounded-xl bg-teal-950/70 border border-teal-800/60 flex items-center justify-between text-xs select-none">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Layers className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+              <span className="text-[11px] font-semibold text-teal-200 truncate">
+                {activeWorkspace.name.replace(' Workspace', '')}
+              </span>
+            </div>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          </div>
+        )}
 
-              <ul className="space-y-0.5">
+        {/* Navigation items list */}
+        <nav
+          className="flex-1 space-y-4 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-slate-800"
+          aria-label="Sidebar navigation"
+        >
+          {sections.map((section) => (
+            <div key={section.title} className="space-y-1">
+              {(!isCollapsed || isOpen) && (
+                <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 select-none">
+                  {section.title}
+                </p>
+              )}
+              {isCollapsed && !isOpen && (
+                <div className="my-2 border-t border-slate-800/60" />
+              )}
+              <div className="space-y-0.5">
                 {section.items.map((item) => {
-                  const baseHref = item.href.split('?')[0];
-                  let isActive = false;
-                  if (item.isReady) {
-                    if (item.href === '/dashboard') {
-                      isActive = pathname === '/dashboard';
-                    } else if (item.name === 'Doctors') {
-                      isActive =
-                        pathname === '/staff' &&
-                        typeof window !== 'undefined' &&
-                        window.location.search.includes('role=DOCTOR');
-                    } else if (item.name === 'Staff Directory') {
-                      isActive =
-                        pathname === '/staff' &&
-                        (typeof window === 'undefined' ||
-                          !window.location.search.includes('role=DOCTOR'));
-                    } else {
-                      isActive =
-                        pathname === baseHref ||
-                        (baseHref !== '/' && pathname.startsWith(baseHref + '/'));
-                    }
-                  }
                   const Icon = item.icon;
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
                   return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={(e) => handleScheduledClick(e, item)}
-                        aria-current={isActive ? 'page' : undefined}
-                        title={isCollapsed && !isOpen ? item.name : undefined}
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={(e) => handleScheduledClick(e, item)}
+                      title={isCollapsed && !isOpen ? item.name : undefined}
+                      className={cn(
+                        'group flex items-center rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-150',
+                        isCollapsed && !isOpen ? 'justify-center' : 'gap-3',
+                        isActive
+                          ? 'bg-teal-600 text-white font-semibold shadow-xs shadow-teal-900/30'
+                          : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200',
+                        !item.isReady && 'opacity-65',
+                      )}
+                    >
+                      <Icon
                         className={cn(
-                          'group flex items-center rounded-xl text-xs font-medium transition-all duration-150 relative select-none',
-                          isCollapsed && !isOpen ? 'justify-center p-2.5' : 'justify-between px-3 py-2',
+                          'h-4 w-4 shrink-0 transition-colors',
                           isActive
-                            ? 'bg-teal-50 text-teal-900 font-semibold shadow-2xs border border-teal-200/80'
-                            : item.isReady
-                            ? 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]'
-                            : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600 opacity-75',
+                            ? 'text-white'
+                            : 'text-slate-400 group-hover:text-slate-200',
                         )}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Icon
-                            className={cn(
-                              'h-4 w-4 shrink-0 transition-colors',
-                              isActive
-                                ? 'text-teal-600'
-                                : item.isReady
-                                ? 'text-slate-500 group-hover:text-slate-800'
-                                : 'text-slate-400',
-                            )}
-                            aria-hidden="true"
-                          />
-                          {(!isCollapsed || isOpen) && (
-                            <span className="truncate">{item.name}</span>
+                        aria-hidden="true"
+                      />
+                      {(!isCollapsed || isOpen) && (
+                        <div className="flex flex-1 items-center justify-between min-w-0">
+                          <span className="truncate">{item.name}</span>
+                          {item.badge && (
+                            <span className="ml-auto inline-block rounded-md bg-teal-500/20 px-1.5 py-0.5 text-[9px] font-bold text-teal-400 uppercase tracking-wider">
+                              {item.badge}
+                            </span>
                           )}
                         </div>
-
-                        {(!isCollapsed || isOpen) && (
-                          <div className="flex items-center gap-1 shrink-0 ml-2">
-                            {item.badge && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-100 text-emerald-800 font-semibold">
-                                {item.badge}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </Link>
-                    </li>
+                      )}
+                    </Link>
                   );
                 })}
-              </ul>
+              </div>
             </div>
           ))}
         </nav>
 
-        {/* Need Help Card (Matching Image 3) */}
-        {(!isCollapsed || isOpen) && (
-          <div className="mx-3 my-2 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-2xs">
-            <div className="flex items-start gap-2.5">
-              <div className="p-1.5 rounded-lg bg-teal-50 text-teal-600 shrink-0 border border-teal-100">
-                <Headphones className="h-4 w-4" />
-              </div>
+        {/* Footer with collapse toggle and support */}
+        <div className="border-t border-slate-800/80 p-3 space-y-2">
+          {(!isCollapsed || isOpen) && (
+            <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-400 select-none">
+              <Headphones className="h-4 w-4 text-teal-500 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-800">Need Help?</p>
-                <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
-                  Get support or view docs
-                </p>
+                <span className="block font-medium text-slate-300 truncate">
+                  HMS 24/7 Support
+                </span>
+                <span className="block text-[10px] text-slate-500 truncate">
+                  support@medcore.health
+                </span>
               </div>
             </div>
-            <button
-              type="button"
-              className="mt-2.5 w-full py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold transition-colors cursor-pointer text-center"
-            >
-              Contact Support
-            </button>
-            <div className="mt-2 text-center text-[10px] font-mono text-slate-400">
-              v1.0.0
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Desktop Collapse / Expand Bottom Bar */}
-        <div className="hidden lg:flex p-2 border-t border-slate-100 bg-slate-50/50 items-center justify-center">
+          {/* Desktop collapse toggle button */}
           <button
             type="button"
             onClick={onToggleCollapse}
-            className={cn(
-              'w-full flex items-center gap-2 rounded-xl p-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer select-none',
-              isCollapsed ? 'justify-center' : 'justify-between px-3',
-            )}
-            title={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar'}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="hidden lg:flex w-full items-center justify-center gap-2 rounded-xl p-2 text-xs text-slate-400 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <div className="flex items-center gap-2">
-              {isCollapsed ? (
-                <PanelLeft className="h-4 w-4 text-slate-500" />
-              ) : (
-                <>
-                  <PanelLeftClose className="h-4 w-4 text-slate-500" />
-                  <span>Collapse Menu</span>
-                </>
-              )}
-            </div>
-            {!isCollapsed && (
-              <span className="text-[10px] text-slate-400 font-mono">⌘B</span>
+            {isCollapsed ? (
+              <PanelLeft className="h-4 w-4" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-4 w-4" />
+                <span className="text-xs font-medium">Collapse Menu</span>
+              </>
             )}
           </button>
         </div>
       </aside>
-
-      {/* Scheduled Milestone Modal Notice */}
-      {scheduledNotice && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
-        >
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-xl space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-                <Info className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base font-bold text-slate-900">{scheduledNotice.name}</h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {scheduledNotice.notice}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setScheduledNotice(null)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
-              >
-                Understood
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -226,10 +226,12 @@ export class EmrService {
       _id: encounter.doctorId,
     }).select('firstName lastName email profile').exec();
 
-    const appointment = await this.appointmentModel.findOne({
-      _id: encounter.appointmentId,
-      tenantId: tId,
-    }).exec();
+    const appointment = encounter.appointmentId
+      ? await this.appointmentModel.findOne({
+          _id: encounter.appointmentId,
+          tenantId: tId,
+        }).exec()
+      : null;
 
     const prescription = await this.prescriptionModel.findOne({
       tenantId: tId,
@@ -471,10 +473,12 @@ export class EmrService {
     }
 
     // Transition appointment to COMPLETED
-    await this.appointmentModel.updateOne(
-      { _id: currentEncounter.appointmentId, tenantId: tId },
-      { $set: { status: AppointmentStatus.COMPLETED } },
-    ).exec();
+    if (currentEncounter.appointmentId) {
+      await this.appointmentModel.updateOne(
+        { _id: currentEncounter.appointmentId, tenantId: tId },
+        { $set: { status: AppointmentStatus.COMPLETED } },
+      ).exec();
+    }
 
     await this.auditService.record({
       action: 'ENCOUNTER_FINALIZE',
@@ -483,8 +487,8 @@ export class EmrService {
       status: 'SUCCESS',
       details: {
         encounterId: id,
-        appointmentId: currentEncounter.appointmentId.toString(),
-        finalizedAt: currentEncounter.finalizedAt.toISOString(),
+        appointmentId: currentEncounter.appointmentId?.toString(),
+        finalizedAt: currentEncounter.finalizedAt?.toISOString(),
         tenantId,
       },
     });

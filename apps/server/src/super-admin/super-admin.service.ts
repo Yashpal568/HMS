@@ -7,7 +7,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
-import { Model, Connection, Types } from 'mongoose';
+import { Model, type Connection, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { Tenant, TenantDocument } from './schemas/tenant.schema.js';
 import { Plan, PlanDocument } from './schemas/plan.schema.js';
@@ -224,7 +224,8 @@ export class SuperAdminService implements OnModuleInit {
           this.patientModel.countDocuments({ tenantId }).exec().catch(() => 0),
         ]);
 
-        const doc = t.toObject();
+        const doc = t.toObject({ virtuals: true });
+        (doc as any).id = t._id.toString();
         doc.usage = {
           doctorsCount: docCount,
           bedsCount: bedCount,
@@ -260,7 +261,8 @@ export class SuperAdminService implements OnModuleInit {
       this.patientModel.countDocuments({ tenantId }).exec().catch(() => 0),
     ]);
 
-    const result = tenant.toObject();
+    const result = tenant.toObject({ virtuals: true });
+    (result as any).id = tenant._id.toString();
     result.usage = {
       doctorsCount: docCount,
       bedsCount: bedCount,

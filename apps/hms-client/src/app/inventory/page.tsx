@@ -16,6 +16,7 @@ import {
   Boxes,
   Layers,
   CheckCircle2,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { apiClient } from '@/lib/api-client';
@@ -96,6 +97,14 @@ export default function InventoryDashboardPage() {
             >
               <Boxes className="h-3.5 w-3.5 text-teal-600" />
               Item Master
+            </Link>
+
+            <Link
+              href="/inventory/import"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-300 rounded-lg hover:bg-teal-100 shadow-2xs transition-colors"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 text-teal-700" />
+              Bulk Migration (CSV)
             </Link>
 
             <Link

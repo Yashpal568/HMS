@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import {
   EncounterStatus,
+  EncounterType,
   DiagnosisType,
   DiagnosisStatus,
   type BmiCategory,
@@ -89,14 +90,25 @@ export class Encounter {
   @Prop({ type: Types.ObjectId, ref: 'Hospital', required: false, index: true })
   hospitalId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Appointment', required: true, index: true })
-  appointmentId!: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Appointment', required: false, index: true })
+  appointmentId?: Types.ObjectId;
+
+  @Prop({
+    type: String,
+    enum: Object.values(EncounterType),
+    default: EncounterType.OPD,
+    index: true,
+  })
+  encounterType!: EncounterType;
 
   @Prop({ type: Types.ObjectId, ref: 'Patient', required: true, index: true })
   patientId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   doctorId!: Types.ObjectId;
+
+  @Prop({ type: String, required: false, trim: true, index: true })
+  department?: string;
 
   @Prop({
     type: String,
@@ -125,6 +137,12 @@ export class Encounter {
   investigations!: InvestigationSubdocument[];
 
   @Prop({ type: Date, required: false })
+  startedAt?: Date;
+
+  @Prop({ type: Date, required: false })
+  endedAt?: Date;
+
+  @Prop({ type: Date, required: false })
   finalizedAt?: Date;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
@@ -133,10 +151,12 @@ export class Encounter {
 
 export const EncounterSchema = SchemaFactory.createForClass(Encounter);
 
-// Compound Unique Index: One encounter per appointment per tenant
-EncounterSchema.index({ tenantId: 1, appointmentId: 1 }, { unique: true });
+// Compound Unique Index: One encounter per appointment per tenant (sparse for walk-ins)
+EncounterSchema.index({ tenantId: 1, appointmentId: 1 }, { unique: true, sparse: true });
 
 // Performance Query Indexes
 EncounterSchema.index({ tenantId: 1, patientId: 1, createdAt: -1 });
 EncounterSchema.index({ tenantId: 1, doctorId: 1, createdAt: -1 });
+EncounterSchema.index({ tenantId: 1, department: 1, createdAt: -1 });
+EncounterSchema.index({ tenantId: 1, encounterType: 1, createdAt: -1 });
 EncounterSchema.index({ tenantId: 1, status: 1, createdAt: -1 });

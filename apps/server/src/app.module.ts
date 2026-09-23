@@ -23,6 +23,12 @@ import { BillingModule } from './billing/billing.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { SuperAdminModule } from './super-admin/super-admin.module.js';
+import { QueueModule } from './queue/queue.module.js';
+import { OrganizationModule } from './organization/organization.module.js';
+import { WorkforceModule } from './workforce/workforce.module.js';
+import { WorkspacesModule } from './workspaces/workspaces.module.js';
+import { InventoryMigrationModule } from './inventory-migration/inventory-migration.module.js';
+import { CommunicationModule } from './communication/communication.module.js';
 import databaseConfig from './config/database.config.js';
 
 @Module({
@@ -58,6 +64,7 @@ import databaseConfig from './config/database.config.js';
     DashboardModule,
     PatientsModule,
     AppointmentsModule,
+    QueueModule,
     EmrModule,
     IpdModule,
     LaboratoryModule,
@@ -67,6 +74,11 @@ import databaseConfig from './config/database.config.js';
     ReportsModule,
     HealthModule,
     SuperAdminModule,
+    OrganizationModule,
+    WorkforceModule,
+    WorkspacesModule,
+    InventoryMigrationModule,
+    CommunicationModule,
   ],
   providers: [
     {

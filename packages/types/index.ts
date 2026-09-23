@@ -396,12 +396,128 @@ export interface AppointmentQueryPayload {
 }
 
 // ==========================================
+// Enterprise OPD Queue Engine Domain Types
+// ==========================================
+
+export enum QueueEntryStatus {
+  WAITING = 'waiting',
+  CALLED = 'called',
+  IN_CONSULTATION = 'in_consultation',
+  COMPLETED = 'completed',
+  SKIPPED = 'skipped',
+  CANCELLED = 'cancelled',
+}
+
+export enum QueuePriority {
+  NORMAL = 'normal',
+  URGENT = 'urgent',
+  EMERGENCY = 'emergency',
+}
+
+export enum QueueStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  CLOSED = 'closed',
+}
+
+export enum QueueSession {
+  MORNING = 'morning',
+  AFTERNOON = 'afternoon',
+  EVENING = 'evening',
+  NIGHT = 'night',
+}
+
+export enum QueueEventType {
+  ENTRY_CHECKED_IN = 'queue.entry_checked_in',
+  ENTRY_CALLED = 'queue.entry_called',
+  CONSULTATION_STARTED = 'queue.consultation_started',
+  CONSULTATION_COMPLETED = 'queue.consultation_completed',
+  ENTRY_SKIPPED = 'queue.entry_skipped',
+  ENTRY_CANCELLED = 'queue.entry_cancelled',
+}
+
+export interface Queue {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  hospitalId?: string;
+  department: string;
+  doctorId: string;
+  date: string; // YYYY-MM-DD
+  session: QueueSession;
+  status: QueueStatus;
+  currentServingToken?: number | string;
+  currentServingEntryId?: string;
+  totalTokensIssued: number;
+  totalCompleted: number;
+  totalSkipped: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface QueueEntry {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  queueId: string;
+  patientId: string;
+  appointmentId?: string;
+  encounterId?: string;
+  doctorId: string;
+  department: string;
+  date: string; // YYYY-MM-DD
+  tokenNumber: number;
+  formattedToken: string; // e.g. "A-021"
+  priority: QueuePriority;
+  priorityWeight: number; // 0 for NORMAL, 10 for URGENT, 50 for EMERGENCY
+  status: QueueEntryStatus;
+  chiefComplaint?: string;
+  triageNotes?: string;
+  checkedInAt: string;
+  calledAt?: string;
+  consultationStartedAt?: string;
+  completedAt?: string;
+  skippedAt?: string;
+  estimatedWaitMinutes?: number;
+  patient?: PatientSummary;
+  doctor?: DoctorUserSummary;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CallNextPatientPayload {
+  date?: string;
+  session?: QueueSession;
+}
+
+export interface CheckInQueuePayload {
+  appointmentId?: string;
+  patientId: string;
+  doctorId: string;
+  department: string;
+  priority?: QueuePriority;
+  chiefComplaint?: string;
+  triageNotes?: string;
+  date?: string;
+  session?: QueueSession;
+}
+
+// ==========================================
 // Milestone 05: EMR & Clinical Consultation Types
 // ==========================================
 
+export enum EncounterType {
+  OPD = 'opd',
+  EMERGENCY = 'emergency',
+  IPD = 'ipd',
+  TELECONSULT = 'teleconsult',
+}
+
 export enum EncounterStatus {
   DRAFT = 'draft',
+  IN_PROGRESS = 'in_progress',
   FINALIZED = 'finalized',
+  CANCELLED = 'cancelled',
 }
 
 export enum DiagnosisType {
@@ -1038,6 +1154,13 @@ export enum StockMovementType {
   DEPT_TRANSFER = 'dept_transfer',
   ADJUSTMENT_LOSS = 'adjustment_loss',
   ADJUSTMENT_GAIN = 'adjustment_gain',
+  PURCHASE = 'purchase',
+  SALE = 'sale',
+  DISPENSE = 'dispense',
+  RETURN = 'return',
+  TRANSFER = 'transfer',
+  ADJUSTMENT = 'adjustment',
+  OPENING_BALANCE = 'opening_balance',
 }
 
 export interface InventoryItem {
@@ -1641,6 +1764,7 @@ export interface StaffUserSummary {
   specialization?: string;
   phone?: string;
   status: string;
+  employeeId?: string;
   lastLoginAt?: string;
   createdAt: string;
 }
@@ -1832,5 +1956,500 @@ export interface CreateBroadcastDto {
   targetAudience: 'ALL' | 'HOSPITAL_ADMINS' | 'CLINICIANS';
   expiresAt?: string;
 }
+
+// ============================================================================
+// Enterprise Hospital Foundation: Workforce, Organization & Operations
+// ============================================================================
+
+export enum StaffType {
+  HOSPITAL_ADMIN = 'HOSPITAL_ADMIN',
+  DOCTOR = 'DOCTOR',
+  RECEPTIONIST = 'RECEPTIONIST',
+  NURSE = 'NURSE',
+  PHARMACIST = 'PHARMACIST',
+  LAB_TECHNICIAN = 'LAB_TECHNICIAN',
+  ACCOUNTANT = 'ACCOUNTANT',
+  INVENTORY_MANAGER = 'INVENTORY_MANAGER',
+  DEPARTMENT_MANAGER = 'DEPARTMENT_MANAGER',
+  OTHER = 'OTHER',
+}
+
+export enum EmploymentStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  EXITED = 'EXITED',
+}
+
+export enum ResourceScope {
+  HOSPITAL_WIDE = 'HOSPITAL_WIDE',
+  DEPARTMENT_ONLY = 'DEPARTMENT_ONLY',
+  TEAM_ONLY = 'TEAM_ONLY',
+  ASSIGNED_RESOURCES = 'ASSIGNED_RESOURCES',
+}
+
+export interface Employee {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  departmentId?: string;
+  departmentName?: string;
+  teamId?: string;
+  teamName?: string;
+  designation: string;
+  staffType: StaffType;
+  employmentStatus: EmploymentStatus;
+  managerId?: string;
+  managerName?: string;
+  joiningDate?: string;
+  userId?: string;
+  userEmail?: string;
+  assignedRoles: string[];
+  assignedWorkspaces: string[];
+  accessScope: ResourceScope;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmployeePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  departmentId?: string;
+  teamId?: string;
+  designation: string;
+  staffType: StaffType;
+  managerId?: string;
+  joiningDate?: string;
+  assignedRoles?: string[];
+  assignedWorkspaces?: string[];
+  accessScope?: ResourceScope;
+}
+
+export interface UpdateEmployeePayload extends Partial<CreateEmployeePayload> {
+  employmentStatus?: EmploymentStatus;
+}
+
+export interface LinkUserToEmployeePayload {
+  employeeId: string;
+  userId: string;
+}
+
+// ----------------------------------------------------------------------------
+// Organization: Departments & Teams
+// ----------------------------------------------------------------------------
+
+export interface Department {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  name: string;
+  code: string;
+  description?: string;
+  headEmployeeId?: string;
+  headEmployeeName?: string;
+  type: string;
+  isActive: boolean;
+  teamsCount?: number;
+  employeesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDepartmentPayload {
+  name: string;
+  code: string;
+  description?: string;
+  headEmployeeId?: string;
+  type?: string;
+}
+
+export interface Team {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  departmentId: string;
+  departmentName?: string;
+  name: string;
+  code: string;
+  description?: string;
+  teamLeadEmployeeId?: string;
+  teamLeadEmployeeName?: string;
+  isActive: boolean;
+  employeesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTeamPayload {
+  departmentId: string;
+  name: string;
+  code: string;
+  description?: string;
+  teamLeadEmployeeId?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Workforce Scheduling
+// ----------------------------------------------------------------------------
+
+export enum ShiftType {
+  MORNING = 'MORNING',
+  EVENING = 'EVENING',
+  NIGHT = 'NIGHT',
+  ROTATING = 'ROTATING',
+  CUSTOM = 'CUSTOM',
+}
+
+export interface WorkforceSchedule {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  employeeId: string;
+  employeeName?: string;
+  departmentId?: string;
+  shiftType: ShiftType;
+  startTime: string; // HH:mm format, e.g. 22:00
+  endTime: string;   // HH:mm format, e.g. 06:00
+  isOvernight: boolean;
+  daysOfWeek: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+  effectiveFrom: string;
+  effectiveTo?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWorkforceSchedulePayload {
+  employeeId: string;
+  departmentId?: string;
+  shiftType: ShiftType;
+  startTime: string;
+  endTime: string;
+  daysOfWeek: number[];
+  effectiveFrom: string;
+  effectiveTo?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Attendance & Corrections
+// ----------------------------------------------------------------------------
+
+export enum AttendanceStatus {
+  PRESENT = 'PRESENT',
+  ABSENT = 'ABSENT',
+  LATE = 'LATE',
+  EARLY_LEAVE = 'EARLY_LEAVE',
+  HALF_DAY = 'HALF_DAY',
+  ON_LEAVE = 'ON_LEAVE',
+  HOLIDAY = 'HOLIDAY',
+  WEEK_OFF = 'WEEK_OFF',
+}
+
+export enum AttendanceMethod {
+  WEB = 'WEB',
+  MANUAL = 'MANUAL',
+  BIOMETRIC_API = 'BIOMETRIC_API',
+  RFID = 'RFID',
+}
+
+export enum AttendanceCorrectionStatus {
+  NONE = 'NONE',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export interface AttendanceCorrection {
+  originalCheckIn?: string;
+  originalCheckOut?: string;
+  correctedCheckIn?: string;
+  correctedCheckOut?: string;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  status: AttendanceCorrectionStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  employeeId: string;
+  employeeName?: string;
+  employeeCode?: string;
+  departmentName?: string;
+  date: string; // YYYY-MM-DD
+  checkInTime?: string;
+  checkOutTime?: string;
+  status: AttendanceStatus;
+  lateMinutes: number;
+  earlyLeaveMinutes: number;
+  method: AttendanceMethod;
+  notes?: string;
+  correction?: AttendanceCorrection;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CheckInPayload {
+  employeeId: string;
+  method?: AttendanceMethod;
+  notes?: string;
+}
+
+export interface CheckOutPayload {
+  employeeId: string;
+  method?: AttendanceMethod;
+  notes?: string;
+}
+
+export interface RequestAttendanceCorrectionPayload {
+  attendanceId: string;
+  correctedCheckIn?: string;
+  correctedCheckOut?: string;
+  reason: string;
+}
+
+export interface ReviewAttendanceCorrectionPayload {
+  attendanceId: string;
+  action: 'APPROVE' | 'REJECT';
+  reviewNote?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Leave Management
+// ----------------------------------------------------------------------------
+
+export enum LeaveType {
+  CASUAL = 'CASUAL',
+  SICK = 'SICK',
+  ANNUAL = 'ANNUAL',
+  MATERNITY = 'MATERNITY',
+  UNPAID = 'UNPAID',
+}
+
+export enum LeaveStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface LeaveRequest {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  employeeId: string;
+  employeeName?: string;
+  departmentName?: string;
+  leaveType: LeaveType;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  totalDays: number;
+  reason: string;
+  status: LeaveStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLeaveRequestPayload {
+  employeeId: string;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason: string;
+}
+
+export interface ReviewLeaveRequestPayload {
+  action: 'APPROVE' | 'REJECT';
+  rejectionReason?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Hospital Onboarding State
+// ----------------------------------------------------------------------------
+
+export enum OnboardingStep {
+  PROFILE = 'PROFILE',
+  DEPARTMENTS = 'DEPARTMENTS',
+  ROLES = 'ROLES',
+  EMPLOYEES = 'EMPLOYEES',
+  WORKSPACES = 'WORKSPACES',
+  STORES = 'STORES',
+  INVENTORY_IMPORT = 'INVENTORY_IMPORT',
+  GO_LIVE = 'GO_LIVE',
+}
+
+export interface HospitalOnboardingState {
+  tenantId: string;
+  currentStep: OnboardingStep;
+  completedSteps: OnboardingStep[];
+  isCompleted: boolean;
+  completionPercentage: number;
+  lastUpdated: string;
+}
+
+// ----------------------------------------------------------------------------
+// Bulk Inventory Migration & Import Pipeline
+// ----------------------------------------------------------------------------
+
+export enum ImportStage {
+  UPLOADED = 'UPLOADED',
+  MAPPING = 'MAPPING',
+  VALIDATING = 'VALIDATING',
+  READY_FOR_APPROVAL = 'READY_FOR_APPROVAL',
+  IMPORTING = 'IMPORTING',
+  COMPLETED = 'COMPLETED',
+  COMPLETED_WITH_ERRORS = 'COMPLETED_WITH_ERRORS',
+  FAILED = 'FAILED',
+}
+
+export interface ColumnMappingConfig {
+  brandName: string;
+  genericName: string;
+  dosageForm: string;
+  strength: string;
+  category: string;
+  batchNumber?: string;
+  expiryDate?: string;
+  unitCostPrice?: string;
+  unitSalePrice?: string;
+  quantity?: string;
+  minStockLevel?: string;
+}
+
+export interface ImportValidationError {
+  rowNumber: number;
+  field: string;
+  message: string;
+  rawValue?: string;
+}
+
+export interface InventoryImportJob {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  fileName: string;
+  fileSizeBytes: number;
+  stage: ImportStage;
+  totalRows: number;
+  validRowsCount: number;
+  invalidRowsCount: number;
+  importedRowsCount: number;
+  detectedColumns: string[];
+  columnMapping?: ColumnMappingConfig;
+  previewRows?: Record<string, string>[];
+  errors?: ImportValidationError[];
+  uploadedBy: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaveColumnMappingPayload {
+  importId: string;
+  mapping: ColumnMappingConfig;
+}
+
+// ----------------------------------------------------------------------------
+// Internal Tasks & Notifications
+// ----------------------------------------------------------------------------
+
+export enum TaskPriority {
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export enum TaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface HospitalTaskComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface HospitalTask {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  title: string;
+  description?: string;
+  creatorId: string;
+  creatorName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  departmentId?: string;
+  departmentName?: string;
+  teamId?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  dueDate?: string;
+  contextType?: 'PATIENT' | 'ENCOUNTER' | 'WARD' | 'GENERAL';
+  contextId?: string;
+  contextTitle?: string;
+  comments: HospitalTaskComment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateHospitalTaskPayload {
+  title: string;
+  description?: string;
+  assigneeId?: string;
+  departmentId?: string;
+  teamId?: string;
+  priority?: TaskPriority;
+  dueDate?: string;
+  contextType?: 'PATIENT' | 'ENCOUNTER' | 'WARD' | 'GENERAL';
+  contextId?: string;
+  contextTitle?: string;
+}
+
+export enum HospitalNotificationType {
+  TASK_ASSIGNED = 'TASK_ASSIGNED',
+  LEAVE_REQUEST = 'LEAVE_REQUEST',
+  ATTENDANCE_CORRECTION = 'ATTENDANCE_CORRECTION',
+  STOCK_ALERT = 'STOCK_ALERT',
+  IMPORT_COMPLETED = 'IMPORT_COMPLETED',
+  GENERAL = 'GENERAL',
+}
+
+export interface HospitalNotification {
+  id: string;
+  _id?: string;
+  tenantId: string;
+  recipientId: string; // Employee or User ID
+  title: string;
+  message: string;
+  type: HospitalNotificationType;
+  isRead: boolean;
+  actionUrl?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
 
 

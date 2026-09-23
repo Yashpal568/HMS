@@ -48,14 +48,25 @@ export default function PlatformAuditTrailPage() {
 
   // Filtered Logs
   const filteredLogs = useMemo(() => {
-    return auditLogs.filter((log) => {
-      const matchesSearch =
-        log.actorEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (log.targetTenantName && log.targetTenantName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (log.ipAddress && log.ipAddress.includes(searchQuery));
+    return auditLogs.filter((log: any) => {
+      const actor = log.actorEmail || log.userEmail || log.userId || '';
+      const action = log.action || '';
+      const targetTenant =
+        log.targetTenantName ||
+        (log.details as any)?.tenantName ||
+        (log.details as any)?.tenantId ||
+        log.targetTenantId ||
+        '';
+      const ip = log.ipAddress || '';
 
-      const matchesAction = selectedAction === 'ALL' || log.action === selectedAction;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        actor.toLowerCase().includes(query) ||
+        action.toLowerCase().includes(query) ||
+        targetTenant.toLowerCase().includes(query) ||
+        ip.toLowerCase().includes(query);
+
+      const matchesAction = selectedAction === 'ALL' || action === selectedAction;
       return matchesSearch && matchesAction;
     });
   }, [auditLogs, searchQuery, selectedAction]);
@@ -157,8 +168,18 @@ export default function PlatformAuditTrailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                {filteredLogs.map((log: any) => {
+                  const logId = log.id || log._id || Math.random().toString();
+                  const actorDisplay = log.actorEmail || log.userEmail || log.userId || 'System';
+                  const tenantDisplay =
+                    log.targetTenantName ||
+                    (log.details as any)?.tenantName ||
+                    (log.details as any)?.tenantId ||
+                    log.targetTenantId ||
+                    'Platform-Wide';
+
+                  return (
+                  <tr key={logId} className="hover:bg-slate-800/30 transition-colors">
                     <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap text-[11px]">
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
@@ -166,7 +187,7 @@ export default function PlatformAuditTrailPage() {
                     <td className="py-3.5 px-4">
                       <span
                         className={`px-2 py-0.5 rounded border text-[10px] font-bold ${getActionBadgeColor(
-                          log.action,
+                          log.action || '',
                         )}`}
                       >
                         {log.action}
@@ -174,11 +195,11 @@ export default function PlatformAuditTrailPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-200">
-                      <span className="font-medium">{log.actorEmail}</span>
+                      <span className="font-medium">{actorDisplay}</span>
                     </td>
 
                     <td className="py-3.5 px-4 text-indigo-300 font-sans font-medium">
-                      {log.targetTenantName || (log.targetTenantId ? log.targetTenantId.slice(0, 10) : '—')}
+                      {tenantDisplay}
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-400 text-[11px]">
@@ -196,7 +217,8 @@ export default function PlatformAuditTrailPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

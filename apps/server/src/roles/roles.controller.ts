@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { RolesService } from './roles.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from '../common/guards/permissions.guard.js';
@@ -28,4 +28,40 @@ export class RolesController {
       data: permissions,
     };
   }
+
+  @Post()
+  @RequirePermissions('roles.manage')
+  async createRole(@Body() body: { name: string; description: string; permissions: string[] }) {
+    const role = await this.rolesService.createRole(body);
+    return {
+      success: true,
+      data: role,
+      message: 'Role created successfully.',
+    };
+  }
+
+  @Patch(':name')
+  @RequirePermissions('roles.manage')
+  async updateRole(
+    @Param('name') name: string,
+    @Body() body: { description?: string; permissions?: string[] },
+  ) {
+    const role = await this.rolesService.updateRole(name, body);
+    return {
+      success: true,
+      data: role,
+      message: 'Role updated successfully.',
+    };
+  }
+
+  @Delete(':name')
+  @RequirePermissions('roles.manage')
+  async deleteRole(@Param('name') name: string) {
+    const result = await this.rolesService.deleteRole(name);
+    return {
+      success: true,
+      message: result.message,
+    };
+  }
 }
+

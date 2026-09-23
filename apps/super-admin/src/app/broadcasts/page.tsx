@@ -235,9 +235,11 @@ export default function PlatformBroadcastsPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {broadcasts.map((b) => (
+                {broadcasts.map((b: any) => {
+                  const broadcastId = b.id || b._id;
+                  return (
                   <div
-                    key={b.id}
+                    key={broadcastId}
                     className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
                       b.severity === 'CRITICAL'
                         ? 'bg-rose-500/10 border-rose-500/30'
@@ -278,14 +280,15 @@ export default function PlatformBroadcastsPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleDismiss(b.id)}
+                      onClick={() => handleDismiss(broadcastId)}
                       className="px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-900 text-slate-300 hover:text-rose-400 border border-slate-700/60 text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0"
                     >
                       <XCircle className="w-3.5 h-3.5" />
                       Dismiss
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

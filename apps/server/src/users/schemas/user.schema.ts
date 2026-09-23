@@ -47,6 +47,9 @@ export class User {
   @Prop({ type: Types.ObjectId, ref: 'Hospital', required: false, index: true })
   hospitalId?: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Employee', required: false, index: true })
+  employeeId?: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'Branch', required: false })
   branchId?: Types.ObjectId;
 

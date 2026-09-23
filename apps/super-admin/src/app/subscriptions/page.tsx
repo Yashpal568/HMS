@@ -177,16 +177,22 @@ export default function SubscriptionsLedgerPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {subscriptions.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-slate-800/30 transition-colors">
+                {subscriptions.map((sub: any) => {
+                  const subId = sub.id || sub._id;
+                  const tenantObj = typeof sub.tenantId === 'object' && sub.tenantId !== null ? sub.tenantId : null;
+                  const tenantIdStr = tenantObj ? (tenantObj._id || tenantObj.id) : String(sub.tenantId || '');
+                  const tenantDisplayName = sub.tenantName || tenantObj?.name || (tenantIdStr ? 'Tenant ' + tenantIdStr.slice(0, 8) : 'Unknown Tenant');
+
+                  return (
+                  <tr key={subId} className="hover:bg-slate-800/30 transition-colors">
                     <td className="py-3.5 px-4 font-medium text-slate-100">
                       <Link
-                        href={`/tenants/${sub.tenantId}`}
+                        href={`/tenants/${tenantIdStr}`}
                         className="hover:text-indigo-400 font-semibold block"
                       >
-                        {sub.tenantName || 'Tenant ' + sub.tenantId.slice(0, 8)}
+                        {tenantDisplayName}
                       </Link>
-                      <span className="text-[10px] font-mono text-slate-500">{sub.tenantId}</span>
+                      <span className="text-[10px] font-mono text-slate-500">{tenantIdStr}</span>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -247,7 +253,7 @@ export default function SubscriptionsLedgerPage() {
 
                     <td className="py-3.5 px-4 text-right">
                       <Link
-                        href={`/tenants/${sub.tenantId}`}
+                        href={`/tenants/${tenantIdStr}`}
                         className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors inline-flex items-center gap-1"
                       >
                         <span>Tenant 360</span>
@@ -255,7 +261,8 @@ export default function SubscriptionsLedgerPage() {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

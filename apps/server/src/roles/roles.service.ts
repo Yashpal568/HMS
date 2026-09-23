@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Role, RoleDocument } from './schemas/role.schema.js';
@@ -224,4 +224,49 @@ export class RolesService implements OnModuleInit {
     if (!role) return [];
     return role.permissions || [];
   }
+
+  async createRole(dto: { name: string; description: string; permissions: string[] }): Promise<RoleDocument> {
+    const uppercaseName = dto.name.trim().toUpperCase();
+    const existing = await this.findByName(uppercaseName);
+    if (existing) {
+      throw new BadRequestException(`Role with name "${uppercaseName}" already exists.`);
+    }
+
+    return this.roleModel.create({
+      name: uppercaseName,
+      description: dto.description.trim(),
+      permissions: dto.permissions || [],
+      isSystem: false,
+    });
+  }
+
+  async updateRole(name: string, dto: { description?: string; permissions?: string[] }): Promise<RoleDocument> {
+    const role = await this.findByName(name);
+    if (!role) {
+      throw new NotFoundException(`Role "${name}" not found.`);
+    }
+
+    if (dto.description !== undefined) {
+      role.description = dto.description.trim();
+    }
+    if (dto.permissions !== undefined) {
+      role.permissions = dto.permissions;
+    }
+
+    return role.save();
+  }
+
+  async deleteRole(name: string): Promise<{ success: boolean; message: string }> {
+    const role = await this.findByName(name);
+    if (!role) {
+      throw new NotFoundException(`Role "${name}" not found.`);
+    }
+    if (role.isSystem) {
+      throw new BadRequestException(`Cannot delete built-in system role "${name}".`);
+    }
+
+    await this.roleModel.deleteOne({ _id: role._id }).exec();
+    return { success: true, message: `Role "${name}" deleted successfully.` };
+  }
 }
+

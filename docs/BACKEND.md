@@ -166,11 +166,42 @@ Long-running and asynchronous tasks are offloaded to BullMQ worker queues:
 1. **`notifications-queue`**: Dispatches SMS, WhatsApp, and push notifications for approaching queue turns and appointment confirmations.
 2. **`reports-queue`**: Generates complex multi-month financial and census reports as asynchronous downloadable PDFs/CSVs.
 3. **`audit-queue`**: Batches non-blocking audit records to minimize API latency.
-4. **`ai-tasks-queue` (Phase 2)**: Schedules asynchronous LLM summarization of clinical records.
+4. **`bulk-import-queue`**: Validates, deduplicates, and ingests large pharmaceutical and inventory catalogs in chunked transactions.
+5. **`analytics-rollup-queue`**: Executes nightly aggregation crons to generate `daily_operational_census` and `daily_revenue_summaries`.
+6. **`ai-tasks-queue` (Phase 2)**: Schedules asynchronous LLM summarization of clinical records.
+
+### 5.3. Real-Time Event Architecture & Redis Pub/Sub
+- Whenever a queue entry changes state (`WAITING` -> `CALLED` -> `IN_CONSULTATION` -> `COMPLETED`), `QueueService` publishes a tenant-scoped event: `tenant:{tenantId}:events:queue`.
+- The WebSocket / SSE gateway consumes these events and pushes live updates to Doctor Workstations, Reception Token Boards, and Patient Mobile Apps without requiring database polling.
+
+### 5.4. Graceful Degradation & Redis Outage Invariant
+> [!IMPORTANT]
+> **Zero Data Loss Invariant**:
+> Redis is strictly transient. If Redis crashes or suffers a network partition:
+> 1. Permanent patient registration, appointment scheduling, clinical encounters, and billing continue uninterrupted against MongoDB Atlas.
+> 2. Primary concurrency safety relies on MongoDB document-level atomic writes (`findOneAndUpdate`), which operate independently of Redis.
+> 3. Real-time updates fall back to client interval heartbeats until Redis reconnects.
+> 4. Redis outage NEVER corrupts or halts healthcare delivery.
 
 ---
 
-## 6. Medicine Formulary & Billing Integration Flow
+## 6. Enterprise OPD Queue Engine Architecture
+
+The queue engine (`apps/server/src/queue/`) implements a state machine ensuring atomic patient reservation:
+
+```text
+POST /api/v1/queue/check-in ──► Allocates sequential token, sets status = WAITING
+POST /api/v1/queue/call-next ──► Atomic findOneAndUpdate claims top priority WAITING patient ──► status = CALLED
+PATCH /api/v1/queue/entries/:id/start ──► Validates transition ──► status = IN_CONSULTATION
+PATCH /api/v1/queue/entries/:id/complete ──► Validates transition, increments completed counter ──► status = COMPLETED
+PATCH /api/v1/queue/entries/:id/skip ──► Patient absent ──► status = SKIPPED
+```
+
+- **Race Condition Prevention**: `callNextPatient` uses MongoDB atomic sort and update (`{ priorityWeight: -1, tokenNumber: 1 }`). If multiple browser tabs or assisting staff click "CALL NEXT" concurrently, MongoDB serializes the writes — exactly one request claims the patient, while subsequent requests claim the next waiting patient or receive `null`.
+
+---
+
+## 7. Medicine Formulary & Billing Integration Flow
 
 The backend guarantees single-source-of-truth inventory pricing across clinical, pharmacy, and billing workflows:
 

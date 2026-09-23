@@ -162,3 +162,48 @@ git push origin main
          ├──► Success: Vercel triggers atomic edge deployments (hms-client, patient-app, super-admin)
          └──► Success: Render pulls Docker image and executes zero-downtime rolling deployment (server)
 ```
+
+---
+
+## 6. Observability Architecture & Production Diagnostics
+
+Operating an enterprise hospital management platform at scale requires end-to-end trace correlation and diagnostic visibility across both platform control and tenant data planes:
+
+1. **Structured Logging**: All backend log entries are output in machine-readable JSON format with standard fields: `timestamp`, `level`, `context`, `correlationId`, `tenantId`, `userId`, `message`.
+2. **End-to-End Request Correlation**: Injected via `CorrelationIdMiddleware` (`x-request-id`). Propagates through backend service calls, audit records, error envelopes, and client response headers.
+3. **Deep Health Checks (`/api/v1/health/deep`)**:
+   - MongoDB Atlas connection state and active ping latency (ms).
+   - Connection pool statistics (available vs allocated connections).
+   - Node.js runtime process memory (RSS, heapTotal, heapUsed, external buffers).
+   - Uptime in seconds and active tenant count.
+4. **Error Envelope Sanitization**: The `GlobalExceptionFilter` strips internal database connection strings, driver stack traces, and sensitive internal paths from HTTP responses, returning uniform `{ success: false, error: { code, message, timestamp, requestId } }`.
+
+---
+
+## 7. Enterprise Capacity & Load Testing Blueprint (10,000–20,000 Visits/Day)
+
+To formally prove that the architectural foundations support 10,000–20,000+ daily visits, the following synthetic load testing framework is defined for future execution on dedicated cloud staging infrastructure:
+
+### 7.1. Target Volume Specifications
+- **Daily Visits**: 15,000 outpatient visits across a 10-hour operating window (Average: 1,500 visits/hour; Peak: 2,500 visits/hour / ~42 visits/minute).
+- **Concurrent Clinicians / Workstations**: 150 active doctors, 50 receptionists, 30 pharmacists, 20 lab technicians, 10 billing cashiers.
+- **Estimated API Ingestion Rate**:
+  - Baseline: 250 requests/second.
+  - Peak Surge: 500–750 requests/second.
+
+### 7.2. Test Scenarios (k6 / Locust Blueprint)
+1. **Scenario 1: Outpatient Intake Burst**:
+   - 50 concurrent receptionists executing `POST /patients` (registration with UHID) and `POST /queue/check-in` (token allocation) simultaneously.
+   - Success Criteria: P95 latency < 150ms; zero duplicate token allocations; zero database deadlocks.
+2. **Scenario 2: Concurrent Clinician Dequeue**:
+   - 150 clinicians clicking `POST /queue/call-next` simultaneously across multiple departments.
+   - Success Criteria: P99 latency < 100ms; zero duplicate patient assignments; zero race conditions.
+3. **Scenario 3: Longitudinal Patient Search Under High Volume**:
+   - 500 concurrent lookups by UHID, phone, and name prefix against a pre-seeded collection of 500,000 patient records.
+   - Success Criteria: P95 latency < 50ms; index hit ratio 100% (zero `COLLSCAN`).
+4. **Scenario 4: High-Volume Invoicing & Payment Settlement**:
+   - 50 cashier threads issuing invoices and settling payments within multi-document MongoDB transactions.
+   - Success Criteria: Zero phantom reads; 100% financial balance consistency.
+5. **Scenario 5: Nightly Rollup Aggregation Performance**:
+   - Generating `daily_operational_census` and `daily_revenue_summaries` over 20,000 daily records.
+   - Success Criteria: Execution time < 60 seconds without affecting concurrent clinical transactions.

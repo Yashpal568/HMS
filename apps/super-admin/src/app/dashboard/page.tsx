@@ -271,10 +271,12 @@ export default function SuperAdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {tenants.slice(0, 5).map((t) => (
-                      <tr key={t.id} className="hover:bg-slate-800/30 transition-colors">
+                    {tenants.slice(0, 5).map((t) => {
+                      const tenantId = t.id || (t as any)._id;
+                      return (
+                      <tr key={tenantId} className="hover:bg-slate-800/30 transition-colors">
                         <td className="py-3 font-medium text-slate-200">
-                          <Link href={`/tenants/${t.id}`} className="hover:text-indigo-400">
+                          <Link href={`/tenants/${tenantId}`} className="hover:text-indigo-400">
                             {t.name}
                           </Link>
                         </td>
@@ -303,7 +305,8 @@ export default function SuperAdminDashboardPage() {
                           {t.usage?.doctorsCount ?? 0} / {t.quotas?.maxDoctors ?? 0}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

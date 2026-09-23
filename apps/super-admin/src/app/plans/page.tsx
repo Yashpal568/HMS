@@ -163,7 +163,7 @@ export default function PlansCatalogPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div
-              key={plan.id}
+              key={plan.id || (plan as any)._id || plan.name}
               className="rounded-2xl bg-slate-900/70 border border-slate-800 p-6 flex flex-col justify-between hover:border-slate-700 transition-all space-y-6"
             >
               <div className="space-y-4">
@@ -234,9 +234,9 @@ export default function PlansCatalogPage() {
                     Included Modules
                   </span>
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {plan.includedModules.map((mod) => (
+                    {plan.includedModules.map((mod, modIdx) => (
                       <span
-                        key={mod}
+                        key={`${mod}-${modIdx}`}
                         className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-medium"
                       >
                         {mod}

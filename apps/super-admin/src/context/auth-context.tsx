@@ -79,11 +79,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Send login request to /auth/login
-      const res = await apiClient.post<any>('/auth/login', {
-        email,
-        password,
-        totpCode,
-      });
+      const payload: Record<string, string> = { email, password };
+      if (totpCode && totpCode.trim()) {
+        payload.totpCode = totpCode.trim();
+      }
+      const res = await apiClient.post<any>('/auth/login', payload);
 
       if (!res.accessToken || !res.user) {
         throw new Error('Invalid authentication response from server.');

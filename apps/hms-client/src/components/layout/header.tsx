@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../context/auth-context';
+import { useWorkspace } from '../../context/workspace-context';
 import {
   Menu,
   LogOut,
@@ -21,6 +22,7 @@ import {
   Check,
   MapPin,
   HelpCircle,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CommandPalette } from '@/components/ui/command-palette';
@@ -54,8 +56,10 @@ export function Header({
   ],
 }: HeaderProps) {
   const { user, logout } = useAuth();
+  const { activeWorkspace, availableWorkspaces, switchWorkspace } = useWorkspace();
   const router = useRouter();
 
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -241,6 +245,63 @@ export function Header({
 
           {/* Display Currency Selector */}
           <CurrencySelector />
+
+          {/* Active Workspace Selector Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsWorkspaceOpen((prev) => !prev);
+                setIsNotificationsOpen(false);
+                setIsProfileOpen(false);
+              }}
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100/90 border border-teal-200/90 text-xs font-semibold text-teal-900 cursor-pointer transition-all shadow-2xs select-none"
+              title="Active Operational Workspace"
+            >
+              <Layers className="h-3.5 w-3.5 text-teal-600 shrink-0" />
+              <span className="truncate max-w-[95px] sm:max-w-[145px]">{activeWorkspace.name.replace(' Workspace', '')}</span>
+              <ChevronDown className={cn("h-3 w-3 text-teal-600 transition-transform", isWorkspaceOpen && "rotate-180")} />
+            </button>
+
+            {isWorkspaceOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setIsWorkspaceOpen(false)} aria-hidden="true" />
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-40 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-2.5 py-1 text-2xs font-bold uppercase tracking-wider text-slate-400">
+                    Switch Operational Workspace
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-0.5 scrollbar-none">
+                    {availableWorkspaces.map((ws) => {
+                      const isSelected = activeWorkspace.code === ws.code;
+                      return (
+                        <button
+                          key={ws.code}
+                          type="button"
+                          onClick={() => {
+                            switchWorkspace(ws.code);
+                            setIsWorkspaceOpen(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left text-xs font-medium transition-colors cursor-pointer",
+                            isSelected ? "bg-teal-50 text-teal-900 font-semibold" : "hover:bg-slate-50 text-slate-700"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={cn("h-2 w-2 rounded-full", isSelected ? "bg-teal-600" : "bg-slate-300")} />
+                            <div>
+                              <div className="leading-tight font-medium">{ws.name}</div>
+                              <div className="text-[10px] text-slate-400 truncate max-w-[180px]">{ws.description}</div>
+                            </div>
+                          </div>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-teal-600 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Notifications Bell Dropdown */}
           <div className="relative">

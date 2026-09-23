@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger, BadRequestException, Optional } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
@@ -406,11 +406,59 @@ export class UsersService implements OnModuleInit {
       specialization: doc.specialization,
       phone: doc.phone,
       status: doc.status,
+      employeeId: doc.employeeId?.toString(),
       lastLoginAt: doc.lastLoginAt?.toISOString(),
       createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
     }));
 
     return { staff, total };
+  }
+
+  async updateUserStatus(hospitalId: string, userId: string, status: UserStatus): Promise<UserDocument> {
+    const user = await this.userModel.findOne({
+      _id: new Types.ObjectId(userId),
+      hospitalId: new Types.ObjectId(hospitalId),
+    }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    user.status = status;
+    return user.save();
+  }
+
+  async updateUserAccess(
+    hospitalId: string,
+    userId: string,
+    dto: { role?: string; permissions?: string[]; department?: string; employeeId?: string },
+  ): Promise<UserDocument> {
+    const user = await this.userModel.findOne({
+      _id: new Types.ObjectId(userId),
+      hospitalId: new Types.ObjectId(hospitalId),
+    }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    if (dto.role) {
+      user.role = dto.role.toUpperCase();
+      if (!dto.permissions) {
+        user.permissions = DEFAULT_ROLE_PERMISSIONS[user.role] || [];
+      }
+    }
+    if (dto.permissions) {
+      user.permissions = dto.permissions;
+    }
+    if (dto.department !== undefined) {
+      user.department = dto.department.trim();
+    }
+    if (dto.employeeId !== undefined) {
+      user.employeeId = dto.employeeId ? new Types.ObjectId(dto.employeeId) : undefined;
+    }
+
+    return user.save();
   }
 
   async updateLastLogin(id: string): Promise<void> {
