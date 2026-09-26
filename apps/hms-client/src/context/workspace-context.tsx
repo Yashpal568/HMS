@@ -34,14 +34,103 @@ export interface WorkspaceContextType {
   refreshWorkspaces: () => Promise<void>;
 }
 
-const DEFAULT_WORKSPACE: WorkspaceDefinition = {
-  code: 'HOSPITAL_ADMIN',
-  name: 'Hospital Administrator Workspace',
-  description: 'Executive clinical governance, operational capacity, and resource management',
-  defaultScope: 'HOSPITAL_WIDE',
-  navigation: ['dashboard', 'patients', 'appointments', 'emr', 'ipd', 'laboratory', 'pharmacy', 'inventory', 'billing', 'reports', 'staff', 'departments', 'audit'],
-  allowedActions: ['users.manage', 'hospital.manage', 'departments.manage', 'reports.view', 'audit.view'],
-  badgeColor: 'teal',
+const STANDARD_WORKSPACES_CLIENT: Record<string, WorkspaceDefinition> = {
+  HOSPITAL_ADMIN: {
+    code: 'HOSPITAL_ADMIN',
+    name: 'Hospital Administrator Workspace',
+    description: 'Executive clinical governance, operational capacity, and resource management',
+    defaultScope: 'HOSPITAL_WIDE',
+    navigation: ['dashboard', 'patients', 'appointments', 'emr', 'ipd', 'laboratory', 'pharmacy', 'inventory', 'billing', 'reports', 'staff', 'departments', 'audit'],
+    allowedActions: ['users.manage', 'hospital.manage', 'departments.manage', 'reports.view', 'audit.view'],
+    badgeColor: 'teal',
+  },
+  DOCTOR: {
+    code: 'DOCTOR',
+    name: 'Doctor Clinical Workspace',
+    description: 'Outpatient consultation cockpit, electronic medical records, and diagnostic requisitions',
+    defaultScope: 'ASSIGNED_RESOURCES',
+    navigation: ['dashboard', 'appointments', 'emr', 'patients', 'laboratory'],
+    allowedActions: ['emr.create', 'emr.update', 'prescriptions.create', 'lab.order'],
+    badgeColor: 'teal',
+  },
+  PHARMACIST: {
+    code: 'PHARMACIST',
+    name: 'Pharmacy & Dispensary Center',
+    description: 'e-Prescription fulfillment, FEFO batch selection, expiry watch, and drug dispensing',
+    defaultScope: 'DEPARTMENT_ONLY',
+    navigation: ['dashboard', 'pharmacy', 'inventory'],
+    allowedActions: ['pharmacy.dispense', 'inventory.view'],
+    badgeColor: 'emerald',
+  },
+  ACCOUNTANT: {
+    code: 'ACCOUNTANT',
+    name: 'Billing & Cashier Command',
+    description: 'Invoice settlements, cashier balance, payment reconciliation, and claims',
+    defaultScope: 'HOSPITAL_WIDE',
+    navigation: ['dashboard', 'billing', 'reports'],
+    allowedActions: ['billing.create', 'billing.collect', 'billing.refund'],
+    badgeColor: 'amber',
+  },
+  RECEPTIONIST: {
+    code: 'RECEPTIONIST',
+    name: 'OPD Reception & Queue Hub',
+    description: 'Patient check-in, token distribution, appointment scheduling, and registration',
+    defaultScope: 'DEPARTMENT_ONLY',
+    navigation: ['dashboard', 'patients', 'appointments', 'billing'],
+    allowedActions: ['patients.create', 'appointments.create', 'queue.checkin'],
+    badgeColor: 'sky',
+  },
+  LAB_TECHNICIAN: {
+    code: 'LAB_TECHNICIAN',
+    name: 'Laboratory Diagnostic Station',
+    description: 'Specimen accessioning, analyzer telemetry, test result entry, and pathology verification',
+    defaultScope: 'DEPARTMENT_ONLY',
+    navigation: ['dashboard', 'laboratory'],
+    allowedActions: ['lab.accession', 'lab.results.enter'],
+    badgeColor: 'purple',
+  },
+  NURSE: {
+    code: 'NURSE',
+    name: 'Inpatient Ward Station',
+    description: 'Bedside telemetry, vitals recording, inpatient care tasks, and medication administration',
+    defaultScope: 'DEPARTMENT_ONLY',
+    navigation: ['dashboard', 'ipd', 'emr', 'patients', 'pharmacy'],
+    allowedActions: ['vitals.record', 'nursing.notes', 'ipd.manage'],
+    badgeColor: 'rose',
+  },
+  INVENTORY_MANAGER: {
+    code: 'INVENTORY_MANAGER',
+    name: 'Store & Inventory Management',
+    description: 'Warehouse GRN receipt, purchase orders, reorder point alarms, and supplier ledger',
+    defaultScope: 'HOSPITAL_WIDE',
+    navigation: ['dashboard', 'inventory', 'reports'],
+    allowedActions: ['inventory.grn', 'inventory.po', 'inventory.adjust'],
+    badgeColor: 'indigo',
+  },
+  DEPARTMENT_MANAGER: {
+    code: 'DEPARTMENT_MANAGER',
+    name: 'Department Operational Management',
+    description: 'Departmental staff scheduling, shift assignments, attendance approvals, and metrics',
+    defaultScope: 'DEPARTMENT_ONLY',
+    navigation: ['dashboard', 'staff', 'appointments', 'reports'],
+    allowedActions: ['schedules.manage', 'attendance.approve', 'leave.approve'],
+    badgeColor: 'cyan',
+  },
+};
+
+const resolveDefaultWorkspace = (role?: string): WorkspaceDefinition => {
+  if (role && STANDARD_WORKSPACES_CLIENT[role]) {
+    return STANDARD_WORKSPACES_CLIENT[role];
+  }
+  return {
+    code: 'NONE',
+    name: 'Unassigned Workspace',
+    description: 'Staff account awaiting operational workspace assignment',
+    defaultScope: 'ASSIGNED_RESOURCES',
+    navigation: ['dashboard'],
+    allowedActions: [],
+    badgeColor: 'slate',
+  };
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -50,16 +139,26 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/a
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { user, token } = useAuth();
-  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceDefinition>(DEFAULT_WORKSPACE);
-  const [availableWorkspaces, setAvailableWorkspaces] = useState<WorkspaceDefinition[]>([DEFAULT_WORKSPACE]);
+  const initialWs = resolveDefaultWorkspace(user?.role);
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceDefinition>(initialWs);
+  const [availableWorkspaces, setAvailableWorkspaces] = useState<WorkspaceDefinition[]>([initialWs]);
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [scope, setScope] = useState<string>('HOSPITAL_WIDE');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Sync with user role when user changes
+  useEffect(() => {
+    if (user?.role) {
+      const defaultForRole = resolveDefaultWorkspace(user.role);
+      setActiveWorkspace((prev) => (prev.code === 'NONE' || prev.code === 'HOSPITAL_ADMIN' ? defaultForRole : prev));
+    }
+  }, [user?.role]);
+
   const fetchWorkspaces = useCallback(async () => {
     if (!token) {
-      setActiveWorkspace(DEFAULT_WORKSPACE);
-      setAvailableWorkspaces([DEFAULT_WORKSPACE]);
+      const defaultWs = resolveDefaultWorkspace(user?.role);
+      setActiveWorkspace(defaultWs);
+      setAvailableWorkspaces([defaultWs]);
       setIsLoading(false);
       return;
     }
@@ -83,6 +182,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
         if (data.availableWorkspaces && data.availableWorkspaces.length > 0) {
           setAvailableWorkspaces(data.availableWorkspaces);
+        } else {
+          setAvailableWorkspaces([resolveDefaultWorkspace(user?.role)]);
         }
 
         if (data.activeWorkspace) {
@@ -90,6 +191,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           if (typeof window !== 'undefined') {
             localStorage.setItem('hms_active_workspace', data.activeWorkspace.code);
           }
+        } else {
+          setActiveWorkspace(resolveDefaultWorkspace(user?.role));
         }
 
         if (data.employee) {
@@ -105,7 +208,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, user]);
 
   useEffect(() => {
     void fetchWorkspaces();
@@ -143,11 +246,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     // Fallback: search available workspaces locally
     const target = availableWorkspaces.find((ws) => ws.code === workspaceCode);
     if (target || user?.role === 'HOSPITAL_ADMIN') {
-      const selected = target || {
-        ...DEFAULT_WORKSPACE,
-        code: workspaceCode,
-        name: `${workspaceCode} Workspace`,
-      };
+      const selected = target || resolveDefaultWorkspace(workspaceCode);
       setActiveWorkspace(selected);
       if (typeof window !== 'undefined') {
         localStorage.setItem('hms_active_workspace', workspaceCode);

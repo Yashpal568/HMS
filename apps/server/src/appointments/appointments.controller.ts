@@ -18,6 +18,7 @@ import { BookAppointmentDto } from './dto/book-appointment.dto.js';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto.js';
 import { DoctorScheduleDto } from './dto/doctor-schedule.dto.js';
 import { AppointmentQueryDto } from './dto/appointment-query.dto.js';
+import { CheckInTriageDto } from './dto/check-in-triage.dto.js';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -158,7 +159,7 @@ export class AppointmentsController {
   }
 
   /**
-   * Reception Check-In Action
+   * Reception Check-In Action with optional clinical triage
    */
   @Post(':id/check-in')
   @RequirePermissions('appointments.update')
@@ -166,12 +167,14 @@ export class AppointmentsController {
   async checkInAppointment(
     @CurrentUser() user: any,
     @Param('id') id: string,
+    @Body() dto?: CheckInTriageDto,
   ): Promise<ApiResponse<any>> {
     const tenantId = this.getTenantId(user);
     const appointment = await this.appointmentsService.checkInAppointment(
       tenantId,
       user.id,
       id,
+      dto,
     );
     return {
       success: true,

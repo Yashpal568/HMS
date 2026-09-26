@@ -1,0 +1,119 @@
+[
+  {
+    "url": "http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721",
+    "method": "GET",
+    "status": 404,
+    "route": "/patients/[id]",
+    "error": "HTTP 404 on http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":404,\"error\":\"PATIENT_NOT_FOUND\",\"message\":\"Patient record not found.\",\"correlationId\":\"req-ddb56b24-a61c-4af1-a964-324688299253\",\"timestamp\":\"2026-09-25T14:03:46.326Z\",\"path\":\"/api/v1/patients/6aa41f53983c601046fd9721\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721",
+    "method": "GET",
+    "status": 404,
+    "route": "/patients/[id]/edit",
+    "error": "HTTP 404 on http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":404,\"error\":\"PATIENT_NOT_FOUND\",\"message\":\"Patient record not found.\",\"correlationId\":\"req-5f7474be-241f-4fcb-8b67-7423cd7b5a14\",\"timestamp\":\"2026-09-25T14:03:50.779Z\",\"path\":\"/api/v1/patients/6aa41f53983c601046fd9721\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/reports/census?startDate=2026-09-18&endDate=2026-09-25",
+    "method": "GET",
+    "status": 500,
+    "route": "/reports",
+    "error": "HTTP 500 on http://localhost:3001/api/v1/reports/census?startDate=2026-09-18&endDate=2026-09-25",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":500,\"error\":\"InternalServerError\",\"message\":\"An unexpected internal server error occurred. Please contact support with the correlation ID.\",\"correlationId\":\"req-bb9dc725-6e88-4f14-b8d3-759a11538ed0\",\"timestamp\":\"2026-09-25T14:04:16.673Z\",\"path\":\"/api/v1/reports/census?startDate=2026-09-18&endDate=2026-09-25\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/reports/census?startDate=2026-08-26&endDate=2026-09-25",
+    "method": "GET",
+    "status": 500,
+    "route": "/reports/census",
+    "error": "HTTP 500 on http://localhost:3001/api/v1/reports/census?startDate=2026-08-26&endDate=2026-09-25",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":500,\"error\":\"InternalServerError\",\"message\":\"An unexpected internal server error occurred. Please contact support with the correlation ID.\",\"correlationId\":\"req-90174c9d-8419-439e-a7e5-84cf25227141\",\"timestamp\":\"2026-09-25T14:04:21.639Z\",\"path\":\"/api/v1/reports/census?startDate=2026-08-26&endDate=2026-09-25\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721",
+    "method": "GET",
+    "status": 404,
+    "route": "/patients/6aa41f53983c601046fd9721 (Mobile)",
+    "error": "HTTP 404 on http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":404,\"error\":\"PATIENT_NOT_FOUND\",\"message\":\"Patient record not found.\",\"correlationId\":\"req-d6466767-8c09-4aa6-ba8b-65d12cd73dd0\",\"timestamp\":\"2026-09-25T14:05:41.851Z\",\"path\":\"/api/v1/patients/6aa41f53983c601046fd9721\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/laboratory/orders",
+    "method": "GET",
+    "status": 404,
+    "route": "/dashboard (LAB_TECHNICIAN)",
+    "error": "HTTP 404 on http://localhost:3001/api/v1/laboratory/orders",
+    "responseType": "text/html; charset=utf-8",
+    "preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/laboratory/orders</pre>\n</body>\n</html>\n"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/users?",
+    "method": "GET",
+    "status": 403,
+    "route": "/users (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/users?",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Role PHARMACIST is not authorized.\",\"correlationId\":\"req-6cb7ff78-9716-43b0-bf86-65ecee59be88\",\"timestamp\":\"2026-09-25T14:06:14.526Z\",\"path\":\"/api/v1/users?\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/roles",
+    "method": "GET",
+    "status": 403,
+    "route": "/users (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/roles",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Missing required permission (roles.read).\",\"correlationId\":\"req-c382be1f-fd5c-4594-af70-cb4eb5cd106b\",\"timestamp\":\"2026-09-25T14:06:14.574Z\",\"path\":\"/api/v1/roles\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/roles",
+    "method": "GET",
+    "status": 403,
+    "route": "/roles (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/roles",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Missing required permission (roles.read).\",\"correlationId\":\"req-6b1e284d-7079-4709-872c-41debf340be6\",\"timestamp\":\"2026-09-25T14:06:18.160Z\",\"path\":\"/api/v1/roles\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/roles/permissions",
+    "method": "GET",
+    "status": 403,
+    "route": "/roles (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/roles/permissions",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Missing required permission (roles.read).\",\"correlationId\":\"req-260fac1b-39a8-4942-a0c1-8d6bbba9e489\",\"timestamp\":\"2026-09-25T14:06:18.168Z\",\"path\":\"/api/v1/roles/permissions\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/roles/permissions",
+    "method": "GET",
+    "status": 403,
+    "route": "/permissions (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/roles/permissions",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Missing required permission (roles.read).\",\"correlationId\":\"req-aa5d3863-7e60-442e-9419-e9ecf1ffeb72\",\"timestamp\":\"2026-09-25T14:06:21.106Z\",\"path\":\"/api/v1/roles/permissions\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/workspaces/assignments",
+    "method": "GET",
+    "status": 403,
+    "route": "/workspace-assignments (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/workspaces/assignments",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Missing required permission (users.read).\",\"correlationId\":\"req-0c60ccb5-4da6-4a3c-abbd-6a7ef5d11f94\",\"timestamp\":\"2026-09-25T14:06:27.197Z\",\"path\":\"/api/v1/workspaces/assignments\"}"
+  },
+  {
+    "url": "http://localhost:3001/api/v1/audit?page=1&limit=20",
+    "method": "GET",
+    "status": 403,
+    "route": "/audit (Restricted Access Test)",
+    "error": "HTTP 403 on http://localhost:3001/api/v1/audit?page=1&limit=20",
+    "responseType": "application/json; charset=utf-8",
+    "preview": "{\"success\":false,\"statusCode\":403,\"error\":\"FORBIDDEN\",\"message\":\"Access denied: Missing required permission (audit.read).\",\"correlationId\":\"req-3473821f-ef17-4e9b-9179-a3b108bb730a\",\"timestamp\":\"2026-09-25T14:06:30.012Z\",\"path\":\"/api/v1/audit?page=1&limit=20\"}"
+  }
+]

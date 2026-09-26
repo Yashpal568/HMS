@@ -658,7 +658,8 @@ function StaffContent() {
               Live Daily Attendance Ledger ({attendanceData?.date || 'Today'})
             </h3>
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-semibold uppercase text-[10px]">
                   <tr>
@@ -717,6 +718,69 @@ function StaffContent() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Stacked Record Cards View */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {!attendanceData?.records || attendanceData.records.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  No check-ins logged yet for today.
+                </div>
+              ) : (
+                attendanceData.records.map((r) => (
+                  <div key={r.id || (r as any)._id} className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-semibold text-slate-900 text-sm">
+                          {(r.employeeId as any)?.firstName} {(r.employeeId as any)?.lastName}
+                        </div>
+                        <div className="text-2xs font-mono text-slate-400">
+                          {(r.employeeId as any)?.employeeId}
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          r.status === AttendanceStatus.PRESENT
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : r.status === AttendanceStatus.LATE
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : r.status === AttendanceStatus.ON_LEAVE
+                            ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
+                        }
+                      >
+                        {r.status}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold uppercase block">Check-In</span>
+                        <span className="font-mono text-slate-800 font-medium">
+                          {r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold uppercase block">Check-Out</span>
+                        <span className="font-mono text-slate-800 font-medium">
+                          {r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold uppercase block">Late Delay</span>
+                        <span className="font-mono text-slate-600">
+                          {r.lateMinutes > 0 ? `${r.lateMinutes} mins` : 'On time'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold uppercase block">Method</span>
+                        <span className="font-mono text-slate-600 text-[11px]">{r.method}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

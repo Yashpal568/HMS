@@ -32,7 +32,7 @@ interface RequestUser {
   permissions: string[];
 }
 
-@Controller('lab')
+@Controller(['lab', 'laboratory'])
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class LaboratoryController {
   constructor(private readonly laboratoryService: LaboratoryService) {}

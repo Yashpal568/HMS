@@ -110,7 +110,10 @@ export function InviteStaffModal({ isOpen, onClose, onSuccess }: InviteStaffModa
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<StaffRole>(StaffRole.DOCTOR);
-  const [department, setDepartment] = useState('General Medicine');
+  const [department, setDepartment] = useState('');
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [availableTeams, setAvailableTeams] = useState<any[]>([]);
+  const [team, setTeam] = useState('');
   const [specialization, setSpecialization] = useState('');
   const [phone, setPhone] = useState('');
 
@@ -119,6 +122,41 @@ export function InviteStaffModal({ isOpen, onClose, onSuccess }: InviteStaffModa
   const [invitedResult, setInvitedResult] = useState<InviteStaffResponse | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
+  const handleDepartmentChange = React.useCallback(async (deptName: string, deptList = departments) => {
+    setDepartment(deptName);
+    setTeam('');
+    const matchedDept = deptList.find((d: any) => d.name === deptName || d.code === deptName || d.id === deptName || d._id === deptName);
+    if (matchedDept?.id || matchedDept?._id) {
+      const deptId = matchedDept.id || matchedDept._id;
+      try {
+        const teamsRes = await apiClient.get<any>(`/organization/teams?departmentId=${deptId}`);
+        if (teamsRes?.data && Array.isArray(teamsRes.data)) {
+          setAvailableTeams(teamsRes.data);
+        } else {
+          setAvailableTeams([]);
+        }
+      } catch {
+        setAvailableTeams([]);
+      }
+    } else {
+      setAvailableTeams([]);
+    }
+  }, [departments]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      void apiClient.get<any>('/organization/departments').then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setDepartments(res.data);
+          if (!department) {
+            setDepartment(res.data[0].name);
+            void handleDepartmentChange(res.data[0].name, res.data);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [isOpen, department, handleDepartmentChange]);
+
   if (!isOpen) return null;
 
   const resetForm = () => {
@@ -126,7 +164,9 @@ export function InviteStaffModal({ isOpen, onClose, onSuccess }: InviteStaffModa
     setLastName('');
     setEmail('');
     setRole(StaffRole.DOCTOR);
-    setDepartment('General Medicine');
+    setDepartment(departments[0]?.name || '');
+    setTeam('');
+    setAvailableTeams([]);
     setSpecialization('');
     setPhone('');
     setErrorMessage(null);
@@ -440,22 +480,48 @@ export function InviteStaffModal({ isOpen, onClose, onSuccess }: InviteStaffModa
                     htmlFor="staff-department"
                     className="block text-xs font-semibold text-slate-700 mb-1"
                   >
-                    Primary Department
+                    Primary Department <span className="text-rose-500">*</span>
                   </label>
                   <select
                     id="staff-department"
+                    required
                     value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none bg-white"
+                    onChange={(e) => void handleDepartmentChange(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none bg-white font-medium"
                   >
-                    {DEPARTMENTS.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
+                    <option value="">Select Department *</option>
+                    {departments.map((dept) => (
+                      <option key={dept._id || dept.id} value={dept.name}>
+                        {dept.name} ({dept.code})
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              {availableTeams.length > 0 && (
+                <div>
+                  <label
+                    htmlFor="staff-team"
+                    className="block text-xs font-semibold text-slate-700 mb-1"
+                  >
+                    Care / Clinical Team (Optional)
+                  </label>
+                  <select
+                    id="staff-team"
+                    value={team}
+                    onChange={(e) => setTeam(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none bg-white font-medium"
+                  >
+                    <option value="">No Team Assigned</option>
+                    {availableTeams.map((t) => (
+                      <option key={t._id || t.id} value={t.name}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* SPECIALIZATION & PHONE */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

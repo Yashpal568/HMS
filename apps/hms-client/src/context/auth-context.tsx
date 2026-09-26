@@ -50,17 +50,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         setUser(data.user);
         return true;
-      } else {
+      } else if (res.status === 401) {
+        // Genuine token expiry or invalid signature -> clear session
         localStorage.removeItem('hms_token');
         setToken(null);
         setUser(null);
         return false;
+      } else if (res.status === 429) {
+        // Rate limit hit: Preserve session token, do not evict user
+        console.warn('[AuthContext] /auth/me rate limit encountered (429). Preserving authenticated session.');
+        return true;
+      } else {
+        // Transient server or network error: retain token
+        return true;
       }
-    } catch {
-      localStorage.removeItem('hms_token');
-      setToken(null);
-      setUser(null);
-      return false;
+    } catch (err) {
+      // Network failure or offline state: retain token
+      console.warn('[AuthContext] Network error verifying profile; retaining token:', err);
+      return true;
     }
   }, []);
 

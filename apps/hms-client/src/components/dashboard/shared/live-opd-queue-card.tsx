@@ -28,24 +28,8 @@ export interface LiveOpdQueueCardProps {
 }
 
 export function LiveOpdQueueCard({
-  queue = [
-    { token: 'A-021', patientName: 'Rahul Kumar', doctorName: 'Dr. Sharma', department: 'Cardiology', waitTime: '12 min', status: 'Waiting', reason: 'Checkup • Follow-up', elapsedTime: '08:24', patientId: 'p1' },
-    { token: 'A-022', patientName: 'Priya Mehta', doctorName: 'Dr. Verma', department: 'General Medicine', waitTime: '18 min', status: 'Waiting', reason: 'Fever check', patientId: 'p2' },
-    { token: 'A-023', patientName: 'Amit Singh', doctorName: 'Dr. Khan', department: 'Orthopedics', waitTime: '25 min', status: 'Waiting', reason: 'Knee ache', patientId: 'p3' },
-    { token: 'A-024', patientName: 'Sneha Patel', doctorName: 'Dr. Iyer', department: 'Dermatology', waitTime: '32 min', status: 'Waiting', reason: 'Skin rash', patientId: 'p4' },
-    { token: 'A-025', patientName: 'Vikram Desai', doctorName: 'Dr. Nair', department: 'Pediatrics', waitTime: '40 min', status: 'Waiting', reason: 'Routine checkup', patientId: 'p5' },
-  ],
-  currentlyServing = {
-    token: 'A-021',
-    patientName: 'Rahul Kumar',
-    doctorName: 'Dr. Sharma',
-    department: 'Cardiology',
-    waitTime: 'Serving',
-    status: 'In Consultation',
-    reason: 'Checkup • Follow-up',
-    elapsedTime: '08:24',
-    patientId: 'p1',
-  },
+  queue = [],
+  currentlyServing = undefined,
   viewAllHref = '/appointments',
   onSelectPatient,
   className,

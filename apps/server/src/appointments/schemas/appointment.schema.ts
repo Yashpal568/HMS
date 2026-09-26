@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { AppointmentStatus, AppointmentType } from '@hms/types';
+import { AppointmentStatus, AppointmentType, QueuePriority } from '@hms/types';
 
 export type AppointmentDocument = Appointment & Document;
 
@@ -44,6 +44,20 @@ export class Appointment {
     index: true,
   })
   status!: AppointmentStatus;
+
+  @Prop({
+    type: String,
+    enum: Object.values(QueuePriority),
+    default: QueuePriority.NORMAL,
+    index: true,
+  })
+  triagePriority?: QueuePriority;
+
+  @Prop({ type: Object, required: false })
+  triageVitals?: Record<string, any>;
+
+  @Prop({ required: false, trim: true })
+  triageNotes?: string;
 
   @Prop({ required: false, trim: true })
   chiefComplaint?: string;

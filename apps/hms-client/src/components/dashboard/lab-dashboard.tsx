@@ -42,73 +42,28 @@ export function LabDashboard() {
     setIsLoading(true);
     try {
       const res = await apiClient.get<ApiResponse<any[]>>('/laboratory/orders');
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+      if (res?.data && Array.isArray(res.data)) {
         setOrders(
-          res.data.slice(0, 5).map((o: any) => ({
+          res.data.map((o: any) => ({
             id: o.id || o._id,
             orderNumber: o.orderNumber || 'LAB-2026-001',
             patientName: o.patientId?.firstName
-              ? `${o.patientId.firstName} ${o.patientId.lastName}`
-              : 'Patient',
-            testName: o.testId?.name || 'Complete Blood Count (CBC)',
-            department: 'Hematology',
+              ? `${o.patientId.firstName} ${o.patientId.lastName || ''}`
+              : (o.patientName || 'Patient'),
+            testName: o.testId?.name || (o.tests?.[0]?.testName || 'Diagnostic Panel'),
+            department: o.testId?.category || o.department || 'Diagnostic Lab',
             status: (o.status === 'SAMPLE_COLLECTED'
               ? 'Sample Received'
               : o.status === 'IN_PROGRESS'
               ? 'Processing'
+              : o.status === 'VERIFIED' || o.status === 'COMPLETED'
+              ? 'Completed'
               : 'Pending Collection') as any,
             priority: o.priority || 'ROUTINE',
           })),
         );
       } else {
-        // High polish fallback orders matching Image 2 #7
-        setOrders([
-          {
-            id: 'ord-1',
-            orderNumber: 'LAB-101',
-            patientName: 'Rahul Kumar',
-            testName: 'CBC (Complete Blood Count)',
-            department: 'Hematology',
-            status: 'Sample Received',
-            priority: 'ROUTINE',
-          },
-          {
-            id: 'ord-2',
-            orderNumber: 'LAB-102',
-            patientName: 'Priya Mehta',
-            testName: 'Lipid Profile',
-            department: 'Biochemistry',
-            status: 'Processing',
-            priority: 'URGENT',
-          },
-          {
-            id: 'ord-3',
-            orderNumber: 'LAB-103',
-            patientName: 'Amit Singh',
-            testName: 'Thyroid Profile (T3, T4, TSH)',
-            department: 'Endocrinology',
-            status: 'Processing',
-            priority: 'ROUTINE',
-          },
-          {
-            id: 'ord-4',
-            orderNumber: 'LAB-104',
-            patientName: 'Sunita Patel',
-            testName: 'Urine Routine & Microscopic',
-            department: 'Pathology',
-            status: 'Pending Collection',
-            priority: 'ROUTINE',
-          },
-          {
-            id: 'ord-5',
-            orderNumber: 'LAB-105',
-            patientName: 'Vikram Desai',
-            testName: 'HbA1c Glycated Hemoglobin',
-            department: 'Biochemistry',
-            status: 'Sample Received',
-            priority: 'STAT',
-          },
-        ]);
+        setOrders([]);
       }
     } catch {
       // Keep polished fallback
@@ -226,50 +181,60 @@ export function LabDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {orders.map((ord) => (
-                  <tr key={ord.id} className="group hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-2 font-mono font-bold text-purple-700 whitespace-nowrap">
-                      {ord.orderNumber}
-                    </td>
-
-                    <td className="py-3 px-2 font-semibold text-slate-900 whitespace-nowrap">
-                      {ord.patientName}
-                    </td>
-
-                    <td className="py-3 px-2">
-                      <p className="font-medium text-slate-800 leading-tight">{ord.testName}</p>
-                      <p className="text-[10px] text-slate-400">{ord.department}</p>
-                    </td>
-
-                    <td className="py-3 px-2 whitespace-nowrap">
-                      <span
-                        className={cn(
-                          'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border',
-                          ord.status === 'Sample Received' &&
-                            'bg-emerald-50 text-emerald-800 border-emerald-200',
-                          ord.status === 'Processing' &&
-                            'bg-amber-50 text-amber-800 border-amber-200',
-                          ord.status === 'Pending Collection' &&
-                            'bg-sky-50 text-sky-800 border-sky-200',
-                        )}
-                      >
-                        {ord.status}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-2 text-right whitespace-nowrap">
-                      <Link href="/laboratory">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-[11px] font-medium text-purple-700 hover:text-purple-800 hover:bg-purple-50 rounded-lg cursor-pointer"
-                        >
-                          Enter Result
-                        </Button>
-                      </Link>
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-xs text-slate-500">
+                      No active laboratory orders found for this facility.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  orders.map((ord) => (
+                    <tr key={ord.id} className="group hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3 px-2 font-mono font-bold text-purple-700 whitespace-nowrap">
+                        {ord.orderNumber}
+                      </td>
+
+                      <td className="py-3 px-2 font-semibold text-slate-900 whitespace-nowrap">
+                        {ord.patientName}
+                      </td>
+
+                      <td className="py-3 px-2">
+                        <p className="font-medium text-slate-800 leading-tight">{ord.testName}</p>
+                        <p className="text-[10px] text-slate-400">{ord.department}</p>
+                      </td>
+
+                      <td className="py-3 px-2 whitespace-nowrap">
+                        <span
+                          className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                            ord.status === 'Sample Received' &&
+                              'bg-emerald-50 text-emerald-800 border-emerald-200',
+                            ord.status === 'Processing' &&
+                              'bg-amber-50 text-amber-800 border-amber-200',
+                            ord.status === 'Pending Collection' &&
+                              'bg-sky-50 text-sky-800 border-sky-200',
+                            ord.status === 'Completed' &&
+                              'bg-slate-100 text-slate-700 border-slate-200',
+                          )}
+                        >
+                          {ord.status}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-2 text-right whitespace-nowrap">
+                        <Link href="/laboratory">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] font-medium text-purple-700 hover:text-purple-800 hover:bg-purple-50 rounded-lg cursor-pointer"
+                          >
+                            Enter Result
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

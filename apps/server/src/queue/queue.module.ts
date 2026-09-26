@@ -5,6 +5,7 @@ import { QueueEntry, QueueEntrySchema } from './schemas/queue-entry.schema.js';
 import { Appointment, AppointmentSchema } from '../appointments/schemas/appointment.schema.js';
 import { QueueService } from './queue.service.js';
 import { QueueController } from './queue.controller.js';
+import { AuditModule } from '../audit/audit.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { QueueController } from './queue.controller.js';
       { name: QueueEntry.name, schema: QueueEntrySchema },
       { name: Appointment.name, schema: AppointmentSchema },
     ]),
+    AuditModule,
   ],
   controllers: [QueueController],
   providers: [QueueService],

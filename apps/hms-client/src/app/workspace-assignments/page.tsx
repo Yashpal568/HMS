@@ -35,6 +35,8 @@ export default function WorkspaceAssignmentsPage() {
   const [assignedWorkspaces, setAssignedWorkspaces] = useState<string[]>([]);
   const [assignedScope, setAssignedScope] = useState<ResourceScope>(ResourceScope.HOSPITAL_WIDE);
   const [assignedDept, setAssignedDept] = useState('');
+  const [assignedTeam, setAssignedTeam] = useState('');
+  const [teams, setTeams] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -58,6 +60,23 @@ export default function WorkspaceAssignmentsPage() {
     }
   }, []);
 
+  const fetchTeamsForDept = async (deptId: string) => {
+    if (!deptId) {
+      setTeams([]);
+      return;
+    }
+    try {
+      const res = await apiClient.get<any>(`/organization/teams?departmentId=${deptId}`);
+      if (res?.data && Array.isArray(res.data)) {
+        setTeams(res.data);
+      } else {
+        setTeams([]);
+      }
+    } catch {
+      setTeams([]);
+    }
+  };
+
   useEffect(() => {
     void fetchAssignments();
   }, [fetchAssignments]);
@@ -70,11 +89,23 @@ export default function WorkspaceAssignmentsPage() {
 
   const handleOpenAssignModal = (item: any) => {
     setSelectedAssignment(item);
-    setAssignedWorkspaces(item.assignedWorkspaces || [item.role]);
+    setAssignedWorkspaces(item.assignedWorkspaces || (item.role ? [item.role] : []));
     setAssignedScope(item.accessScope || ResourceScope.HOSPITAL_WIDE);
     setAssignedDept(item.departmentId || '');
+    setAssignedTeam(item.teamId || '');
     setFormError(null);
+    if (item.departmentId) {
+      void fetchTeamsForDept(item.departmentId);
+    } else {
+      setTeams([]);
+    }
     setIsAssignModalOpen(true);
+  };
+
+  const handleDeptChange = (deptId: string) => {
+    setAssignedDept(deptId);
+    setAssignedTeam('');
+    void fetchTeamsForDept(deptId);
   };
 
   const handleSaveAssignment = async (e: React.FormEvent) => {
@@ -95,6 +126,7 @@ export default function WorkspaceAssignmentsPage() {
         workspaces: assignedWorkspaces,
         accessScope: assignedScope,
         departmentId: assignedDept || undefined,
+        teamId: assignedTeam || undefined,
       });
 
       const empName = selectedAssignment.employeeName || selectedAssignment.name || 'Employee';
@@ -170,24 +202,26 @@ export default function WorkspaceAssignmentsPage() {
               <thead className="bg-slate-50/80 border-b border-slate-100 text-2xs uppercase tracking-wider text-slate-500 font-semibold">
                 <tr>
                   <th className="px-4 py-3">Employee</th>
-                  <th className="px-4 py-3">ID Code</th>
-                  <th className="px-4 py-3">Department</th>
-                  <th className="px-4 py-3">Authorized Workspaces</th>
-                  <th className="px-4 py-3">Resource Scope</th>
                   <th className="px-4 py-3">User Account</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Department</th>
+                  <th className="px-4 py-3">Team</th>
+                  <th className="px-4 py-3">Workspace(s)</th>
+                  <th className="px-4 py-3">Resource Scope</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
+                    <td colSpan={9} className="px-4 py-12 text-center text-slate-400">
                       Loading workspace assignments...
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                    <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
                       No assignments found matching criteria.
                     </td>
                   </tr>
@@ -196,17 +230,36 @@ export default function WorkspaceAssignmentsPage() {
                     const empName = item.employeeName || item.name || 'Unnamed Employee';
                     const empCode = item.employeeCode || item.employeeId || '—';
                     const hasAccount = item.hasUserAccount ?? item.isUserLinked ?? false;
+                    const primaryRole = (item.assignedRoles && item.assignedRoles[0]) || item.staffType || item.designation || 'Staff';
                     return (
                       <tr key={item.id || item.employeeId || item._id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-4 py-3">
                           <div className="font-semibold text-slate-900">{empName}</div>
-                          <div className="text-2xs text-slate-500">{item.email}</div>
+                          <div className="text-2xs font-mono text-slate-400">{empCode}</div>
                         </td>
-                        <td className="px-4 py-3 font-mono font-medium text-slate-700">
-                          {empCode}
+                        <td className="px-4 py-3">
+                          <div className="text-slate-800 font-medium">{item.email || '—'}</div>
+                          {hasAccount ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                              Linked
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-medium text-slate-400">
+                              Unlinked
+                            </span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          {item.department || 'General'}
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+                            {primaryRole}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 font-medium">
+                          {item.department || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {item.team || '—'}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
@@ -221,37 +274,30 @@ export default function WorkspaceAssignmentsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-mono text-[11px] text-slate-700 font-medium">
+                          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-700 font-medium">
                             {item.accessScope}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {hasAccount ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                              No Account
-                            </span>
-                          )}
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {item.userStatus || 'ACTIVE'}
+                          </span>
                         </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleOpenAssignModal(item)}
-                          className="text-teal-600 hover:text-teal-700 hover:bg-teal-50 text-xs"
-                        >
-                          <Edit2 className="h-3 w-3 mr-1" />
-                          Modify Workspaces
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenAssignModal(item)}
+                            className="text-teal-600 hover:text-teal-700 hover:bg-teal-50 text-xs"
+                          >
+                            <Edit2 className="h-3 w-3 mr-1" />
+                            Configure
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -264,7 +310,7 @@ export default function WorkspaceAssignmentsPage() {
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    Authorize Workspaces
+                    Authorize Workspaces & Access Scope
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
                     {selectedAssignment.employeeName} ({selectedAssignment.employeeCode})
@@ -345,12 +391,30 @@ export default function WorkspaceAssignmentsPage() {
                   </label>
                   <select
                     value={assignedDept}
-                    onChange={(e) => setAssignedDept(e.target.value)}
+                    onChange={(e) => handleDeptChange(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-500"
                   >
                     <option value="">Select Department</option>
                     {departments.map((d) => (
-                      <option key={d._id} value={d._id}>{d.name} ({d.code})</option>
+                      <option key={d._id || d.id} value={d._id || d.id}>{d.name} ({d.code})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Team Selection */}
+                <div>
+                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[11px] mb-1">
+                    Assigned Team (Optional)
+                  </label>
+                  <select
+                    value={assignedTeam}
+                    onChange={(e) => setAssignedTeam(e.target.value)}
+                    disabled={!assignedDept || teams.length === 0}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-500 disabled:bg-slate-100 disabled:text-slate-400"
+                  >
+                    <option value="">{teams.length === 0 ? (assignedDept ? 'No teams in this department' : 'Select a department first') : 'Select Team (Optional)'}</option>
+                    {teams.map((t) => (
+                      <option key={t._id || t.id} value={t._id || t.id}>{t.name}</option>
                     ))}
                   </select>
                 </div>

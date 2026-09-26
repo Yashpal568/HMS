@@ -54,5 +54,6 @@ export interface DashboardSummary {
     pendingLabOrders: { count: number; note: string };
     lowStockAlerts: { count: number; note: string };
     pendingInvoices: { count: number; note: string };
+    beds?: { total: number; occupied: number; available: number };
   };
 }

@@ -169,8 +169,10 @@ export class WorkspacesService {
     } else if (user.role === 'HOSPITAL_ADMIN') {
       // Hospital Admin has access to preview all workspaces
       workspaceCodes = Object.keys(STANDARD_WORKSPACES);
-    } else {
+    } else if (STANDARD_WORKSPACES[user.role]) {
       workspaceCodes = [user.role];
+    } else {
+      workspaceCodes = [];
     }
 
     const availableWorkspaces = workspaceCodes
@@ -178,12 +180,12 @@ export class WorkspacesService {
       .filter((ws): ws is WorkspaceDefinition => !!ws);
 
     // Determine active workspace: preferred if authorized, else first available
-    let activeWorkspace: WorkspaceDefinition | undefined;
+    let activeWorkspace: WorkspaceDefinition | null = null;
     if (preferredWorkspaceCode && (user.role === 'HOSPITAL_ADMIN' || workspaceCodes.includes(preferredWorkspaceCode))) {
-      activeWorkspace = STANDARD_WORKSPACES[preferredWorkspaceCode];
+      activeWorkspace = STANDARD_WORKSPACES[preferredWorkspaceCode] || null;
     }
     if (!activeWorkspace) {
-      activeWorkspace = availableWorkspaces[0] || STANDARD_WORKSPACES.HOSPITAL_ADMIN;
+      activeWorkspace = availableWorkspaces[0] || null;
     }
 
     return {
@@ -291,26 +293,64 @@ export class WorkspacesService {
       throw new NotFoundException('Employee not found.');
     }
 
-    // Validate workspace codes
+    // Validate workspace codes & prohibit SUPER_ADMIN
     for (const wsCode of dto.workspaces) {
+      if (wsCode === 'SUPER_ADMIN') {
+        throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be assigned as a workspace.');
+      }
       if (!STANDARD_WORKSPACES[wsCode]) {
         throw new BadRequestException(`Unrecognized workspace code "${wsCode}".`);
       }
     }
 
-    employee.assignedWorkspaces = dto.workspaces;
     if (dto.role) {
+      if (dto.role.toUpperCase() === 'SUPER_ADMIN') {
+        throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be assigned to hospital staff.');
+      }
       employee.assignedRoles = [dto.role.toUpperCase()];
     }
+
     if (dto.departmentId) {
+      if (!Types.ObjectId.isValid(dto.departmentId)) {
+        throw new BadRequestException('Invalid department ID format.');
+      }
+      const deptExists = await this.departmentModel.findOne({
+        _id: new Types.ObjectId(dto.departmentId),
+        tenantId: tId,
+      }).exec();
+      if (!deptExists) {
+        throw new BadRequestException('Specified department does not exist in this hospital tenant.');
+      }
       employee.departmentId = new Types.ObjectId(dto.departmentId);
     }
+
     if (dto.teamId) {
+      if (!Types.ObjectId.isValid(dto.teamId)) {
+        throw new BadRequestException('Invalid team ID format.');
+      }
+      const targetDeptId = employee.departmentId;
+      if (!targetDeptId) {
+        throw new BadRequestException('Cannot assign a team without an associated department.');
+      }
+      const teamExists = await (this.employeeModel.db as any).collection('teams').findOne({
+        _id: new Types.ObjectId(dto.teamId),
+        tenantId: tId,
+        departmentId: targetDeptId,
+      });
+      if (!teamExists) {
+        throw new BadRequestException('Specified team does not belong to the selected department.');
+      }
       employee.teamId = new Types.ObjectId(dto.teamId);
     }
+
     if (dto.accessScope) {
+      if (!Object.values(ResourceScope).includes(dto.accessScope)) {
+        throw new BadRequestException(`Invalid resource scope "${dto.accessScope}".`);
+      }
       employee.accessScope = dto.accessScope;
     }
+
+    employee.assignedWorkspaces = dto.workspaces;
 
     await employee.save();
 

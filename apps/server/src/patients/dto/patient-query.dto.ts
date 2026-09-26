@@ -23,4 +23,7 @@ export class PatientQueryDto {
   @Max(100)
   @IsOptional()
   limit?: number = 20;
+
+  @IsOptional()
+  today?: string;
 }

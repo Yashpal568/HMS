@@ -1,0 +1,1452 @@
+[
+  {
+    "route": "/",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 5,
+    "targetNodes": [
+      ".hover\\:bg-slate-50\\/70:nth-child(1) > .text-right > .gap-1\\.5.inline-flex.items-center > .hover\\:text-slate-600.p-1.hover\\:bg-slate-100",
+      ".hover\\:bg-slate-50\\/70:nth-child(2) > .text-right > .gap-1\\.5.inline-flex.items-center > .hover\\:text-slate-600.p-1.hover\\:bg-slate-100",
+      ".hover\\:bg-slate-50\\/70:nth-child(3) > .text-right > .gap-1\\.5.inline-flex.items-center > .hover\\:text-slate-600.p-1.hover\\:bg-slate-100"
+    ]
+  },
+  {
+    "route": "/",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 36,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider.select-none",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"dashboard\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider.select-none"
+    ]
+  },
+  {
+    "route": "/",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".pb-4 > .gap-2.items-center.flex > .text-sm"
+    ]
+  },
+  {
+    "route": "/login",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".right-0"
+    ]
+  },
+  {
+    "route": "/login",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".mt-4"
+    ]
+  },
+  {
+    "route": "/login",
+    "ruleId": "landmark-one-main",
+    "impact": "moderate",
+    "description": "Ensure the document has a main landmark",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/landmark-one-main?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "html"
+    ]
+  },
+  {
+    "route": "/login",
+    "ruleId": "region",
+    "impact": "moderate",
+    "description": "Ensure all page content is contained by landmarks",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/region?application=axeAPI",
+    "nodesCount": 9,
+    "targetNodes": [
+      "h1",
+      ".mt-1",
+      "label[for=\"email\"]"
+    ]
+  },
+  {
+    "route": "/dashboard",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 5,
+    "targetNodes": [
+      ".hover\\:bg-slate-50\\/70:nth-child(1) > .text-right > .gap-1\\.5.inline-flex.items-center > .hover\\:text-slate-600.p-1.hover\\:bg-slate-100",
+      ".hover\\:bg-slate-50\\/70:nth-child(2) > .text-right > .gap-1\\.5.inline-flex.items-center > .hover\\:text-slate-600.p-1.hover\\:bg-slate-100",
+      ".hover\\:bg-slate-50\\/70:nth-child(3) > .text-right > .gap-1\\.5.inline-flex.items-center > .hover\\:text-slate-600.p-1.hover\\:bg-slate-100"
+    ]
+  },
+  {
+    "route": "/dashboard",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 36,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider.select-none",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"dashboard\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider.select-none"
+    ]
+  },
+  {
+    "route": "/dashboard",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".pb-4 > .gap-2.items-center.flex > .text-sm"
+    ]
+  },
+  {
+    "route": "/appointments",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 14,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider.text-\\[10px\\]",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"appointments\"]:nth-child(3) > .flex-1.min-w-0.justify-between > .truncate",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"appointments\"]:nth-child(4) > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/appointments",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-4.gap-4.border-slate-200\\/80:nth-child(2) > div:nth-child(2) > h3"
+    ]
+  },
+  {
+    "route": "/appointments",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".text-center"
+    ]
+  },
+  {
+    "route": "/appointments",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/appointments/book",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 13,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider.text-\\[10px\\]",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"appointments\"]:nth-child(3) > .flex-1.min-w-0.justify-between > .truncate",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"appointments\"]:nth-child(4) > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/appointments/schedules",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 22,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider.text-\\[10px\\]",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"appointments\"]:nth-child(3) > .min-w-0.justify-between.flex-1 > .truncate",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"appointments\"]:nth-child(4) > .min-w-0.justify-between.flex-1 > .truncate"
+    ]
+  },
+  {
+    "route": "/appointments/schedules",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".hover\\:border-slate-300.p-5.border-slate-200\\/80:nth-child(1) > .md\\:flex-row.md\\:items-center.pb-4 > .gap-3.flex.items-center:nth-child(1) > div:nth-child(2) > h3"
+    ]
+  },
+  {
+    "route": "/appointments/schedules",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 18,
+    "targetNodes": [
+      ".hover\\:border-slate-300.p-5.border-slate-200\\/80:nth-child(1) > .pt-4.grid.grid-cols-1 > .space-y-1\\.5:nth-child(1) > .gap-1\\.5.flex.items-center > .px-2[value=\"09:00\"][type=\"time\"]",
+      ".hover\\:border-slate-300.p-5.border-slate-200\\/80:nth-child(1) > .pt-4.grid.grid-cols-1 > .space-y-1\\.5:nth-child(1) > .gap-1\\.5.flex.items-center > .px-2[value=\"13:00\"][type=\"time\"]",
+      ".hover\\:border-slate-300.p-5.border-slate-200\\/80:nth-child(1) > .pt-4.grid.grid-cols-1 > .space-y-1\\.5:nth-child(3) > input[min=\"1\"][max=\"150\"][type=\"number\"]"
+    ]
+  },
+  {
+    "route": "/appointments/schedules",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".focus\\:ring-teal-500\\/20",
+      ".hover\\:border-slate-300.p-5.border-slate-200\\/80:nth-child(1) > .pt-4.grid.grid-cols-1 > .space-y-1\\.5:nth-child(2) > select",
+      ".hover\\:border-slate-300.p-5.border-slate-200\\/80:nth-child(2) > .pt-4.grid.grid-cols-1 > .space-y-1\\.5:nth-child(2) > select"
+    ]
+  },
+  {
+    "route": "/appointments/[id]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 9,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".bg-teal-600.shadow-teal-900\\/30[href$=\"appointments\"]:nth-child(3) > .flex-1.min-w-0.justify-between > .truncate",
+      ".bg-teal-600.shadow-teal-900\\/30[href$=\"appointments\"]:nth-child(4) > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/appointments/[id]",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-6.space-y-4.border-slate-200\\/80:nth-child(1) > .pb-3.border-slate-100.border-b > h3"
+    ]
+  },
+  {
+    "route": "/audit",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      ".disabled\\:opacity-40.py-1.hover\\:bg-muted:nth-child(1)",
+      ".disabled\\:opacity-40.py-1.hover\\:bg-muted:nth-child(2)"
+    ]
+  },
+  {
+    "route": "/audit",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 38,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(3) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/audit",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      ".bg-transparent[type=\"date\"]:nth-child(2)",
+      ".bg-transparent[type=\"date\"]:nth-child(4)"
+    ]
+  },
+  {
+    "route": "/audit",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      "select:nth-child(1)",
+      "select:nth-child(2)"
+    ]
+  },
+  {
+    "route": "/billing",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 8,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .text-\\[10px\\].uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .text-\\[10px\\].uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/billing/invoices/new",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 20,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".space-y-1:nth-child(2) > p",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/billing/invoices/new",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 4,
+    "targetNodes": [
+      "input[min=\"1\"]",
+      "input[value=\"500\"]",
+      "input[value=\"0\"]"
+    ]
+  },
+  {
+    "route": "/billing/invoices/new",
+    "ruleId": "link-name",
+    "impact": "serious",
+    "description": "Ensure links have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/link-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".hover\\:bg-slate-50"
+    ]
+  },
+  {
+    "route": "/billing/invoices/new",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 3,
+    "targetNodes": [
+      "div:nth-child(1) > .focus\\:ring-indigo-500\\/20",
+      ".gap-2.flex.items-center:nth-child(2) > .bg-slate-100",
+      ".sm\\:col-span-3 > select"
+    ]
+  },
+  {
+    "route": "/billing/invoices/[id]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 17,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".overflow-y-auto > .space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/billing/invoices/[id]",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "h3"
+    ]
+  },
+  {
+    "route": "/billing/invoices/[id]",
+    "ruleId": "link-name",
+    "impact": "serious",
+    "description": "Ensure links have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/link-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".gap-3.items-center.flex > .dark\\:border-slate-700.hover\\:bg-slate-50.dark\\:hover\\:bg-slate-750"
+    ]
+  },
+  {
+    "route": "/billing/payments",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 14,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/billing/payments",
+    "ruleId": "link-name",
+    "impact": "serious",
+    "description": "Ensure links have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/link-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".dark\\:hover\\:bg-slate-750"
+    ]
+  },
+  {
+    "route": "/billing/refunds",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 9,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/billing/refunds",
+    "ruleId": "link-name",
+    "impact": "serious",
+    "description": "Ensure links have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/link-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".dark\\:hover\\:bg-slate-750"
+    ]
+  },
+  {
+    "route": "/billing/tariffs",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 19,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/billing/tariffs",
+    "ruleId": "link-name",
+    "impact": "serious",
+    "description": "Ensure links have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/link-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".dark\\:hover\\:bg-slate-750"
+    ]
+  },
+  {
+    "route": "/departments",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 13,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider.uppercase.select-none",
+      ".space-y-1:nth-child(2) > .tracking-wider.uppercase.select-none",
+      ".space-y-1:nth-child(3) > .tracking-wider.uppercase.select-none"
+    ]
+  },
+  {
+    "route": "/departments",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".gap-2.flex.items-center > .text-sm"
+    ]
+  },
+  {
+    "route": "/departments",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/employees",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 14,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(3) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/employees",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 3,
+    "targetNodes": [
+      "select:nth-child(1)",
+      "select:nth-child(2)",
+      "select:nth-child(3)"
+    ]
+  },
+  {
+    "route": "/emr",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 13,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider.text-\\[10px\\]",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider.text-\\[10px\\]",
+      ".space-y-1:nth-child(3) > .uppercase.tracking-wider.text-\\[10px\\]"
+    ]
+  },
+  {
+    "route": "/emr",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".hover\\:border-slate-300\\/80.border-border\\/70.hover\\:border-border:nth-child(1) > .p-6.pt-0.p-5 > div:nth-child(1) > h3"
+    ]
+  },
+  {
+    "route": "/emr",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "input[type=\"date\"]"
+    ]
+  },
+  {
+    "route": "/emr/consultation/[appointmentId]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 11,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider.uppercase",
+      ".space-y-1:nth-child(2) > .tracking-wider.uppercase",
+      ".space-y-1:nth-child(3) > .tracking-wider.uppercase"
+    ]
+  },
+  {
+    "route": "/emr/consultation/[appointmentId]",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "h4"
+    ]
+  },
+  {
+    "route": "/emr/consultation/[appointmentId]",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 4,
+    "targetNodes": [
+      "input[value=\"3\"]",
+      "input[value=\"6\"]",
+      ".sm\\:col-span-3:nth-child(5) > input[value=\"7\"][min=\"1\"][type=\"number\"]"
+    ]
+  },
+  {
+    "route": "/emr/consultation/[appointmentId]",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 4,
+    "targetNodes": [
+      ".p-3\\.5.bg-muted\\/10.space-y-3:nth-child(1) > .sm\\:grid-cols-12.grid-cols-1.grid > .sm\\:col-span-3:nth-child(2) > select",
+      ".p-3\\.5.bg-muted\\/10.space-y-3:nth-child(1) > .sm\\:grid-cols-12.grid-cols-1.grid > .sm\\:col-span-4:nth-child(4) > select",
+      ".p-3\\.5.bg-muted\\/10.space-y-3:nth-child(2) > .sm\\:grid-cols-12.grid-cols-1.grid > .sm\\:col-span-3:nth-child(2) > select"
+    ]
+  },
+  {
+    "route": "/inventory",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 12,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider.select-none.uppercase",
+      ".space-y-1:nth-child(2) > .tracking-wider.select-none.uppercase",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".hover\\:border-teal-500.hover\\:shadow-xs[href$=\"items\"] > .gap-3.flex.items-center > div > h3"
+    ]
+  },
+  {
+    "route": "/inventory/grn",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory/grn",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/inventory/import",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "h3 > .hover\\:text-slate-700"
+    ]
+  },
+  {
+    "route": "/inventory/import",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 16,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider.uppercase.text-\\[10px\\]",
+      ".space-y-1:nth-child(2) > .tracking-wider.uppercase.text-\\[10px\\]",
+      ".shadow-teal-900\\/30.shadow-xs[href$=\"inventory\"] > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory/import",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-6.space-y-4.shadow-2xs:nth-child(1) > .justify-between.flex.items-center:nth-child(1) > .text-base"
+    ]
+  },
+  {
+    "route": "/inventory/import",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      "input",
+      "textarea"
+    ]
+  },
+  {
+    "route": "/inventory/import",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 10,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > select",
+      ".space-y-1:nth-child(2) > select",
+      ".space-y-1:nth-child(3) > select"
+    ]
+  },
+  {
+    "route": "/inventory/items",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory/purchase-orders",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 12,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory/purchase-orders",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/inventory/suppliers",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 10,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory/suppliers",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-5.hover\\:border-teal-500.space-y-4:nth-child(1) > .items-start.justify-between.flex > .gap-2\\.5.items-center.flex > div > h3"
+    ]
+  },
+  {
+    "route": "/inventory/transfers",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 12,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/inventory/transfers",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "h3"
+    ]
+  },
+  {
+    "route": "/ipd",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 22,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      "a[href$=\"ipd\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/ipd/admissions/new",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 6,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"ipd\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/ipd/admissions/new",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 4,
+    "targetNodes": [
+      "div:nth-child(1) > .relative > select",
+      ".grid > div:nth-child(2) > select",
+      "div:nth-child(3) > .relative > select"
+    ]
+  },
+  {
+    "route": "/ipd/admissions/[id]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 10,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".bg-teal-600.shadow-teal-900\\/30[href$=\"ipd\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > p"
+    ]
+  },
+  {
+    "route": "/ipd/admissions/[id]/discharge",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 10,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".bg-teal-600.shadow-teal-900\\/30[href$=\"ipd\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > p"
+    ]
+  },
+  {
+    "route": "/ipd/beds",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 23,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"ipd\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .tracking-wider"
+    ]
+  },
+  {
+    "route": "/laboratory",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 13,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      "a[href$=\"laboratory\"] > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/laboratory",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/laboratory/orders/new",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 10,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".space-y-1:nth-child(2) > p",
+      ".bg-teal-600.shadow-teal-900\\/30[href$=\"laboratory\"] > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/laboratory/orders/new",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/laboratory/reports/[orderId]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 19,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600.shadow-teal-900\\/30[href$=\"laboratory\"] > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/laboratory/tests",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 12,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".space-y-1:nth-child(2) > p",
+      ".shadow-teal-900\\/30.bg-teal-600[href$=\"laboratory\"] > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/laboratory/tests",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".overflow-hidden.hover\\:border-slate-300.shadow-xs:nth-child(1) > .bg-slate-50\\/40.sm\\:flex-row[role=\"button\"] > .items-start.sm\\:items-center.gap-3 > div:nth-child(2) > .flex-wrap.gap-2.flex > h3"
+    ]
+  },
+  {
+    "route": "/laboratory/worklist",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".space-y-1:nth-child(2) > p",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/patients",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      "a[href$=\"patients\"] > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/patients/register",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".bg-teal-600.shadow-teal-900\\/30.shadow-xs > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > p"
+    ]
+  },
+  {
+    "route": "/patients/register",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "input[max=\"2026-09-25\"]"
+    ]
+  },
+  {
+    "route": "/patients/register",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 5,
+    "targetNodes": [
+      ".sm\\:grid-cols-4.gap-4.grid > div:nth-child(2) > select",
+      ".sm\\:grid-cols-4.gap-4.grid > div:nth-child(3) > select",
+      "div:nth-child(4) > select"
+    ]
+  },
+  {
+    "route": "/patients/[id]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".bg-teal-600.shadow-teal-900\\/30.shadow-xs > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/patients/[id]",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "h3"
+    ]
+  },
+  {
+    "route": "/patients/[id]/edit",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 6,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/permissions",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 9,
+    "targetNodes": [
+      ".space-y-4 > .space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-4 > .space-y-1:nth-child(2) > .tracking-wider",
+      ".space-y-4 > .space-y-1:nth-child(3) > .tracking-wider"
+    ]
+  },
+  {
+    "route": "/pharmacy",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 9,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .text-\\[10px\\].uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .text-\\[10px\\].uppercase.tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/pharmacy/batches",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 117,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/pharmacy/batches",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/pharmacy/dispense/[prescriptionId]",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 13,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".space-y-1:nth-child(2) > p",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/pharmacy/medicines",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 24,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/reports",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 13,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > p",
+      ".space-y-1:nth-child(2) > p",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/reports",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      "input[value=\"2026-09-18\"]",
+      "input[value=\"2026-09-25\"]"
+    ]
+  },
+  {
+    "route": "/reports/census",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".disabled\\:opacity-50"
+    ]
+  },
+  {
+    "route": "/reports/census",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/reports/census",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".lg\\:col-span-2 > .mb-4.justify-between.flex > h3"
+    ]
+  },
+  {
+    "route": "/reports/census",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      "input[value=\"2026-08-26\"]",
+      "input[value=\"2026-09-25\"]"
+    ]
+  },
+  {
+    "route": "/reports/financial",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".disabled\\:opacity-50"
+    ]
+  },
+  {
+    "route": "/reports/financial",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 14,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider.select-none",
+      ".space-y-1:nth-child(2) > .tracking-wider.select-none",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/reports/financial",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".mb-4.justify-between.flex > div > h3"
+    ]
+  },
+  {
+    "route": "/reports/financial",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      "input[value=\"2026-08-26\"]",
+      "input[value=\"2026-09-25\"]"
+    ]
+  },
+  {
+    "route": "/reports/pharmacy-inventory",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".disabled\\:opacity-50"
+    ]
+  },
+  {
+    "route": "/reports/pharmacy-inventory",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 26,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider",
+      ".space-y-1:nth-child(2) > .tracking-wider",
+      ".bg-teal-600 > .flex-1.min-w-0.justify-between > .truncate"
+    ]
+  },
+  {
+    "route": "/reports/pharmacy-inventory",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-5.bg-card.shadow-sm:nth-child(4) > .mb-4.justify-between.flex > div > h3"
+    ]
+  },
+  {
+    "route": "/reports/pharmacy-inventory",
+    "ruleId": "label",
+    "impact": "critical",
+    "description": "Ensure every form element has a label",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      "input[value=\"2026-08-26\"]",
+      "input[value=\"2026-09-25\"]"
+    ]
+  },
+  {
+    "route": "/roles",
+    "ruleId": "button-name",
+    "impact": "critical",
+    "description": "Ensure buttons have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/button-name?application=axeAPI",
+    "nodesCount": 2,
+    "targetNodes": [
+      ".p-5.hover\\:border-teal-300.space-y-4:nth-child(10) > .pt-3.border-slate-100.border-t > .text-rose-600.hover\\:text-rose-700.hover\\:bg-rose-50",
+      ".p-5.hover\\:border-teal-300.space-y-4:nth-child(11) > .pt-3.border-slate-100.border-t > .text-rose-600.hover\\:text-rose-700.hover\\:bg-rose-50"
+    ]
+  },
+  {
+    "route": "/roles",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 18,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(3) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/roles",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-5.hover\\:border-teal-300.space-y-4:nth-child(1) > .space-y-3 > .items-start.justify-between.flex > div > .gap-2.items-center.flex > h3"
+    ]
+  },
+  {
+    "route": "/roles",
+    "ruleId": "scrollable-region-focusable",
+    "impact": "serious",
+    "description": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".p-5.hover\\:border-teal-300.space-y-4:nth-child(1) > .space-y-3 > .flex-wrap.max-h-20.scrollbar-none"
+    ]
+  },
+  {
+    "route": "/staff",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 7,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .tracking-wider.uppercase.font-bold",
+      ".space-y-1:nth-child(2) > .tracking-wider.uppercase.font-bold",
+      ".space-y-1:nth-child(3) > .tracking-wider.uppercase.font-bold"
+    ]
+  },
+  {
+    "route": "/staff",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 3,
+    "targetNodes": [
+      "div:nth-child(2) > select",
+      "div:nth-child(3) > select",
+      "div:nth-child(4) > select"
+    ]
+  },
+  {
+    "route": "/users",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 30,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(3) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/users",
+    "ruleId": "select-name",
+    "impact": "critical",
+    "description": "Ensure select element has an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      "select"
+    ]
+  },
+  {
+    "route": "/workspace-assignments",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 9,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(2) > .uppercase.tracking-wider",
+      ".space-y-1:nth-child(3) > .uppercase.tracking-wider"
+    ]
+  },
+  {
+    "route": "/workspaces",
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+    "nodesCount": 41,
+    "targetNodes": [
+      ".space-y-1:nth-child(1) > .text-slate-500",
+      ".space-y-1:nth-child(2) > .text-slate-500",
+      ".space-y-1:nth-child(3) > .text-slate-500"
+    ]
+  },
+  {
+    "route": "/workspaces",
+    "ruleId": "heading-order",
+    "impact": "moderate",
+    "description": "Ensure the order of headings is semantically correct",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/heading-order?application=axeAPI",
+    "nodesCount": 1,
+    "targetNodes": [
+      ".border-teal-500 > .space-y-4 > .items-start.justify-between.flex > .gap-3.items-center.flex > div:nth-child(2) > h3"
+    ]
+  }
+]

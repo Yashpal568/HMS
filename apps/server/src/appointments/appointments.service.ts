@@ -4,6 +4,8 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -12,15 +14,18 @@ import { DoctorSchedule, type DoctorScheduleDocument } from './schemas/doctor-sc
 import { Patient, type PatientDocument } from '../patients/schemas/patient.schema.js';
 import { User, type UserDocument, UserRole, UserStatus } from '../users/schemas/user.schema.js';
 import { AuditService } from '../audit/audit.service.js';
+import { QueueService } from '../queue/queue.service.js';
 import {
   AppointmentStatus,
   AppointmentType,
+  QueuePriority,
   type AvailableSlot,
   type DoctorUserSummary,
 } from '@hms/types';
 import type { BookAppointmentDto } from './dto/book-appointment.dto.js';
 import type { DoctorScheduleDto } from './dto/doctor-schedule.dto.js';
 import type { AppointmentQueryDto } from './dto/appointment-query.dto.js';
+import type { CheckInTriageDto } from './dto/check-in-triage.dto.js';
 
 @Injectable()
 export class AppointmentsService {
@@ -36,6 +41,8 @@ export class AppointmentsService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly auditService: AuditService,
+    @Inject(forwardRef(() => QueueService))
+    private readonly queueService: QueueService,
   ) {}
 
   /**
@@ -412,6 +419,35 @@ export class AppointmentsService {
       filter.patientId = this.toObjectId(query.patientId);
     }
 
+    if (query.search && query.search.trim()) {
+      const term = query.search.trim();
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escaped, 'i');
+
+      const matchingPatients = await this.patientModel
+        .find({
+          tenantId: tId,
+          $or: [
+            { uhid: searchRegex },
+            { 'name.first': searchRegex },
+            { 'name.last': searchRegex },
+            { 'contacts.phone': searchRegex },
+          ],
+        })
+        .select('_id')
+        .lean()
+        .exec();
+
+      const patientIds = matchingPatients.map((p) => p._id);
+      const orConditions: any[] = [{ patientId: { $in: patientIds } }];
+
+      if (!isNaN(Number(term))) {
+        orConditions.push({ tokenNumber: Number(term) });
+      }
+
+      filter.$or = orConditions;
+    }
+
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(100, Math.max(1, query.limit || 50));
     const skip = (page - 1) * limit;
@@ -463,6 +499,9 @@ export class AppointmentsService {
       timeSlot: item.timeSlot,
       type: item.type,
       status: item.status,
+      triagePriority: item.triagePriority,
+      triageVitals: item.triageVitals,
+      triageNotes: item.triageNotes,
       chiefComplaint: item.chiefComplaint,
       checkedInAt: item.checkedInAt ? item.checkedInAt.toISOString() : undefined,
       cancelledReason: item.cancelledReason,
@@ -528,6 +567,9 @@ export class AppointmentsService {
       timeSlot: item.timeSlot,
       type: item.type,
       status: item.status,
+      triagePriority: item.triagePriority,
+      triageVitals: item.triageVitals,
+      triageNotes: item.triageNotes,
       chiefComplaint: item.chiefComplaint,
       checkedInAt: item.checkedInAt ? item.checkedInAt.toISOString() : undefined,
       cancelledReason: item.cancelledReason,
@@ -558,9 +600,14 @@ export class AppointmentsService {
   }
 
   /**
-   * Reception Check-In Action
+   * Reception Check-In Action with Clinical Triage and Live OPD Queue Enrollment
    */
-  async checkInAppointment(tenantId: string, userId: string, id: string): Promise<any> {
+  async checkInAppointment(
+    tenantId: string,
+    userId: string,
+    id: string,
+    dto?: CheckInTriageDto,
+  ): Promise<any> {
     const tId = this.toObjectId(tenantId);
     const apptId = this.toObjectId(id);
 
@@ -573,13 +620,63 @@ export class AppointmentsService {
       throw new BadRequestException('Cannot check in a cancelled appointment');
     }
 
+    if (
+      appointment.status === AppointmentStatus.CHECKED_IN ||
+      appointment.status === AppointmentStatus.IN_CONSULTATION
+    ) {
+      throw new ConflictException(`Appointment "${id}" is already checked into queue`);
+    }
+
     if (appointment.status === AppointmentStatus.COMPLETED) {
       throw new BadRequestException('Appointment is already completed');
+    }
+
+    // Triage priority and notes
+    const priority = dto?.priority || appointment.triagePriority || QueuePriority.NORMAL;
+    appointment.triagePriority = priority;
+    if (dto?.triageNotes) {
+      appointment.triageNotes = dto.triageNotes;
+    }
+    if (dto?.chiefComplaint) {
+      appointment.chiefComplaint = dto.chiefComplaint;
+    }
+
+    // Triage vitals with automated BMI calculation
+    if (dto?.vitals) {
+      const vitals: any = { ...dto.vitals };
+      if (vitals.weight && vitals.height && vitals.weight > 0 && vitals.height > 0) {
+        const heightM = vitals.height / 100;
+        const bmi = Math.round((vitals.weight / (heightM * heightM)) * 10) / 10;
+        vitals.bmi = bmi;
+        if (bmi < 18.5) vitals.bmiCategory = 'underweight';
+        else if (bmi < 25) vitals.bmiCategory = 'normal';
+        else if (bmi < 30) vitals.bmiCategory = 'overweight';
+        else vitals.bmiCategory = 'obese';
+      }
+      appointment.triageVitals = vitals;
     }
 
     appointment.status = AppointmentStatus.CHECKED_IN;
     appointment.checkedInAt = new Date();
     await appointment.save();
+
+    // Check patient into live OPD Queue
+    try {
+      if (this.queueService) {
+        await this.queueService.checkInPatient(tenantId, {
+          patientId: String(appointment.patientId),
+          doctorId: String(appointment.doctorId),
+          department: appointment.department,
+          appointmentId: id,
+          priority,
+          triageNotes: appointment.triageNotes,
+          chiefComplaint: appointment.chiefComplaint,
+        });
+      }
+    } catch (err: any) {
+      // Idempotency: if already in queue, continue
+      this.logger.log(`Live OPD queue check-in status: ${err?.message || err}`);
+    }
 
     await this.auditService.record({
       action: 'APPOINTMENT_CHECKIN',
@@ -591,6 +688,8 @@ export class AppointmentsService {
         appointmentId: id,
         tokenNumber: appointment.tokenNumber,
         checkedInAt: appointment.checkedInAt.toISOString(),
+        priority,
+        hasVitals: Boolean(dto?.vitals),
       },
     });
 

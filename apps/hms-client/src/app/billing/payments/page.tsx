@@ -143,7 +143,8 @@ export default function PaymentsPage() {
 
         {/* Table */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-800/40 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -237,6 +238,82 @@ export default function PaymentsPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Stacked Record Cards View */}
+          <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-800">
+            {isLoading ? (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-500" />
+                Loading receipts...
+              </div>
+            ) : filteredPayments.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                No payments found.
+              </div>
+            ) : (
+              filteredPayments.map((p) => {
+                const patient = typeof p.patientId === 'object' ? p.patientId : null;
+                const invoice = typeof p.invoiceId === 'object' ? p.invoiceId : null;
+                const cashier = typeof p.cashierId === 'object' ? p.cashierId : null;
+                const patientName = patient
+                  ? ((patient as any).name
+                      ? `${(patient as any).name.first || ''} ${(patient as any).name.last || ''}`.trim()
+                      : `${(patient as any).firstName || ''} ${(patient as any).lastName || ''}`.trim())
+                  : null;
+
+                return (
+                  <div key={p._id || p.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs block">
+                          {p.receiptNumber}
+                        </span>
+                        {invoice && (
+                          <Link
+                            href={`/billing/invoices/${invoice._id || invoice.id}`}
+                            className="font-mono text-indigo-600 hover:underline text-[11px]"
+                          >
+                            Inv: {invoice.invoiceNumber}
+                          </Link>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400 block">
+                          {formatCurrency(p.amount)}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 uppercase">
+                          {p.method.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                      {patientName && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">Patient:</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {patientName} {patient?.uhid && <span className="font-mono text-2xs text-slate-400 font-normal">({patient.uhid})</span>}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-500">Cashier:</span>
+                        <span className="text-slate-700 dark:text-slate-300">
+                          {cashier ? `${cashier.firstName} ${cashier.lastName}` : 'System'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-500">Date:</span>
+                        <span className="font-mono text-slate-600 dark:text-slate-400 text-2xs">
+                          {new Date(p.paidAt).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

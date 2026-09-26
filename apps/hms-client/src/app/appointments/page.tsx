@@ -29,6 +29,7 @@ import {
   AlertCircle,
   Settings,
   Hash,
+  Stethoscope,
 } from 'lucide-react';
 
 export default function AppointmentsPage() {
@@ -73,6 +74,7 @@ export default function AppointmentsPage() {
         if (selectedDate) queryParams.set('date', selectedDate);
         if (selectedDoctorId) queryParams.set('doctorId', selectedDoctorId);
         if (selectedStatus) queryParams.set('status', selectedStatus);
+        if (searchQuery.trim()) queryParams.set('search', searchQuery.trim());
 
         const url = `/appointments?${queryParams.toString()}`;
         const res = await apiClient.get<{
@@ -93,7 +95,7 @@ export default function AppointmentsPage() {
         setRefreshing(false);
       }
     },
-    [selectedDate, selectedDoctorId, selectedStatus]
+    [selectedDate, selectedDoctorId, selectedStatus, searchQuery]
   );
 
   useEffect(() => {
@@ -564,6 +566,21 @@ export default function AppointmentsPage() {
                                 <UserCheck className="w-3.5 h-3.5" />
                                 <span>Check In</span>
                               </Button>
+                            )}
+
+                            {/* Consult Action */}
+                            {(app.status === AppointmentStatus.CHECKED_IN ||
+                              app.status === AppointmentStatus.IN_CONSULTATION) && (
+                              <Link href={`/emr/consultation/${apptId}`}>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="h-7 text-xs px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium flex items-center gap-1 shadow-xs"
+                                >
+                                  <Stethoscope className="w-3.5 h-3.5" />
+                                  <span>Consult</span>
+                                </Button>
+                              </Link>
                             )}
 
                             {/* View Detail Action */}

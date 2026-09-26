@@ -241,83 +241,140 @@ export default function ItemMasterCatalogPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-600">
-                <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">Item Code</th>
-                    <th className="py-3 px-4">Item Name</th>
-                    <th className="py-3 px-4">Category</th>
-                    <th className="py-3 px-4">UOM</th>
-                    <th className="py-3 px-4">Stock on Hand</th>
-                    <th className="py-3 px-4">Safety Threshold</th>
-                    <th className="py-3 px-4">Unit Cost</th>
-                    <th className="py-3 px-4 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
-                  {items.map((item) => {
-                    const isLow = item.stockOnHand <= item.reorderLevel;
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">Item Code</th>
+                      <th className="py-3 px-4">Item Name</th>
+                      <th className="py-3 px-4">Category</th>
+                      <th className="py-3 px-4">UOM</th>
+                      <th className="py-3 px-4">Stock on Hand</th>
+                      <th className="py-3 px-4">Safety Threshold</th>
+                      <th className="py-3 px-4">Unit Cost</th>
+                      <th className="py-3 px-4 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {items.map((item) => {
+                      const isLow = item.stockOnHand <= item.reorderLevel;
 
-                    return (
-                      <tr key={item._id || item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                          {item.itemCode}
-                        </td>
+                      return (
+                        <tr key={item._id || item.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                            {item.itemCode}
+                          </td>
 
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-slate-900 block text-xs">
-                            {item.name}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${getCategoryBadge(
-                              item.category,
-                            )}`}
-                          >
-                            {item.category}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-slate-500">
-                          {item.uom}
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <span className={`text-sm font-extrabold ${isLow ? 'text-amber-700' : 'text-slate-900'}`}>
-                            {item.stockOnHand}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-slate-500">
-                          Min: <span className="font-bold text-slate-700">{item.reorderLevel}</span> (Reorder: {item.reorderQuantity || item.reorderLevel * 2})
-                        </td>
-
-                        <td className="py-3.5 px-4 font-mono text-slate-700">
-                          {formatCurrency(item.unitCost || 0)}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-right">
-                          {isLow ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                              <AlertTriangle className="h-3 w-3" />
-                              Reorder Due
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-900 block text-xs">
+                              {item.name}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Healthy
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${getCategoryBadge(
+                                item.category,
+                              )}`}
+                            >
+                              {item.category}
                             </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-slate-500">
+                            {item.uom}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <span className={`text-sm font-extrabold ${isLow ? 'text-amber-700' : 'text-slate-900'}`}>
+                              {item.stockOnHand}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-slate-500">
+                            Min: <span className="font-bold text-slate-700">{item.reorderLevel}</span> (Reorder: {item.reorderQuantity || item.reorderLevel * 2})
+                          </td>
+
+                          <td className="py-3.5 px-4 font-mono text-slate-700">
+                            {formatCurrency(item.unitCost || 0)}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right">
+                            {isLow ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                <AlertTriangle className="h-3 w-3" />
+                                Reorder Due
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Healthy
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Stacked Record Cards View */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {items.map((item) => {
+                  const isLow = item.stockOnHand <= item.reorderLevel;
+                  return (
+                    <div key={item._id || item.id} className="p-4 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-mono text-xs font-bold text-slate-900 block">{item.itemCode}</span>
+                          <span className="font-bold text-slate-900 text-sm leading-tight">{item.name}</span>
+                        </div>
+                        {isLow ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
+                            <AlertTriangle className="h-2.5 w-2.5" />
+                            Reorder
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                            <CheckCircle2 className="h-2.5 w-2.5" />
+                            Healthy
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${getCategoryBadge(
+                            item.category,
+                          )}`}
+                        >
+                          {item.category}
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-medium">UOM: {item.uom}</span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold uppercase block">In Stock</span>
+                          <span className={`text-sm font-black ${isLow ? 'text-amber-700' : 'text-slate-900'}`}>{item.stockOnHand}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold uppercase block">Reorder Min</span>
+                          <span className="font-bold text-slate-700">{item.reorderLevel}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold uppercase block">Unit Cost</span>
+                          <span className="font-mono text-slate-800 font-semibold">{formatCurrency(item.unitCost || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 

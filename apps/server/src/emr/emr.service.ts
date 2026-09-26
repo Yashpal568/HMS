@@ -3,6 +3,9 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  Inject,
+  Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -11,11 +14,16 @@ import { Prescription, type PrescriptionDocument } from './schemas/prescription.
 import { Appointment, type AppointmentDocument } from '../appointments/schemas/appointment.schema.js';
 import { Patient, type PatientDocument } from '../patients/schemas/patient.schema.js';
 import { User, type UserDocument } from '../users/schemas/user.schema.js';
+import { Queue, type QueueDocument } from '../queue/schemas/queue.schema.js';
+import { QueueEntry, type QueueEntryDocument } from '../queue/schemas/queue-entry.schema.js';
 import { AuditService } from '../audit/audit.service.js';
+import { LaboratoryService } from '../laboratory/laboratory.service.js';
 import {
   EncounterStatus,
   PrescriptionStatus,
   AppointmentStatus,
+  QueueEntryStatus,
+  LabOrderPriority,
   type BmiCategory,
   type Vitals,
 } from '@hms/types';
@@ -38,6 +46,15 @@ export class EmrService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly auditService: AuditService,
+    @Optional()
+    @Inject(forwardRef(() => LaboratoryService))
+    private readonly laboratoryService?: LaboratoryService,
+    @Optional()
+    @InjectModel(Queue.name)
+    private readonly queueModel?: Model<QueueDocument>,
+    @Optional()
+    @InjectModel(QueueEntry.name)
+    private readonly queueEntryModel?: Model<QueueEntryDocument>,
   ) {}
 
   private toObjectId(id: string): Types.ObjectId {
@@ -140,6 +157,9 @@ export class EmrService {
     }).exec();
 
     if (!encounter) {
+      // Pre-populate vitals from triage if recorded during reception check-in
+      const initialVitals = (appointment as any).triageVitals || {};
+
       // Create new draft encounter
       encounter = new this.encounterModel({
         tenantId: tId,
@@ -148,7 +168,7 @@ export class EmrService {
         patientId: appointment.patientId,
         doctorId: docId,
         status: EncounterStatus.DRAFT,
-        vitals: {},
+        vitals: initialVitals,
         chiefComplaints: appointment.chiefComplaint ? [appointment.chiefComplaint] : [],
         diagnoses: [],
         investigations: [],
@@ -159,6 +179,36 @@ export class EmrService {
       if (appointment.status !== AppointmentStatus.COMPLETED) {
         appointment.status = AppointmentStatus.IN_CONSULTATION;
         await appointment.save();
+      }
+
+      // Sync live OPD Queue Entry to IN_CONSULTATION
+      if (this.queueEntryModel) {
+        try {
+          const updatedQueueEntry = await this.queueEntryModel.findOneAndUpdate(
+            { tenantId: tId, appointmentId: aptId },
+            {
+              $set: {
+                status: QueueEntryStatus.IN_CONSULTATION,
+                consultationStartedAt: new Date(),
+              },
+            },
+            { new: true },
+          ).exec();
+
+          if (updatedQueueEntry?.queueId && this.queueModel) {
+            await this.queueModel.updateOne(
+              { _id: updatedQueueEntry.queueId, tenantId: tId },
+              {
+                $set: {
+                  currentServingToken: updatedQueueEntry.tokenNumber,
+                  currentServingEntryId: updatedQueueEntry._id,
+                },
+              },
+            ).exec();
+          }
+        } catch (err) {
+          this.logger.warn(`Could not sync queue entry to IN_CONSULTATION: ${(err as Error).message}`);
+        }
       }
 
       await this.auditService.record({
@@ -173,6 +223,12 @@ export class EmrService {
           tenantId,
         },
       });
+    } else {
+      // If encounter exists but has no vitals and appointment has triage vitals, populate them
+      if ((!encounter.vitals || Object.keys(encounter.vitals).length === 0) && (appointment as any).triageVitals) {
+        encounter.vitals = (appointment as any).triageVitals;
+        await encounter.save();
+      }
     }
 
     // Populate patient to check allergies
@@ -472,12 +528,89 @@ export class EmrService {
       });
     }
 
+    // Auto-create Laboratory Order if investigations were requisitioned
+    if (this.laboratoryService && currentEncounter.investigations?.length) {
+      try {
+        const availableTests = (await this.laboratoryService.getTestCatalog(
+          tId.toString(),
+        )) as Array<{ _id: Types.ObjectId; name: string; code: string }>;
+        const matchedTestIds: string[] = [];
+
+        for (const inv of currentEncounter.investigations) {
+          const invNameLower = inv.testName.toLowerCase().trim();
+          const match = availableTests.find(
+            (t: { name: string; code: string }) =>
+              t.name.toLowerCase().includes(invNameLower) ||
+              invNameLower.includes(t.name.toLowerCase()) ||
+              invNameLower.includes(t.code.toLowerCase()),
+          );
+          if (match && !matchedTestIds.includes(match._id.toString())) {
+            matchedTestIds.push(match._id.toString());
+          }
+        }
+
+        const finalTestIds =
+          matchedTestIds.length > 0
+            ? matchedTestIds
+            : availableTests.slice(0, 1).map((t: { _id: Types.ObjectId }) => t._id.toString());
+
+        if (finalTestIds.length > 0) {
+          await this.laboratoryService.createOrder(
+            tId.toString(),
+            doctorId,
+            {
+              patientId: currentEncounter.patientId.toString(),
+              doctorId,
+              testIds: finalTestIds,
+              appointmentId: currentEncounter.appointmentId?.toString(),
+              priority: currentEncounter.investigations.some((i) => i.urgency === 'urgent')
+                ? LabOrderPriority.STAT
+                : LabOrderPriority.ROUTINE,
+              clinicalNotes: `Investigations ordered during consultation: ${currentEncounter.investigations.map((i) => i.testName).join(', ')}`,
+            },
+          );
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Could not auto-generate lab order on encounter finalization: ${(err as Error).message}`,
+        );
+      }
+    }
+
     // Transition appointment to COMPLETED
     if (currentEncounter.appointmentId) {
       await this.appointmentModel.updateOne(
         { _id: currentEncounter.appointmentId, tenantId: tId },
         { $set: { status: AppointmentStatus.COMPLETED } },
       ).exec();
+
+      // Sync live OPD Queue Entry to COMPLETED and increment parent queue counters
+      if (this.queueEntryModel) {
+        try {
+          const completedQueueEntry = await this.queueEntryModel.findOneAndUpdate(
+            { tenantId: tId, appointmentId: currentEncounter.appointmentId },
+            {
+              $set: {
+                status: QueueEntryStatus.COMPLETED,
+                completedAt: new Date(),
+              },
+            },
+            { new: true },
+          ).exec();
+
+          if (completedQueueEntry?.queueId && this.queueModel) {
+            await this.queueModel.updateOne(
+              { _id: completedQueueEntry.queueId, tenantId: tId },
+              {
+                $inc: { totalCompleted: 1 },
+                $unset: { currentServingEntryId: '', currentServingToken: '' },
+              },
+            ).exec();
+          }
+        } catch (err) {
+          this.logger.warn(`Could not sync queue entry to COMPLETED: ${(err as Error).message}`);
+        }
+      }
     }
 
     await this.auditService.record({

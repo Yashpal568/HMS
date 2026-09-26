@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Role, RoleDocument } from './schemas/role.schema.js';
@@ -212,7 +212,7 @@ export class RolesService implements OnModuleInit {
   }
 
   async findAllRoles(): Promise<RoleDocument[]> {
-    return this.roleModel.find().exec();
+    return this.roleModel.find({ name: { $ne: 'SUPER_ADMIN' } }).exec();
   }
 
   async findAllPermissions(): Promise<PermissionDocument[]> {
@@ -227,6 +227,9 @@ export class RolesService implements OnModuleInit {
 
   async createRole(dto: { name: string; description: string; permissions: string[] }): Promise<RoleDocument> {
     const uppercaseName = dto.name.trim().toUpperCase();
+    if (uppercaseName === 'SUPER_ADMIN') {
+      throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be created within a hospital tenant.');
+    }
     const existing = await this.findByName(uppercaseName);
     if (existing) {
       throw new BadRequestException(`Role with name "${uppercaseName}" already exists.`);
@@ -241,6 +244,9 @@ export class RolesService implements OnModuleInit {
   }
 
   async updateRole(name: string, dto: { description?: string; permissions?: string[] }): Promise<RoleDocument> {
+    if (name.toUpperCase() === 'SUPER_ADMIN') {
+      throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be modified within a hospital tenant.');
+    }
     const role = await this.findByName(name);
     if (!role) {
       throw new NotFoundException(`Role "${name}" not found.`);
@@ -257,6 +263,9 @@ export class RolesService implements OnModuleInit {
   }
 
   async deleteRole(name: string): Promise<{ success: boolean; message: string }> {
+    if (name.toUpperCase() === 'SUPER_ADMIN') {
+      throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be deleted within a hospital tenant.');
+    }
     const role = await this.findByName(name);
     if (!role) {
       throw new NotFoundException(`Role "${name}" not found.`);

@@ -156,6 +156,14 @@ export class PatientsService {
       filter.status = query.status;
     }
 
+    if (query.today === 'true' || (query as any).today === true) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      filter.createdAt = { $gte: startOfDay, $lte: endOfDay };
+    }
+
     if (query.search && query.search.trim()) {
       const term = query.search.trim();
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

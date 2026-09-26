@@ -62,6 +62,12 @@ HMS MedCore is structured as a **Multi-Tenant Software-as-a-Service Platform** c
   - `AppointmentsModule`: Doctor schedule rosters, slot calculation, sequential token generation, OPD queue board, check-in, cancellation.
   - `EmrModule`: Clinical encounters, chief complaints, vitals, ICD-coded diagnoses, e-prescriptions.
   - `IpdModule`: Bed allocation, ward transfers, inpatient tracking, nursing stations.
+  - `OrganizationModule`: Clinical & operational departments (`departments`), sub-teams (`teams`), and 8-step `HospitalOnboarding` state machine.
+  - `WorkforceModule`: Staff directory (`employees`), shift rosters (`workforce_schedules`), daily attendance with punctuality checks (`attendance_records`), and multi-day leave requests (`leave_requests`).
+  - `WorkspacesModule`: Catalog of 9 standard operational workspaces and dynamic workspace resolution engine (`resolveUserWorkspaces`).
+  - `InventoryMigrationModule`: 4-stage bulk inventory migration pipeline (Upload, Mapping, Validation, Chunked Execution) for 10k-50k legacy records.
+  - `CommunicationModule`: Multi-context clinical tasks (`hospital_tasks`), threaded comments, and enterprise staff notifications (`hospital_notifications`).
+  - `QueueModule`: High-concurrency OPD waitlist engine (`queue_entries`), atomic token calling, and real-time waiting line telemetry.
   - `LaboratoryModule`: Diagnostic test catalog, orders, sample accessioning, result verification.
   - `PharmacyModule`: Medicine Master catalog, batch management, FEFO dispensing.
   - `InventoryModule`: Consumable catalog, suppliers, purchase orders, stock ledger.

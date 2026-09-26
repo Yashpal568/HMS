@@ -330,7 +330,7 @@ export class ReportsService {
                 $sum: { $cond: [{ $in: ['$status', ['VERIFIED', 'COMPLETED']] }, 1, 0] },
               },
               pending: {
-                $sum: { $cond: [{ $nin: ['$status', ['VERIFIED', 'COMPLETED', 'CANCELLED']] }, 1, 0] },
+                $sum: { $cond: [{ $not: [{ $in: ['$status', ['VERIFIED', 'COMPLETED', 'CANCELLED']] }] }, 1, 0] },
               },
               avgTatHours: {
                 $avg: {

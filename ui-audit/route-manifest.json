@@ -1,0 +1,1498 @@
+[
+  {
+    "route": "/",
+    "resolvedUrl": "/",
+    "pageName": "Root Landing & Gateway Redirect",
+    "category": "Landing & Navigation",
+    "dynamic": false,
+    "requiresAuth": false,
+    "expectedRoles": [
+      "ALL"
+    ],
+    "tested": true,
+    "screenshot": "001-root-gateway.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Administrator Workspace",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 35,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/dashboard"
+    },
+    "accessibilityViolationsCount": 3
+  },
+  {
+    "route": "/login",
+    "resolvedUrl": "/login",
+    "pageName": "Staff Authentication Portal",
+    "category": "Authentication",
+    "dynamic": false,
+    "requiresAuth": false,
+    "expectedRoles": [
+      "ANONYMOUS"
+    ],
+    "tested": true,
+    "screenshot": "002-login.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Management System",
+      "h2": "",
+      "tables": 0,
+      "forms": 1,
+      "buttons": 3,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/login"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/dashboard",
+    "resolvedUrl": "/dashboard",
+    "pageName": "Executive Hospital Cockpit",
+    "category": "Dashboard & Overview",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN",
+      "DOCTOR",
+      "NURSE",
+      "RECEPTIONIST",
+      "PHARMACIST",
+      "LAB_TECHNICIAN",
+      "ACCOUNTANT",
+      "INVENTORY_MANAGER"
+    ],
+    "tested": true,
+    "screenshot": "003-dashboard.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Administrator Workspace",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 35,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/dashboard"
+    },
+    "accessibilityViolationsCount": 3
+  },
+  {
+    "route": "/appointments",
+    "resolvedUrl": "/appointments",
+    "pageName": "Outpatient Appointments & OPD Token Roster",
+    "category": "Outpatient Care",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "RECEPTIONIST",
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "004-appointments.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 24,
+      "inputs": 3,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/appointments"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/appointments/book",
+    "resolvedUrl": "/appointments/book",
+    "pageName": "Book Outpatient Appointment Wizard",
+    "category": "Outpatient Care",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "RECEPTIONIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "005-appointments-book.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "Select Patient",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 13,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/appointments/book"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/appointments/schedules",
+    "resolvedUrl": "/appointments/schedules",
+    "pageName": "Doctor Shift Schedules & Clinic Rosters",
+    "category": "Outpatient Care",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN",
+      "DOCTOR",
+      "RECEPTIONIST"
+    ],
+    "tested": true,
+    "screenshot": "006-appointments-schedules.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 19,
+      "inputs": 32,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/appointments/schedules"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/appointments/[id]",
+    "resolvedUrl": "/appointments/6aa53c45e95450ac73d55050",
+    "pageName": "Appointment Encounter Summary & Token Details",
+    "category": "Outpatient Care",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "RECEPTIONIST",
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "007-appointment-detail.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 13,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/appointments/6aa53c45e95450ac73d55050"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/audit",
+    "resolvedUrl": "/audit",
+    "pageName": "Master Security & Institutional Audit Center",
+    "category": "Administration & Security",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "008-audit.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 35,
+      "inputs": 5,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/audit"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/billing",
+    "resolvedUrl": "/billing",
+    "pageName": "Billing & Invoicing Command Center",
+    "category": "Financial Command",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "ACCOUNTANT",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "009-billing.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Billing & Revenue",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 17,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/billing"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/billing/invoices/new",
+    "resolvedUrl": "/billing/invoices/new",
+    "pageName": "Universal Invoice Authoring Wizard",
+    "category": "Financial Command",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "ACCOUNTANT",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "010-billing-invoices-new.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Create Patient Invoice",
+      "h2": "",
+      "tables": 0,
+      "forms": 1,
+      "buttons": 16,
+      "inputs": 10,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/billing/invoices/new"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/billing/invoices/[id]",
+    "resolvedUrl": "/billing/invoices/6aad2c3595901473f7a6caad",
+    "pageName": "Itemized Invoice Statement & Settlement",
+    "category": "Financial Command",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "ACCOUNTANT",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "011-billing-invoice-detail.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Invoice #INV-2026-00001",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 15,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/billing/invoices/6aad2c3595901473f7a6caad"
+    },
+    "accessibilityViolationsCount": 3
+  },
+  {
+    "route": "/billing/payments",
+    "resolvedUrl": "/billing/payments",
+    "pageName": "Cashier Receipts & Payment Register",
+    "category": "Financial Command",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "ACCOUNTANT",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "012-billing-payments.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Payments & Receipts Register",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 19,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/billing/payments"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/billing/refunds",
+    "resolvedUrl": "/billing/refunds",
+    "pageName": "Refunds Authorization Queue & Verification",
+    "category": "Financial Command",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "ACCOUNTANT",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "013-billing-refunds.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Permission-Controlled Refunds Queue",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 16,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/billing/refunds"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/billing/tariffs",
+    "resolvedUrl": "/billing/tariffs",
+    "pageName": "Hospital Service Tariff Catalog",
+    "category": "Financial Command",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "ACCOUNTANT",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "014-billing-tariffs.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Tariff & Charge Master",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 19,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/billing/tariffs"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/departments",
+    "resolvedUrl": "/departments",
+    "pageName": "Clinical Departments & Team Hierarchy",
+    "category": "Organization & Structure",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "015-departments.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Departments & Organization",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/departments"
+    },
+    "accessibilityViolationsCount": 3
+  },
+  {
+    "route": "/employees",
+    "resolvedUrl": "/employees",
+    "pageName": "Workforce Master & Employee Directory",
+    "category": "Workforce Management",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "016-employees.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Employee Directory",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 4,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/employees"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/emr",
+    "resolvedUrl": "/emr",
+    "pageName": "Electronic Medical Records (EMR) Directory",
+    "category": "Clinical & EMR",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "DOCTOR",
+      "NURSE",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "017-emr.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 17,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/emr"
+    },
+    "accessibilityViolationsCount": 3
+  },
+  {
+    "route": "/emr/consultation/[appointmentId]",
+    "resolvedUrl": "/emr/consultation/6aa53c45e95450ac73d55050",
+    "pageName": "Physician Clinical Consultation Cockpit",
+    "category": "Clinical & EMR",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "018-emr-consultation.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "Rohan Verma",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 25,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/emr/consultation/6aa53c45e95450ac73d55050"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/inventory",
+    "resolvedUrl": "/inventory",
+    "pageName": "Store & Inventory Management Center",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "PHARMACIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "019-inventory.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Inventory & Procurement",
+      "h2": "Critical Safety Stock Alerts",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 12,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/inventory/grn",
+    "resolvedUrl": "/inventory/grn",
+    "pageName": "Goods Received Note (GRN) Ingestion",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "020-inventory-grn.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Goods Receiving Note (GRN)",
+      "h2": "Receive Shipment Against Approved Purchase Order",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 12,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory/grn"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/inventory/import",
+    "resolvedUrl": "/inventory/import",
+    "pageName": "Bulk Catalog & Stock Migration Pipeline",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "021-inventory-import.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Bulk Inventory Migration",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 24,
+      "inputs": 12,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory/import"
+    },
+    "accessibilityViolationsCount": 5
+  },
+  {
+    "route": "/inventory/items",
+    "resolvedUrl": "/inventory/items",
+    "pageName": "Consumables & Item Master Catalog",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "022-inventory-items.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Item Master Catalog",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 21,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory/items"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/inventory/purchase-orders",
+    "resolvedUrl": "/inventory/purchase-orders",
+    "pageName": "Purchase Order Requisitions & Procurement",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "023-inventory-purchase-orders.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Purchase Orders",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 19,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory/purchase-orders"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/inventory/suppliers",
+    "resolvedUrl": "/inventory/suppliers",
+    "pageName": "Approved Supplier & Vendor Directory",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "024-inventory-suppliers.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Supplier Directory",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 13,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory/suppliers"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/inventory/transfers",
+    "resolvedUrl": "/inventory/transfers",
+    "pageName": "Departmental Stock Transfers & Issues",
+    "category": "Supply Chain & Inventory",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "INVENTORY_MANAGER",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "025-inventory-transfers.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Department Transfers & Ledger",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/inventory/transfers"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/ipd",
+    "resolvedUrl": "/ipd",
+    "pageName": "Inpatient Care Command Station",
+    "category": "Inpatient Care",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "NURSE",
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "026-ipd.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "WARD OCCUPANCY DISTRIBUTION",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 18,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/ipd"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/ipd/admissions/new",
+    "resolvedUrl": "/ipd/admissions/new",
+    "pageName": "Inpatient Admission & Bed Allocation Wizard",
+    "category": "Inpatient Care",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "NURSE",
+      "RECEPTIONIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "027-ipd-admissions-new.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "Select Patient for Admission",
+      "tables": 0,
+      "forms": 1,
+      "buttons": 14,
+      "inputs": 6,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/ipd/admissions/new"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/ipd/admissions/[id]",
+    "resolvedUrl": "/ipd/admissions/6aa54de33d46ccfb940484ca",
+    "pageName": "Inpatient Admission Details & Clinical Chart",
+    "category": "Inpatient Care",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "NURSE",
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "028-ipd-admission-detail.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "ADMITTING CLINICAL DIAGNOSIS",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 13,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/ipd/admissions/6aa54de33d46ccfb940484ca"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/ipd/admissions/[id]/discharge",
+    "resolvedUrl": "/ipd/admissions/6aa54de33d46ccfb940484ca/discharge",
+    "pageName": "Inpatient Discharge Summary & Clearance",
+    "category": "Inpatient Care",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "DOCTOR",
+      "NURSE",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "029-ipd-admission-discharge.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "ADMITTING CLINICAL DIAGNOSIS",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 13,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/ipd/admissions/6aa54de33d46ccfb940484ca"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/ipd/beds",
+    "resolvedUrl": "/ipd/beds",
+    "pageName": "Ward & Bed Acuity Matrix",
+    "category": "Inpatient Care",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "NURSE",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "030-ipd-beds.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 35,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/ipd/beds"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/laboratory",
+    "resolvedUrl": "/laboratory",
+    "pageName": "Laboratory Diagnostic Station",
+    "category": "Diagnostics & LIS",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "LAB_TECHNICIAN",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "031-laboratory.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 21,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/laboratory"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/laboratory/orders/new",
+    "resolvedUrl": "/laboratory/orders/new",
+    "pageName": "Diagnostic Requisition & Test Order Wizard",
+    "category": "Diagnostics & LIS",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "DOCTOR",
+      "LAB_TECHNICIAN",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "032-laboratory-orders-new.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "1. PATIENT IDENTIFICATION",
+      "tables": 0,
+      "forms": 1,
+      "buttons": 16,
+      "inputs": 3,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/laboratory/orders/new"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/laboratory/reports/[orderId]",
+    "resolvedUrl": "/laboratory/reports/6aa55be5c4496aeca34f908e",
+    "pageName": "Diagnostic Pathology Verification Report",
+    "category": "Diagnostics & LIS",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "LAB_TECHNICIAN",
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "033-laboratory-report-detail.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 12,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/laboratory/reports/6aa55be5c4496aeca34f908e"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/laboratory/tests",
+    "resolvedUrl": "/laboratory/tests",
+    "pageName": "Diagnostic Test Catalog & Reference Intervals",
+    "category": "Diagnostics & LIS",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "LAB_TECHNICIAN",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "034-laboratory-tests.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 4,
+      "forms": 0,
+      "buttons": 18,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/laboratory/tests"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/laboratory/worklist",
+    "resolvedUrl": "/laboratory/worklist",
+    "pageName": "Dual-Bench Laboratory Worklist",
+    "category": "Diagnostics & LIS",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "LAB_TECHNICIAN",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "035-laboratory-worklist.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/laboratory/worklist"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/patients",
+    "resolvedUrl": "/patients",
+    "pageName": "Master Patient Index (MPI) Directory",
+    "category": "Patient Management",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "RECEPTIONIST",
+      "DOCTOR",
+      "NURSE",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "036-patients.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Patient Directory",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 19,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/patients"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/patients/register",
+    "resolvedUrl": "/patients/register",
+    "pageName": "Patient Intake & Registration Wizard",
+    "category": "Patient Management",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "RECEPTIONIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "037-patients-register.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Register Patient",
+      "h2": "1. PATIENT DEMOGRAPHICS",
+      "tables": 0,
+      "forms": 1,
+      "buttons": 13,
+      "inputs": 22,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/patients/register"
+    },
+    "accessibilityViolationsCount": 3
+  },
+  {
+    "route": "/patients/[id]",
+    "resolvedUrl": "/patients/6aa41f53983c601046fd9721",
+    "pageName": "360° Comprehensive Patient Clinical Chart",
+    "category": "Patient Management",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "DOCTOR",
+      "NURSE",
+      "RECEPTIONIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "038-patient-detail.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Patient Profile",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 12,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/patients/6aa41f53983c601046fd9721"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/patients/[id]/edit",
+    "resolvedUrl": "/patients/6aa41f53983c601046fd9721/edit",
+    "pageName": "Edit Patient Demographic Profile",
+    "category": "Patient Management",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "RECEPTIONIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "039-patient-edit.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Edit Patient",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 11,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/patients/6aa41f53983c601046fd9721/edit"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/permissions",
+    "resolvedUrl": "/permissions",
+    "pageName": "Security Permissions Explorer & Telemetry",
+    "category": "Administration & Security",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "040-permissions.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Permissions Explorer",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 27,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/permissions"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/pharmacy",
+    "resolvedUrl": "/pharmacy",
+    "pageName": "Pharmacy & Dispensary Center",
+    "category": "Pharmacy & Therapeutics",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "PHARMACIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "041-pharmacy.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Pharmacy Workstation",
+      "h2": "Prescription Dispensing Queue",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 15,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/pharmacy"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/pharmacy/batches",
+    "resolvedUrl": "/pharmacy/batches",
+    "pageName": "Pharmaceutical Batches & Expiry Watch",
+    "category": "Pharmacy & Therapeutics",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "PHARMACIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "042-pharmacy-batches.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Batch Stock Ledger",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 17,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/pharmacy/batches"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/pharmacy/dispense/[prescriptionId]",
+    "resolvedUrl": "/pharmacy/dispense/6aa542ebbe25781a51bb65a8",
+    "pageName": "Prescription Dispensing Workstation",
+    "category": "Pharmacy & Therapeutics",
+    "dynamic": true,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "PHARMACIST",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "043-pharmacy-dispense.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Dispense Prescription",
+      "h2": "Prescribed Medications & FEFO Batch Selection",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": true,
+      "title": "HMS — Hospital Management System",
+      "url": "/pharmacy/dispense/6aa542ebbe25781a51bb65a8"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/pharmacy/medicines",
+    "resolvedUrl": "/pharmacy/medicines",
+    "pageName": "Hospital Formulary Medication Catalog",
+    "category": "Pharmacy & Therapeutics",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "PHARMACIST",
+      "DOCTOR",
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "044-pharmacy-medicines.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Drug Master Catalog",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 18,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/pharmacy/medicines"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/reports",
+    "resolvedUrl": "/reports",
+    "pageName": "Master Reports & Operational Analytics Hub",
+    "category": "Analytics & Reporting",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN",
+      "ACCOUNTANT"
+    ],
+    "tested": true,
+    "screenshot": "045-reports.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "Operational Footfall & Capacity Overview",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 22,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/reports"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/reports/census",
+    "resolvedUrl": "/reports/census",
+    "pageName": "Daily Operational Census & Bed Occupancy",
+    "category": "Analytics & Reporting",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN",
+      "NURSE"
+    ],
+    "tested": true,
+    "screenshot": "046-reports-census.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/reports/census"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/reports/financial",
+    "resolvedUrl": "/reports/financial",
+    "pageName": "Revenue Realization & Accounts Receivable Aging",
+    "category": "Analytics & Reporting",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN",
+      "ACCOUNTANT"
+    ],
+    "tested": true,
+    "screenshot": "047-reports-financial.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/reports/financial"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/reports/pharmacy-inventory",
+    "resolvedUrl": "/reports/pharmacy-inventory",
+    "pageName": "Supply Chain Risk & Drug Expiry Analytics",
+    "category": "Analytics & Reporting",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN",
+      "PHARMACIST",
+      "INVENTORY_MANAGER"
+    ],
+    "tested": true,
+    "screenshot": "048-reports-pharmacy-inventory.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Hospital Dashboard",
+      "h2": "",
+      "tables": 2,
+      "forms": 0,
+      "buttons": 14,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/reports/pharmacy-inventory"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/roles",
+    "resolvedUrl": "/roles",
+    "pageName": "Role-Based Access Control (RBAC) Governance",
+    "category": "Administration & Security",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "049-roles.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Roles Management",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 25,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/roles"
+    },
+    "accessibilityViolationsCount": 4
+  },
+  {
+    "route": "/staff",
+    "resolvedUrl": "/staff",
+    "pageName": "Staff Rostering, Attendance & Leave Command",
+    "category": "Workforce Management",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "050-staff.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Workforce Management",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 21,
+      "inputs": 4,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/staff"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/users",
+    "resolvedUrl": "/users",
+    "pageName": "User Accounts & Access Control Hub",
+    "category": "Administration & Security",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "051-users.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Users & Access",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 36,
+      "inputs": 2,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/users"
+    },
+    "accessibilityViolationsCount": 2
+  },
+  {
+    "route": "/workspace-assignments",
+    "resolvedUrl": "/workspace-assignments",
+    "pageName": "Workspace Authorization & Scope Matrix",
+    "category": "Administration & Security",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "052-workspace-assignments.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Workspace Assignments",
+      "h2": "",
+      "tables": 1,
+      "forms": 0,
+      "buttons": 13,
+      "inputs": 1,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/workspace-assignments"
+    },
+    "accessibilityViolationsCount": 1
+  },
+  {
+    "route": "/workspaces",
+    "resolvedUrl": "/workspaces",
+    "pageName": "Operational Workspaces Catalog",
+    "category": "Administration & Security",
+    "dynamic": false,
+    "requiresAuth": true,
+    "expectedRoles": [
+      "HOSPITAL_ADMIN"
+    ],
+    "tested": true,
+    "screenshot": "053-workspaces.png",
+    "status": "PASS",
+    "domDetails": {
+      "h1": "Workspaces Catalog",
+      "h2": "",
+      "tables": 0,
+      "forms": 0,
+      "buttons": 29,
+      "inputs": 0,
+      "hasError": false,
+      "hasEmptyState": false,
+      "title": "HMS — Hospital Management System",
+      "url": "/workspaces"
+    },
+    "accessibilityViolationsCount": 2
+  }
+]

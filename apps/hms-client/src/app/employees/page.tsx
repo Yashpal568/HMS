@@ -223,9 +223,10 @@ export default function EmployeesPage() {
           </div>
         </div>
 
-        {/* Employees Table */}
+        {/* Employees Table (Desktop) & Stacked Cards (Mobile) */}
         <div className="rounded-2xl bg-white border border-slate-200/90 shadow-2xs overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 border-b border-slate-100 text-2xs uppercase tracking-wider text-slate-500 font-semibold">
                 <tr>
@@ -320,7 +321,7 @@ export default function EmployeesPage() {
                             setSelectedEmployee(emp);
                             setIsViewModalOpen(true);
                           }}
-                          className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                          className="text-teal-600 hover:text-teal-700 hover:bg-teal-50 cursor-pointer"
                         >
                           <Eye className="h-3.5 w-3.5 mr-1" />
                           View
@@ -331,6 +332,86 @@ export default function EmployeesPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Stacked Record Cards View */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {isLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400">Loading employees...</div>
+            ) : employees.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-500">
+                No employees found matching criteria.
+              </div>
+            ) : (
+              employees.map((emp) => (
+                <div key={emp._id || emp.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-full bg-teal-50 border border-teal-100 text-teal-700 font-bold flex items-center justify-center text-xs shrink-0">
+                        {emp.firstName?.[0] || 'E'}{emp.lastName?.[0] || ''}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-900 text-sm">{emp.firstName} {emp.lastName}</div>
+                        <div className="text-2xs text-slate-500">{emp.email}</div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={emp.employmentStatus === 'ACTIVE' ? 'success' : 'secondary'}
+                      className="text-2xs shrink-0"
+                    >
+                      {emp.employmentStatus}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase block">Employee ID</span>
+                      <span className="font-mono text-slate-700 font-medium">{emp.employeeId}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase block">Designation</span>
+                      <span className="text-slate-800 font-medium">{emp.designation}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase block">Department</span>
+                      <span className="text-slate-700">{emp.departmentId?.name || 'General'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase block">Team</span>
+                      <span className="text-slate-700">{emp.teamId?.name || 'No team'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex flex-wrap gap-1">
+                      {(emp.assignedWorkspaces && emp.assignedWorkspaces.length > 0
+                        ? emp.assignedWorkspaces
+                        : [emp.staffType]
+                      ).map((ws: string) => (
+                        <span
+                          key={ws}
+                          className="px-1.5 py-0.5 rounded bg-teal-50 border border-teal-200 text-[10px] font-medium text-teal-800"
+                        >
+                          {ws}
+                        </span>
+                      ))}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedEmployee(emp);
+                        setIsViewModalOpen(true);
+                      }}
+                      className="text-xs text-teal-700 border-teal-200 hover:bg-teal-50 shrink-0 cursor-pointer"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

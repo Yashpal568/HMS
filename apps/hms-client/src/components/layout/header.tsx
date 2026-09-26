@@ -143,14 +143,14 @@ export function Header({
     <>
       <CommandPalette isOpen={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
 
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/85 backdrop-blur-md px-4 sm:px-6 transition-all">
+      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/85 backdrop-blur-md px-3 sm:px-6 transition-all overflow-hidden">
         {/* Left side: Sidebar Toggle + Breadcrumb trail */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 mr-2">
           {/* Mobile hamburger menu */}
           <button
             type="button"
             onClick={onMenuClick}
-            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:hidden cursor-pointer transition-colors"
+            className="rounded-xl p-1.5 sm:p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:hidden cursor-pointer transition-colors shrink-0"
             aria-label="Open sidebar menu"
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
@@ -160,7 +160,7 @@ export function Header({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer select-none"
+            className="hidden lg:flex rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer select-none shrink-0"
             title={isCollapsed ? 'Expand sidebar (⌘B)' : 'Collapse sidebar (⌘B)'}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -171,10 +171,10 @@ export function Header({
             )}
           </button>
 
-          <div className="h-4 w-px bg-slate-200 hidden lg:block" />
+          <div className="h-4 w-px bg-slate-200 hidden lg:block shrink-0" />
 
           {/* Breadcrumb Navigation & Page Title */}
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-500">
               <Link href="/dashboard" className="hover:text-slate-800 transition-colors flex items-center gap-1">
                 <Home className="h-3 w-3" />
@@ -202,7 +202,7 @@ export function Header({
               ))}
             </nav>
 
-            <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-tight truncate max-w-[150px] sm:max-w-xs md:max-w-none">
+            <h1 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight leading-tight truncate">
               {title}
             </h1>
           </div>
@@ -226,12 +226,12 @@ export function Header({
         </div>
 
         {/* Right side: Telemetry indicators, Notifications & User menu */}
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Mobile search icon trigger */}
           <button
             type="button"
             onClick={() => setIsCommandOpen(true)}
-            className="md:hidden rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+            className="md:hidden rounded-xl p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
             aria-label="Open command palette"
           >
             <Search className="h-4 w-4" />
@@ -247,7 +247,7 @@ export function Header({
           <CurrencySelector />
 
           {/* Active Workspace Selector Dropdown */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -255,12 +255,13 @@ export function Header({
                 setIsNotificationsOpen(false);
                 setIsProfileOpen(false);
               }}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100/90 border border-teal-200/90 text-xs font-semibold text-teal-900 cursor-pointer transition-all shadow-2xs select-none"
-              title="Active Operational Workspace"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100/90 border border-teal-200/90 text-xs font-semibold text-teal-900 cursor-pointer transition-all shadow-2xs select-none shrink-0"
+              title={`Active Workspace: ${activeWorkspace.name}`}
+              aria-label="Switch operational workspace"
             >
               <Layers className="h-3.5 w-3.5 text-teal-600 shrink-0" />
-              <span className="truncate max-w-[95px] sm:max-w-[145px]">{activeWorkspace.name.replace(' Workspace', '')}</span>
-              <ChevronDown className={cn("h-3 w-3 text-teal-600 transition-transform", isWorkspaceOpen && "rotate-180")} />
+              <span className="hidden sm:inline truncate max-w-[80px] sm:max-w-[145px]">{activeWorkspace.name.replace(' Workspace', '')}</span>
+              <ChevronDown className={cn("h-3 w-3 text-teal-600 transition-transform shrink-0", isWorkspaceOpen && "rotate-180")} />
             </button>
 
             {isWorkspaceOpen && (

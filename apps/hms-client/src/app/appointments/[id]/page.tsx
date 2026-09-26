@@ -227,6 +227,19 @@ export default function AppointmentDetailPage({ params }: PageProps) {
               </Button>
             )}
 
+            {(isCheckedIn || appointment.status === AppointmentStatus.IN_CONSULTATION) && (
+              <Link href={`/emr/consultation/${appointmentId}`}>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-xl text-xs bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1.5 shadow-sm"
+                >
+                  <Stethoscope className="w-4 h-4" />
+                  <span>Start Consultation</span>
+                </Button>
+              </Link>
+            )}
+
             {canCancel && (
               <Button
                 type="button"

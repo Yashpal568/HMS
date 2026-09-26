@@ -45,6 +45,9 @@ export default function UsersAccessPage() {
     phone: '',
     linkEmployeeId: '',
   });
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [availableTeams, setAvailableTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{
@@ -71,10 +74,11 @@ export default function UsersAccessPage() {
       if (search) params.append('search', search);
       if (selectedRole) params.append('role', selectedRole);
 
-      const [usersRes, empRes, rolesRes] = await Promise.all([
+      const [usersRes, empRes, rolesRes, deptRes] = await Promise.all([
         apiClient.get<any>(`/users?${params.toString()}`),
         apiClient.get<any>('/workforce/employees').catch(() => null),
         apiClient.get<any>('/roles').catch(() => null),
+        apiClient.get<any>('/organization/departments').catch(() => null),
       ]);
 
       if (usersRes?.data) {
@@ -85,6 +89,9 @@ export default function UsersAccessPage() {
       }
       if (rolesRes?.data) {
         setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
+      }
+      if (deptRes?.data && Array.isArray(deptRes.data)) {
+        setDepartments(deptRes.data);
       }
     } catch {
       // Keep empty defaults
@@ -97,8 +104,33 @@ export default function UsersAccessPage() {
     void fetchUsersAndMeta();
   }, [fetchUsersAndMeta]);
 
+  const handleDepartmentChange = async (deptName: string) => {
+    setInviteData((prev) => ({ ...prev, department: deptName }));
+    setSelectedTeam('');
+    const matchedDept = departments.find((d) => d.name === deptName || d.code === deptName || d.id === deptName || d._id === deptName);
+    if (matchedDept?.id || matchedDept?._id) {
+      const deptId = matchedDept.id || matchedDept._id;
+      try {
+        const teamsRes = await apiClient.get<any>(`/organization/teams?departmentId=${deptId}`);
+        if (teamsRes?.data && Array.isArray(teamsRes.data)) {
+          setAvailableTeams(teamsRes.data);
+        } else {
+          setAvailableTeams([]);
+        }
+      } catch {
+        setAvailableTeams([]);
+      }
+    } else {
+      setAvailableTeams([]);
+    }
+  };
+
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!inviteData.department) {
+      setInviteError('Please select a valid hospital department.');
+      return;
+    }
     setInviteError(null);
     setIsInviting(true);
 
@@ -108,7 +140,7 @@ export default function UsersAccessPage() {
         lastName: inviteData.lastName.trim(),
         email: inviteData.email.trim(),
         role: inviteData.role,
-        department: inviteData.department.trim() || undefined,
+        department: inviteData.department.trim(),
         specialization: inviteData.specialization.trim() || undefined,
         phone: inviteData.phone.trim() || undefined,
       });
@@ -464,16 +496,40 @@ export default function UsersAccessPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-slate-700 font-medium mb-1">Department</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Cardiology"
+                      <label className="block text-slate-700 font-medium mb-1">Department *</label>
+                      <select
+                        required
                         value={inviteData.department}
-                        onChange={(e) => setInviteData({ ...inviteData, department: e.target.value })}
+                        onChange={(e) => handleDepartmentChange(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-500"
-                      />
+                      >
+                        <option value="">Select Department *</option>
+                        {departments.map((d) => (
+                          <option key={d._id || d.id} value={d.name}>
+                            {d.name} ({d.code})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
+
+                  {availableTeams.length > 0 && (
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">Care / Operational Team (Optional)</label>
+                      <select
+                        value={selectedTeam}
+                        onChange={(e) => setSelectedTeam(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-500"
+                      >
+                        <option value="">No Team Assigned</option>
+                        {availableTeams.map((t) => (
+                          <option key={t._id || t.id} value={t.name}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
                     <Button
@@ -544,12 +600,18 @@ export default function UsersAccessPage() {
 
                 <div>
                   <label className="block text-slate-700 font-medium mb-1">Department</label>
-                  <input
-                    type="text"
+                  <select
                     value={editDept}
                     onChange={(e) => setEditDept(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-500"
-                  />
+                  >
+                    <option value="">Select Department (Optional)</option>
+                    {departments.map((d) => (
+                      <option key={d._id || d.id} value={d.name}>
+                        {d.name} ({d.code})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

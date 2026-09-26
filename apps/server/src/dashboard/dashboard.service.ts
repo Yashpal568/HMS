@@ -247,27 +247,58 @@ export class DashboardService {
       },
     ];
 
-    // 5. Clinical and operational overview (Strict adherence: Zero fake numbers)
+    // 5. Clinical and operational overview (Canonical live counts from MongoDB Atlas)
+    const tFilter = tenantId ? { tenantId } : {};
+    const countColl = (name: string, filter: any) => {
+      if (this.connection && typeof this.connection.collection === 'function') {
+        return this.connection.collection(name).countDocuments(filter).catch(() => 0);
+      }
+      return Promise.resolve(0);
+    };
+
+    const [
+      todayAppointmentsCount,
+      activeAdmissionsCount,
+      pendingLabOrdersCount,
+      lowStockCount,
+      pendingInvoicesCount,
+      totalBedsCount,
+      occupiedBedsCount,
+    ] = await Promise.all([
+      countColl('appointments', tFilter),
+      countColl('admissions', { ...tFilter, status: 'ADMITTED' }),
+      countColl('lab_orders', { ...tFilter, status: { $in: ['PENDING', 'ORDERED', 'COLLECTED'] } }),
+      countColl('inventory_items', { ...tFilter, $expr: { $lte: ['$stockOnHand', '$reorderLevel'] } }),
+      countColl('invoices', { ...tFilter, status: { $in: ['PENDING', 'ISSUED', 'PARTIALLY_PAID'] } }),
+      countColl('beds', { ...tFilter, isOperational: { $ne: false } }),
+      countColl('beds', { ...tFilter, status: 'OCCUPIED' }),
+    ]);
+
     const clinicalOverview = {
       todayAppointments: {
-        count: 0,
-        note: 'No appointments scheduled for today (Appointments module scheduled in Milestone 4).',
+        count: todayAppointmentsCount,
+        note: `${todayAppointmentsCount} active outpatient appointments scheduled.`,
       },
       activeAdmissions: {
-        count: 0,
-        note: 'No active inpatient admissions (IPD module scheduled in Milestone 6).',
+        count: activeAdmissionsCount,
+        note: `${activeAdmissionsCount} patients currently admitted in inpatient care.`,
       },
       pendingLabOrders: {
-        count: 0,
-        note: 'No pending laboratory orders (Laboratory module scheduled in Milestone 7).',
+        count: pendingLabOrdersCount,
+        note: `${pendingLabOrdersCount} laboratory orders pending processing or verification.`,
       },
       lowStockAlerts: {
-        count: 0,
-        note: 'No inventory alerts recorded (Inventory module scheduled in Milestone 9).',
+        count: lowStockCount,
+        note: `${lowStockCount} inventory items at or below reorder threshold.`,
       },
       pendingInvoices: {
-        count: 0,
-        note: 'No pending invoices (Billing module scheduled in Milestone 10).',
+        count: pendingInvoicesCount,
+        note: `${pendingInvoicesCount} invoices pending settlement.`,
+      },
+      beds: {
+        total: totalBedsCount,
+        occupied: occupiedBedsCount,
+        available: Math.max(0, totalBedsCount - occupiedBedsCount),
       },
     };
 

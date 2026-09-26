@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -12,10 +13,12 @@ import {
   QueueSession,
   QueueStatus,
   AppointmentStatus,
+  AppointmentType,
 } from '@hms/types';
 import { Queue, QueueDocument } from './schemas/queue.schema.js';
 import { QueueEntry, QueueEntryDocument } from './schemas/queue-entry.schema.js';
 import { Appointment, AppointmentDocument } from '../appointments/schemas/appointment.schema.js';
+import { AuditService } from '../audit/audit.service.js';
 import {
   CheckInQueueDto,
   CallNextPatientDto,
@@ -34,6 +37,8 @@ export class QueueService {
     private readonly queueEntryModel: Model<QueueEntryDocument>,
     @InjectModel(Appointment.name)
     private readonly appointmentModel: Model<AppointmentDocument>,
+    @Optional()
+    private readonly auditService?: AuditService,
   ) {}
 
   /**
@@ -92,11 +97,55 @@ export class QueueService {
     const priorityWeight =
       priority === QueuePriority.EMERGENCY ? 50 : priority === QueuePriority.URGENT ? 10 : 0;
 
+    let finalApptId = apptId;
+
+    // If no appointment was pre-booked (walk-in patient arrival), auto-create appointment record
+    if (!finalApptId) {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
+      const endMins = String(Number(mins) + 15).padStart(2, '0');
+      const timeSlot = `${hours}:${mins} - ${hours}:${endMins}`;
+
+      const walkInAppt = await this.appointmentModel.create({
+        tenantId: tId,
+        hospitalId: tId,
+        patientId: patId,
+        doctorId: docId,
+        department: dto.department,
+        tokenNumber,
+        scheduledAt: new Date(`${date}T00:00:00.000Z`),
+        timeSlot,
+        type: AppointmentType.WALK_IN,
+        status: AppointmentStatus.CHECKED_IN,
+        chiefComplaint: dto.chiefComplaint,
+        triagePriority: priority,
+        triageNotes: dto.triageNotes,
+        checkedInAt: new Date(),
+      });
+      finalApptId = walkInAppt._id;
+    } else {
+      // Sync existing scheduled appointment status to CHECKED_IN
+      await this.appointmentModel.updateOne(
+        { _id: finalApptId, tenantId: tId },
+        {
+          $set: {
+            status: AppointmentStatus.CHECKED_IN,
+            checkedInAt: new Date(),
+            tokenNumber,
+            triagePriority: priority,
+            ...(dto.triageNotes ? { triageNotes: dto.triageNotes } : {}),
+            ...(dto.chiefComplaint ? { chiefComplaint: dto.chiefComplaint } : {}),
+          },
+        },
+      ).exec();
+    }
+
     const entry = new this.queueEntryModel({
       tenantId: tId,
       queueId: queue._id,
       patientId: patId,
-      appointmentId: apptId,
+      appointmentId: finalApptId,
       doctorId: docId,
       department: dto.department,
       date,
@@ -112,18 +161,22 @@ export class QueueService {
 
     await entry.save();
 
-    // If an appointment is attached, sync its status to CHECKED_IN
-    if (apptId) {
-      await this.appointmentModel.updateOne(
-        { _id: apptId, tenantId: tId },
-        {
-          $set: {
-            status: AppointmentStatus.CHECKED_IN,
-            checkedInAt: new Date(),
-            tokenNumber,
-          },
+    if (this.auditService) {
+      await this.auditService.record({
+        hospitalId: tenantId,
+        tenantId,
+        userId: dto.doctorId || 'system',
+        action: 'QUEUE_ENTRY_ASSIGNED',
+        resource: 'queue',
+        status: 'SUCCESS',
+        details: {
+          patientId: dto.patientId,
+          appointmentId: finalApptId?.toString(),
+          tokenNumber,
+          formattedToken,
+          priority,
         },
-      ).exec();
+      });
     }
 
     this.logger.log(
@@ -166,8 +219,9 @@ export class QueueService {
         new: true,
       },
     )
-      .populate('patientId', 'uhid firstName lastName dateOfBirth gender bloodGroup contacts')
+      .populate('patientId', 'uhid firstName lastName name dateOfBirth gender bloodGroup contacts')
       .populate('doctorId', 'firstName lastName email department')
+      .populate('appointmentId')
       .exec();
 
     if (!nextEntry) {
@@ -184,6 +238,23 @@ export class QueueService {
         },
       },
     ).exec();
+
+    if (this.auditService) {
+      await this.auditService.record({
+        hospitalId: tenantId,
+        tenantId,
+        userId: doctorId,
+        action: 'QUEUE_CALL_NEXT',
+        resource: 'queue',
+        status: 'SUCCESS',
+        details: {
+          entryId: nextEntry._id.toString(),
+          patientId: (nextEntry.patientId as any)?._id?.toString() || (nextEntry.patientId as any)?.toString(),
+          tokenNumber: nextEntry.tokenNumber,
+          formattedToken: nextEntry.formattedToken,
+        },
+      });
+    }
 
     this.logger.log(
       `Doctor ${doctorId} called next patient: Token ${nextEntry.formattedToken} (ID: ${nextEntry._id})`,
@@ -231,6 +302,21 @@ export class QueueService {
         { _id: entry.appointmentId, tenantId: tId },
         { $set: { status: AppointmentStatus.IN_CONSULTATION } },
       ).exec();
+    }
+
+    if (this.auditService) {
+      await this.auditService.record({
+        hospitalId: tenantId,
+        tenantId,
+        userId: doctorId,
+        action: 'CONSULTATION_START',
+        resource: 'queue',
+        status: 'SUCCESS',
+        details: {
+          entryId: entry._id.toString(),
+          appointmentId: entry.appointmentId?.toString(),
+        },
+      });
     }
 
     return entry;
@@ -283,6 +369,21 @@ export class QueueService {
       ).exec();
     }
 
+    if (this.auditService) {
+      await this.auditService.record({
+        hospitalId: tenantId,
+        tenantId,
+        userId: doctorId,
+        action: 'ENCOUNTER_COMPLETE',
+        resource: 'queue',
+        status: 'SUCCESS',
+        details: {
+          entryId: entry._id.toString(),
+          appointmentId: entry.appointmentId?.toString(),
+        },
+      });
+    }
+
     return entry;
   }
 
@@ -326,6 +427,79 @@ export class QueueService {
       { _id: entry.queueId, tenantId: tId },
       { $inc: { totalSkipped: 1 } },
     ).exec();
+
+    if (this.auditService) {
+      await this.auditService.record({
+        hospitalId: tenantId,
+        tenantId,
+        userId: doctorId,
+        action: 'QUEUE_SKIP',
+        resource: 'queue',
+        status: 'SUCCESS',
+        details: {
+          entryId: entry._id.toString(),
+          reason: dto?.reason,
+        },
+      });
+    }
+
+    return entry;
+  }
+
+  /**
+   * Transition queue entry from SKIPPED -> CALLED (patient returns / recalled)
+   */
+  async recallPatient(
+    tenantId: string,
+    entryId: string,
+    doctorId: string,
+  ): Promise<QueueEntryDocument> {
+    const tId = new Types.ObjectId(tenantId);
+    const docId = new Types.ObjectId(doctorId);
+    const eId = new Types.ObjectId(entryId);
+
+    const entry = await this.queueEntryModel.findOneAndUpdate(
+      {
+        _id: eId,
+        tenantId: tId,
+        doctorId: docId,
+        status: QueueEntryStatus.SKIPPED,
+      },
+      {
+        $set: {
+          status: QueueEntryStatus.CALLED,
+          calledAt: new Date(),
+        },
+      },
+      { new: true },
+    ).exec();
+
+    if (!entry) {
+      throw new BadRequestException(
+        `Queue entry "${entryId}" must be in SKIPPED status to be recalled`,
+      );
+    }
+
+    await this.queueModel.updateOne(
+      { _id: entry.queueId, tenantId: tId },
+      { $inc: { totalSkipped: -1 } },
+    ).exec();
+
+    if (this.auditService) {
+      await this.auditService.record({
+        hospitalId: tenantId,
+        tenantId,
+        userId: doctorId,
+        action: 'QUEUE_RECALL',
+        resource: 'queue',
+        status: 'SUCCESS',
+        details: {
+          entryId: entry._id.toString(),
+          tokenNumber: entry.tokenNumber,
+          formattedToken: entry.formattedToken,
+        },
+      });
+    }
 
     return entry;
   }
@@ -372,7 +546,8 @@ export class QueueService {
         .sort({ priorityWeight: -1, tokenNumber: 1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('patientId', 'uhid firstName lastName dateOfBirth gender bloodGroup contacts')
+        .populate('patientId', 'uhid firstName lastName name dateOfBirth gender bloodGroup contacts')
+        .populate('appointmentId')
         .exec(),
       this.queueEntryModel.countDocuments(baseFilter).exec(),
       this.queueEntryModel

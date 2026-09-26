@@ -48,7 +48,9 @@ export default function PatientsDirectoryPage() {
         if (searchQuery.trim()) {
           queryParams.set('search', searchQuery.trim());
         }
-        if (status && status !== 'all') {
+        if (status === 'today') {
+          queryParams.set('today', 'true');
+        } else if (status && status !== 'all') {
           queryParams.set('status', status);
         }
 
@@ -83,7 +85,9 @@ export default function PatientsDirectoryPage() {
         if (search.trim()) {
           queryParams.set('search', search.trim());
         }
-        if (statusFilter && statusFilter !== 'all') {
+        if (statusFilter === 'today') {
+          queryParams.set('today', 'true');
+        } else if (statusFilter && statusFilter !== 'all') {
           queryParams.set('status', statusFilter);
         }
 
@@ -126,6 +130,7 @@ export default function PatientsDirectoryPage() {
 
   const statusTabItems = [
     { id: 'all', label: 'All Patients' },
+    { id: 'today', label: "Today's Patients" },
     { id: PatientStatus.ACTIVE, label: 'Active' },
     { id: PatientStatus.INACTIVE, label: 'Inactive' },
     { id: PatientStatus.DECEASED, label: 'Deceased' },

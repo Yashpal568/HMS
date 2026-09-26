@@ -69,15 +69,74 @@ export function HospitalAdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const [opdFlowAppointments, setOpdFlowAppointments] = useState<OpdFlowAppointment[]>([]);
+  const [liveQueue, setLiveQueue] = useState<any[]>([]);
+
   const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await apiClient.get<ApiResponse<DashboardSummary>>('/dashboard');
-      if (res?.data) {
-        setSummary(res.data);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const [dashRes, apptsRes] = await Promise.all([
+        apiClient.get<ApiResponse<DashboardSummary>>('/dashboard').catch(() => null),
+        apiClient.get<ApiResponse<any[]>>(`/appointments?date=${todayStr}`).catch(() => null),
+      ]);
+
+      if (dashRes?.data) {
+        setSummary(dashRes.data);
       }
+
+      const rawAppts = apptsRes?.data && Array.isArray(apptsRes.data) ? apptsRes.data : [];
+      const mappedAppointments: OpdFlowAppointment[] = rawAppts.slice(0, 10).map((a: any) => {
+        const pName = a.patient?.name
+          ? `${a.patient.name.first || ''} ${a.patient.name.last || ''}`.trim()
+          : a.patientId?.firstName
+          ? `${a.patientId.firstName} ${a.patientId.lastName || ''}`.trim()
+          : a.patientName || 'Patient';
+
+        let statusText: OpdFlowAppointment['status'] = 'Scheduled';
+        if (a.status === 'COMPLETED') statusText = 'Completed';
+        else if (a.status === 'IN_CONSULTATION') statusText = 'In Consultation';
+        else if (a.status === 'CHECKED_IN') statusText = 'Waiting';
+
+        return {
+          id: a.id || a._id,
+          time: a.timeSlot || '09:00 AM',
+          patientName: pName,
+          patientInitial: pName.charAt(0).toUpperCase() || 'P',
+          department: a.department || 'General Medicine',
+          doctor: a.doctor?.name ? `Dr. ${a.doctor.name}` : 'Attending Clinician',
+          status: statusText,
+        };
+      });
+
+      setOpdFlowAppointments(mappedAppointments);
+
+      const mappedQueue = rawAppts
+        .filter((a: any) => a.status === 'CHECKED_IN' || a.status === 'IN_CONSULTATION')
+        .map((a: any) => {
+          const pName = a.patient?.name
+            ? `${a.patient.name.first || ''} ${a.patient.name.last || ''}`.trim()
+            : a.patientId?.firstName
+            ? `${a.patientId.firstName} ${a.patientId.lastName || ''}`.trim()
+            : a.patientName || 'Patient';
+
+          return {
+            token: `#${String(a.tokenNumber || 1).padStart(2, '0')}`,
+            patientName: pName,
+            doctorName: a.doctor?.name ? `Dr. ${a.doctor.name}` : 'Doctor',
+            department: a.department,
+            waitTime: a.timeSlot || 'Waiting',
+            status: a.status === 'IN_CONSULTATION' ? 'In Consultation' : 'Waiting',
+            reason: a.chiefComplaint || 'Consultation',
+            patientId: a.patient?.id || a.patient?._id,
+          };
+        });
+
+      setLiveQueue(mappedQueue);
     } catch {
-      // Graceful fallback without blocking UI
+      // Graceful fallback
+      setOpdFlowAppointments([]);
+      setLiveQueue([]);
     } finally {
       setIsLoading(false);
     }
@@ -87,60 +146,11 @@ export function HospitalAdminDashboard() {
     void fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const firstName = user?.firstName && user.firstName !== 'System' ? user.firstName : 'Rahul';
+  const firstName = user?.firstName && user.firstName !== 'System' ? user.firstName : 'Hospital';
   const hospitalName =
     user?.hospitalId && !/^[0-9a-fA-F]{24}$/.test(user.hospitalId)
       ? user.hospitalId
-      : 'CityCare Hospital';
-
-  // Opd Flow appointments (Matching Image 3 table)
-  const opdFlowAppointments: OpdFlowAppointment[] = [
-    {
-      id: 'apt-1',
-      time: '09:30 AM',
-      patientName: 'Rajesh Kumar',
-      patientInitial: 'R',
-      department: 'Cardiology',
-      doctor: 'Dr. Sharma',
-      status: 'Completed',
-    },
-    {
-      id: 'apt-2',
-      time: '10:00 AM',
-      patientName: 'Priya Mehta',
-      patientInitial: 'P',
-      department: 'General Medicine',
-      doctor: 'Dr. Verma',
-      status: 'In Consultation',
-    },
-    {
-      id: 'apt-3',
-      time: '10:30 AM',
-      patientName: 'Amit Singh',
-      patientInitial: 'A',
-      department: 'Orthopedics',
-      doctor: 'Dr. Khan',
-      status: 'Waiting',
-    },
-    {
-      id: 'apt-4',
-      time: '11:00 AM',
-      patientName: 'Sunita Patel',
-      patientInitial: 'S',
-      department: 'Dermatology',
-      doctor: 'Dr. Iyer',
-      status: 'Scheduled',
-    },
-    {
-      id: 'apt-5',
-      time: '11:30 AM',
-      patientName: 'Vikram Desai',
-      patientInitial: 'V',
-      department: 'Pediatrics',
-      doctor: 'Dr. Nair',
-      status: 'Scheduled',
-    },
-  ];
+      : 'Main Campus';
 
   return (
     <div className="space-y-6 pb-12">
@@ -174,11 +184,9 @@ export function HospitalAdminDashboard() {
       {/* 2. 6 TOP KPI CARDS (Exact Match to Image 3) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <MetricKpiCard
-          title="Today's Patients"
-          value={summary?.patients?.totalPatients ?? 86}
-          change={{ value: 12, isPositive: true }}
-          sparkline={true}
-          sparklineData={[65, 70, 68, 74, 80, 82, 86]}
+          title="Total Patients"
+          value={summary?.patients?.totalPatients ?? 0}
+          subtext={`${summary?.patients?.activePatients ?? 0} active`}
           icon={Users}
           iconColor="text-teal-600"
           iconBg="bg-teal-50 border-teal-100"
@@ -186,10 +194,8 @@ export function HospitalAdminDashboard() {
 
         <MetricKpiCard
           title="Appointments"
-          value={102}
-          change={{ value: 8, isPositive: true }}
-          sparkline={true}
-          sparklineData={[80, 85, 90, 88, 95, 98, 102]}
+          value={summary?.clinicalOverview?.todayAppointments?.count ?? 0}
+          subtext={summary?.clinicalOverview?.todayAppointments?.note || 'Active today'}
           icon={Calendar}
           iconColor="text-purple-600"
           iconBg="bg-purple-50 border-purple-100"
@@ -197,8 +203,8 @@ export function HospitalAdminDashboard() {
 
         <MetricKpiCard
           title="OPD Queue"
-          value={24}
-          subtext="12 waiting"
+          value={summary?.clinicalOverview?.todayAppointments?.count ?? 0}
+          subtext={`${summary?.clinicalOverview?.todayAppointments?.count ?? 0} registered`}
           icon={Clock}
           iconColor="text-blue-600"
           iconBg="bg-blue-50 border-blue-100"
@@ -206,8 +212,8 @@ export function HospitalAdminDashboard() {
 
         <MetricKpiCard
           title="Admissions"
-          value={12}
-          change={{ value: 20, isPositive: true }}
+          value={summary?.clinicalOverview?.activeAdmissions?.count ?? 0}
+          subtext={summary?.clinicalOverview?.activeAdmissions?.note || 'Active admitted'}
           icon={Bed}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-50 border-indigo-100"
@@ -215,8 +221,8 @@ export function HospitalAdminDashboard() {
 
         <MetricKpiCard
           title="Available Beds"
-          value="48 / 60"
-          subtext="80% Occupancy"
+          value={`${summary?.clinicalOverview?.beds?.available ?? 0} / ${summary?.clinicalOverview?.beds?.total ?? 0}`}
+          subtext={`${summary?.clinicalOverview?.beds?.total ? Math.round(((summary.clinicalOverview.beds.occupied || 0) / summary.clinicalOverview.beds.total) * 100) : 0}% Occupancy`}
           icon={Bed}
           iconColor="text-emerald-600"
           iconBg="bg-emerald-50 border-emerald-100"
@@ -224,8 +230,8 @@ export function HospitalAdminDashboard() {
 
         <MetricKpiCard
           title="Pending Bills"
-          value={18}
-          change={{ value: 5, isPositive: false }}
+          value={summary?.clinicalOverview?.pendingInvoices?.count ?? 0}
+          subtext={summary?.clinicalOverview?.pendingInvoices?.note || 'Pending settlement'}
           icon={Receipt}
           iconColor="text-rose-600"
           iconBg="bg-rose-50 border-rose-100"
@@ -312,74 +318,82 @@ export function HospitalAdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {opdFlowAppointments.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="group hover:bg-slate-50/70 transition-colors"
-                    >
-                      <td className="py-3 px-2 font-mono font-medium text-slate-600 whitespace-nowrap">
-                        {row.time}
-                      </td>
-
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-teal-800 font-bold text-xs ring-1 ring-slate-200">
-                            {row.patientInitial}
-                          </div>
-                          <span className="font-semibold text-slate-900 whitespace-nowrap">
-                            {row.patientName}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-2 text-slate-600 whitespace-nowrap">
-                        {row.department}
-                      </td>
-
-                      <td className="py-3 px-2 font-medium text-slate-800 whitespace-nowrap">
-                        {row.doctor}
-                      </td>
-
-                      <td className="py-3 px-2 whitespace-nowrap">
-                        <span
-                          className={cn(
-                            'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border',
-                            row.status === 'Completed' &&
-                              'bg-emerald-50 text-emerald-800 border-emerald-200/60',
-                            row.status === 'In Consultation' &&
-                              'bg-teal-50 text-teal-800 border-teal-200/60',
-                            row.status === 'Waiting' &&
-                              'bg-amber-50 text-amber-800 border-amber-200/60',
-                            row.status === 'Scheduled' &&
-                              'bg-slate-100 text-slate-700 border-slate-200/60',
-                          )}
-                        >
-                          {row.status}
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-2 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5">
-                          <Link href="/appointments">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1 cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5 text-slate-400" />
-                              <span>View</span>
-                            </Button>
-                          </Link>
-                          <button
-                            type="button"
-                            className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </button>
-                        </div>
+                  {opdFlowAppointments.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-xs text-slate-400">
+                        No outpatient consultations scheduled for today.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    opdFlowAppointments.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="group hover:bg-slate-50/70 transition-colors"
+                      >
+                        <td className="py-3 px-2 font-mono font-medium text-slate-600 whitespace-nowrap">
+                          {row.time}
+                        </td>
+
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-teal-800 font-bold text-xs ring-1 ring-slate-200">
+                              {row.patientInitial}
+                            </div>
+                            <span className="font-semibold text-slate-900 whitespace-nowrap">
+                              {row.patientName}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-2 text-slate-600 whitespace-nowrap">
+                          {row.department}
+                        </td>
+
+                        <td className="py-3 px-2 font-medium text-slate-800 whitespace-nowrap">
+                          {row.doctor}
+                        </td>
+
+                        <td className="py-3 px-2 whitespace-nowrap">
+                          <span
+                            className={cn(
+                              'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                              row.status === 'Completed' &&
+                                'bg-emerald-50 text-emerald-800 border-emerald-200/60',
+                              row.status === 'In Consultation' &&
+                                'bg-teal-50 text-teal-800 border-teal-200/60',
+                              row.status === 'Waiting' &&
+                                'bg-amber-50 text-amber-800 border-amber-200/60',
+                              row.status === 'Scheduled' &&
+                                'bg-slate-100 text-slate-700 border-slate-200/60',
+                            )}
+                          >
+                            {row.status}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-2 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            <Link href="/appointments">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                <span>View</span>
+                              </Button>
+                            </Link>
+                            <button
+                              type="button"
+                              className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -388,7 +402,7 @@ export function HospitalAdminDashboard() {
 
         {/* Right Column: Live OPD Queue */}
         <div className="lg:col-span-1">
-          <LiveOpdQueueCard />
+          <LiveOpdQueueCard queue={liveQueue} />
         </div>
       </div>
 

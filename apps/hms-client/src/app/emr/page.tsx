@@ -26,6 +26,7 @@ import {
   FileText,
   UserCheck,
   HeartPulse,
+  Play,
 } from 'lucide-react';
 import { AppointmentStatus } from '@hms/types';
 import type { Appointment } from '@hms/types';
@@ -40,6 +41,32 @@ export default function EmrQueuePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [startingConsultationId, setStartingConsultationId] = useState<string | null>(null);
+  const [callingNext, setCallingNext] = useState(false);
+
+  const handleCallNext = async () => {
+    try {
+      setCallingNext(true);
+      const res = await apiClient.post<{ success: boolean; data: any; message: string }>(
+        '/queue/call-next',
+        {},
+      );
+      if (res.success && res.data) {
+        const nextApptId = res.data.appointmentId?._id || res.data.appointmentId;
+        if (nextApptId) {
+          router.push(`/emr/consultation/${nextApptId}`);
+        } else {
+          fetchAppointments();
+        }
+      } else {
+        alert('All patients in the live OPD queue have been served. No waiting patients.');
+      }
+    } catch (err: any) {
+      console.error('Call next error:', err);
+      alert(err.message || 'Failed to call next patient from queue.');
+    } finally {
+      setCallingNext(false);
+    }
+  };
 
   const fetchAppointments = useCallback(async () => {
     try {
@@ -172,23 +199,34 @@ export default function EmrQueuePage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchAppointments}
-              disabled={loading}
-              className="gap-1.5"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Link href="/appointments/book">
-              <Button size="sm" variant="default" className="gap-1.5 bg-teal-600 hover:bg-teal-700 text-white">
-                Book Walk-in Patient
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchAppointments}
+                disabled={loading}
+                className="gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            </Link>
-          </div>
+
+              <Button
+                size="sm"
+                onClick={handleCallNext}
+                disabled={callingNext}
+                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>{callingNext ? 'Calling...' : 'Call Next Patient'}</span>
+              </Button>
+
+              <Link href="/appointments/book">
+                <Button size="sm" variant="default" className="gap-1.5 bg-teal-600 hover:bg-teal-700 text-white">
+                  Book Walk-in Patient
+                </Button>
+              </Link>
+            </div>
         </div>
 
         {/* Operational Statistics Cards */}
@@ -294,6 +332,7 @@ export default function EmrQueuePage() {
             <div className="relative">
               <input
                 type="date"
+                aria-label="Filter by appointment date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="px-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-teal-500"

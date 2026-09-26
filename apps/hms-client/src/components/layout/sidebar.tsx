@@ -176,7 +176,6 @@ const getSectionsForWorkspace = (workspaceCode: string): NavSection[] => {
       ];
 
     case 'HOSPITAL_ADMIN':
-    default:
       return [
         {
           title: 'Core Management',
@@ -213,6 +212,16 @@ const getSectionsForWorkspace = (workspaceCode: string): NavSection[] => {
             { name: 'Attendance', href: '/staff?tab=attendance', icon: UserCheck, isReady: true },
             { name: 'Leave Management', href: '/staff?tab=leave', icon: CheckSquare, isReady: true },
             { name: 'Audit & Security', href: '/audit', icon: Settings, isReady: true },
+          ],
+        },
+      ];
+
+    default:
+      return [
+        {
+          title: 'Staff Workstation',
+          items: [
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isReady: true },
           ],
         },
       ];
@@ -364,13 +373,14 @@ export function Sidebar({
 
         {/* Navigation items list */}
         <nav
-          className="flex-1 space-y-4 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-slate-800"
+          className="flex-1 space-y-4 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-slate-800 focus:outline-hidden"
           aria-label="Sidebar navigation"
+          tabIndex={0}
         >
           {sections.map((section) => (
             <div key={section.title} className="space-y-1">
               {(!isCollapsed || isOpen) && (
-                <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 select-none">
+                <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
                   {section.title}
                 </p>
               )}
@@ -388,6 +398,7 @@ export function Sidebar({
                     <Link
                       key={item.name}
                       href={item.href}
+                      aria-label={item.name}
                       onClick={(e) => handleScheduledClick(e, item)}
                       title={isCollapsed && !isOpen ? item.name : undefined}
                       className={cn(

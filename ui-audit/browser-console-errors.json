@@ -1,0 +1,106 @@
+[
+  {
+    "route": "/patients/[id]",
+    "timestamp": "2026-09-25T14:03:46.328Z",
+    "error": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721"
+    }
+  },
+  {
+    "route": "/patients/[id]/edit",
+    "timestamp": "2026-09-25T14:03:50.781Z",
+    "error": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721"
+    }
+  },
+  {
+    "route": "/reports",
+    "timestamp": "2026-09-25T14:04:16.678Z",
+    "error": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/reports/census?startDate=2026-09-18&endDate=2026-09-25"
+    }
+  },
+  {
+    "route": "/reports/census",
+    "timestamp": "2026-09-25T14:04:21.645Z",
+    "error": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/reports/census?startDate=2026-08-26&endDate=2026-09-25"
+    }
+  },
+  {
+    "route": "/patients/6aa41f53983c601046fd9721 (Mobile)",
+    "timestamp": "2026-09-25T14:05:41.853Z",
+    "error": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/patients/6aa41f53983c601046fd9721"
+    }
+  },
+  {
+    "route": "/dashboard (LAB_TECHNICIAN)",
+    "timestamp": "2026-09-25T14:06:13.448Z",
+    "error": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/laboratory/orders"
+    }
+  },
+  {
+    "route": "/users (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:14.530Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/users?"
+    }
+  },
+  {
+    "route": "/users (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:14.579Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/roles"
+    }
+  },
+  {
+    "route": "/roles (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:18.163Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/roles"
+    }
+  },
+  {
+    "route": "/roles (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:18.171Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/roles/permissions"
+    }
+  },
+  {
+    "route": "/permissions (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:21.109Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/roles/permissions"
+    }
+  },
+  {
+    "route": "/workspace-assignments (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:27.199Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/workspaces/assignments"
+    }
+  },
+  {
+    "route": "/audit (Restricted Access Test)",
+    "timestamp": "2026-09-25T14:06:30.019Z",
+    "error": "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "location": {
+      "url": "http://localhost:3001/api/v1/audit?page=1&limit=20"
+    }
+  }
+]

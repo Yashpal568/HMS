@@ -24,9 +24,9 @@
 
 ---
 
-## 2. Master Entity Catalog (27 Collections)
+## 2. Master Entity Catalog (38 Collections)
 
-The database schema models 27 distinct entities grouped by domain and tenancy tier:
+The database schema models 38 distinct entities grouped by domain and tenancy tier:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -55,6 +55,12 @@ The database schema models 27 distinct entities grouped by domain and tenancy ti
 │ 7. BILLING, PAYMENTS & AUDIT TRAIL                                          │
 │    • invoices          • payments          • notifications                  │
 │    • documents         • audit_logs                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 8. WORKFORCE, ORGANIZATION & MIGRATION FOUNDATION                           │
+│    • employees         • workforce_schedules • attendance_records          │
+│    • leave_requests    • teams               • hospital_onboardings         │
+│    • inventory_locations • inventory_import_jobs • hospital_tasks           │
+│    • hospital_notifications                                                 │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 

@@ -29,14 +29,14 @@ export function CurrencySelector({ className = '' }: { className?: string }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200/90 text-[11px] font-semibold text-slate-800 transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+        className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200/90 text-[11px] font-semibold text-slate-800 transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/40 shrink-0"
         title="Select system display currency"
         aria-label="Change currency"
         aria-expanded={isOpen}
       >
         <span className="font-bold text-sky-700">{currency.symbol.trim()}</span>
-        <span className="text-slate-600 font-mono tracking-tight">{currency.code}</span>
-        <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="hidden sm:inline text-slate-600 font-mono tracking-tight">{currency.code}</span>
+        <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (

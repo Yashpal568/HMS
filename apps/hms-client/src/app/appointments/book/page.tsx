@@ -133,7 +133,7 @@ export default function BookAppointmentPage() {
           data: { slots: AvailableSlot[]; doctorId: string; date: string };
         }>(`/appointments/slots?doctorId=${selectedDoctorId}&date=${selectedDate}`);
 
-        setSlots(res.data?.slots || []);
+        setSlots(res.data?.slots || (res.data as any)?.availableSlots || []);
       } catch (err) {
         console.error('Failed to load slots', err);
         setSlots([]);

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Types } from 'mongoose';
 import { AppointmentsService } from './appointments.service.js';
-import { AppointmentStatus, AppointmentType } from '@hms/types';
+import { AppointmentStatus, AppointmentType, QueuePriority } from '@hms/types';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 
 describe('AppointmentsService', () => {
@@ -11,6 +11,7 @@ describe('AppointmentsService', () => {
   let mockPatientModel: any;
   let mockUserModel: any;
   let mockAuditService: any;
+  let mockQueueService: any;
 
   const sampleTenantId = new Types.ObjectId().toString();
   const sampleUserId = new Types.ObjectId().toString();
@@ -115,12 +116,20 @@ describe('AppointmentsService', () => {
       record: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockQueueService = {
+      checkInPatient: vi.fn().mockResolvedValue({
+        tokenNumber: 2,
+        formattedToken: 'C-002',
+      }),
+    };
+
     appointmentsService = new AppointmentsService(
       mockAppointmentModel,
       mockDoctorScheduleModel,
       mockPatientModel,
       mockUserModel,
       mockAuditService,
+      mockQueueService,
     );
   });
 
@@ -315,10 +324,74 @@ describe('AppointmentsService', () => {
     expect(result).toBeDefined();
     expect(mockAppt.status).toBe(AppointmentStatus.CHECKED_IN);
     expect(mockAppt.save).toHaveBeenCalled();
+    expect(mockQueueService.checkInPatient).toHaveBeenCalled();
     expect(mockAuditService.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'APPOINTMENT_CHECKIN',
         status: 'SUCCESS',
+      }),
+    );
+  });
+
+  it('should capture triage vitals, compute BMI, and assign priority during check-in', async () => {
+    const mockAppt: any = {
+      _id: new Types.ObjectId(),
+      patientId: new Types.ObjectId(),
+      doctorId: new Types.ObjectId(),
+      department: 'Cardiology',
+      tokenNumber: 5,
+      status: AppointmentStatus.SCHEDULED,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    mockAppointmentModel.findOne = vi.fn().mockReturnValue({
+      exec: vi.fn().mockResolvedValue(mockAppt),
+      populate: vi.fn().mockReturnValue({
+        populate: vi.fn().mockReturnValue({
+          lean: vi.fn().mockReturnValue({
+            exec: vi.fn().mockResolvedValue({
+              ...mockAppt,
+              status: AppointmentStatus.CHECKED_IN,
+              triagePriority: QueuePriority.URGENT,
+              triageVitals: { weight: 70, height: 175, bmi: 22.9, bmiCategory: 'normal' },
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const triageDto = {
+      priority: QueuePriority.URGENT,
+      triageNotes: 'Chest discomfort since morning',
+      chiefComplaint: 'Chest pain',
+      vitals: {
+        bpSystolic: 130,
+        bpDiastolic: 85,
+        pulse: 78,
+        temperature: 98.6,
+        spO2: 99,
+        weight: 70,
+        height: 175,
+      },
+    };
+
+    const checkedIn = await appointmentsService.checkInAppointment(
+      sampleTenantId,
+      sampleUserId,
+      mockAppt._id.toString(),
+      triageDto as any,
+    );
+
+    expect(checkedIn).toBeDefined();
+    expect(mockAppt.triagePriority).toBe(QueuePriority.URGENT);
+    expect(mockAppt.triageNotes).toBe('Chest discomfort since morning');
+    expect(mockAppt.triageVitals.bmi).toBe(22.9);
+    expect(mockAppt.triageVitals.bmiCategory).toBe('normal');
+    expect(mockQueueService.checkInPatient).toHaveBeenCalledWith(
+      sampleTenantId,
+      expect.objectContaining({
+        priority: QueuePriority.URGENT,
+        triageNotes: 'Chest discomfort since morning',
       }),
     );
   });

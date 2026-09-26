@@ -50,7 +50,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { activeWorkspace, availableWorkspaces, switchWorkspace } = useWorkspace();
 
-  const isAdmin = !user?.role || user.role === 'HOSPITAL_ADMIN';
+  const isAdmin = user?.role === 'HOSPITAL_ADMIN';
   const hasMultipleWorkspaces = availableWorkspaces.length > 1;
 
   // Workspace configuration metadata
@@ -105,11 +105,51 @@ export default function DashboardPage() {
           component: <DepartmentManagerDashboard />,
         };
       case 'HOSPITAL_ADMIN':
-      default:
         return {
           title: 'Hospital Administrator Workspace',
           breadcrumbs: [{ label: 'Overview', href: '/dashboard' }, { label: 'Hospital Overview' }],
           component: <HospitalAdminDashboard />,
+        };
+      case 'NONE':
+      default:
+        return {
+          title: 'Workspace Setup Required',
+          breadcrumbs: [{ label: 'Overview', href: '/dashboard' }, { label: 'Setup Required' }],
+          component: (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-8 text-center max-w-2xl mx-auto my-12 shadow-xs">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 mb-4">
+                <Briefcase className="h-7 w-7" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Workspace Setup Required</h2>
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                Your account (<span className="font-semibold text-slate-800">{user?.email}</span>) is authenticated, but has not yet been assigned to an active hospital workspace or linked employee profile.
+              </p>
+              <div className="rounded-xl border border-amber-200 bg-white p-4 text-left text-xs space-y-2 mb-6 text-slate-700">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Account Role:</span>
+                  <span className="font-semibold">{user?.role || 'UNASSIGNED'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Hospital ID:</span>
+                  <span className="font-mono text-2xs">{user?.hospitalId || 'Active Tenant'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Workspace Status:</span>
+                  <span className="text-amber-600 font-semibold">Pending Assignment</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mb-6">
+                Please contact your Hospital Administrator to assign your clinical department, team, and workspace.
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Refresh Status
+              </button>
+            </div>
+          ),
         };
     }
   };

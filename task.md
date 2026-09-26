@@ -4,7 +4,35 @@
 **Classification**: Operational Tracker  
 
 ## CURRENT MILESTONE
-**AWAITING INSTRUCTION** — Phase 1 Complete Enterprise Hospital Foundation Complete. Next: **Milestone 14 — Patient Discovery Platform (patient-app)** (`docs/milestones/M14_PATIENT_DISCOVERY_PLATFORM.md`)
+**OPD COCKPIT — FORMALLY CERTIFIED & SIGNED OFF**  
+Official Certification Report: [docs/qa/OPD-COCKPIT-CERTIFICATION.md](file:///E:/FluBird/docs/qa/OPD-COCKPIT-CERTIFICATION.md)  
+Awaiting explicit user instruction before proceeding to the next cockpit.
+
+---
+
+## COCKPIT CERTIFICATIONS
+
+### OPD Cockpit (Outpatient Department & Consultation Flow) — CERTIFIED & COMPLETE
+- **Status**: Production Certified (13 E2E Test Suites / 64 Tests Passed, 23 Backend Unit Suites / 150 Tests Passed, 0 TypeScript Errors, 0 Lint Warnings).
+- **Certification Report**: `docs/qa/OPD-COCKPIT-CERTIFICATION.md`
+- **Core Workflow Operationalized**:
+  `Patient Registration -> Outpatient Appointment / Walk-In -> Reception Check-In with Clinical Triage (Vitals & Priority) -> Live OPD Queue (WAITING) -> Doctor Priority-Weighted Call Next (CALLED) -> Consultation Encounter Started (IN_CONSULTATION with pre-populated triage vitals) -> Clinical Documentation (ICD-10 diagnoses, e-Prescription, Lab requisitions) -> Finalize & Seal Encounter (COMPLETED, locked record) -> Downstream Handoff (Active Pharmacy Rx, STAT Lab Order Requisition, Billing Settlement Link, Queue Call Next Continuity)`.
+- **E2E Automated Test Suites (`tests/e2e/opd/` - 13/13 Passed)**:
+  1. `01-opd-dashboard.spec.ts` (4 passed) — Dashboard & live telemetry
+  2. `02-patient-registration.spec.ts` (4 passed) — UHID allocation & server-side search
+  3. `03-appointments.spec.ts` (4 passed) — Booking, slot conflicts, cancellation
+  4. `04-checkin.spec.ts` (3 passed) — Triage vitals, BMI, priority, walk-in auto-booking
+  5. `05-opd-queue.spec.ts` (3 passed) — Priority-weighted FIFO dequeue, skip, recall
+  6. `06-encounter.spec.ts` (3 passed) — Consultation lifecycle, notes, ICD-10, finalize
+  7. `07-rbac.spec.ts` (5 passed) — Role authorization: Admin, Receptionist, Doctor, Nurse, Accountant
+  8. `08-tenant-isolation.spec.ts` (4 passed) — Cross-tenant isolation & IDOR uniform 404 masking
+  9. `09-queue-concurrency.spec.ts` (1 passed) — Multi-session concurrent CALL NEXT mutual exclusion
+  10. `10-error-states.spec.ts` (4 passed) — Validation error envelopes, 404, invalid IDs
+  11. `11-responsive.spec.ts` (3 passed) — Multi-viewport testing (Desktop, Tablet, Mobile)
+  12. `12-accessibility.spec.ts` (3 passed) — WCAG 2.1 AA landmarks, headings, aria-labels
+  13. `13-opd-complete-flow.spec.ts` (23 passed) — Full 25-step patient journey (`OPD-001`) & 12 negative edge cases (`OPD-NEG-001` through `OPD-NEG-012`)
+- **Visual Evidence Archive**: 11 Chrome browser screenshots saved under `docs/certifications/opd/`.
+- **Mock Data Elimination**: All OPD dashboards (`doctor-dashboard.tsx`, `receptionist-dashboard.tsx`, `live-opd-queue-card.tsx`, `hospital-admin-dashboard.tsx`) fully purged of mock data and hardcoded metrics; verified with authentic database states.
 
 ---
 

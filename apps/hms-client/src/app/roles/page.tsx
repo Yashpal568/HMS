@@ -64,7 +64,8 @@ export default function RolesPage() {
   const groupedPermissions = React.useMemo(() => {
     const groups: Record<string, any[]> = {};
     for (const p of allPermissions) {
-      const domain = p.domain || (p.code ? p.code.split('.')[0] : 'general');
+      const key = p.slug || p.code || '';
+      const domain = p.module || p.domain || (key ? key.split('.')[0] : 'general');
       if (!groups[domain]) groups[domain] = [];
       groups[domain].push(p);
     }
@@ -72,6 +73,7 @@ export default function RolesPage() {
   }, [allPermissions]);
 
   const togglePermission = (code: string) => {
+    if (!code) return;
     setSelectedPermissions((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
     );
@@ -355,7 +357,7 @@ export default function RolesPage() {
                         setSelectedPermissions(
                           selectedPermissions.length === allPermissions.length
                             ? []
-                            : allPermissions.map((p) => p.code),
+                            : allPermissions.map((p) => p.slug || p.code),
                         )
                       }
                       className="text-2xs text-teal-600 hover:text-teal-700 font-semibold cursor-pointer"
@@ -372,24 +374,29 @@ export default function RolesPage() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                           {perms.map((p) => {
-                            const isChecked = selectedPermissions.includes(p.code);
+                            const permKey = p.slug || p.code;
+                            const isChecked = selectedPermissions.includes(permKey);
                             return (
                               <label
-                                key={p.code}
+                                key={permKey}
+                                htmlFor={`perm-create-${permKey}`}
                                 className={cn(
-                                  'flex items-center gap-2 p-1.5 rounded-lg border transition-colors cursor-pointer select-none text-[11px]',
+                                  'flex items-center gap-2 p-2 rounded-lg border transition-colors cursor-pointer select-none text-[11px]',
                                   isChecked
                                     ? 'bg-teal-50 border-teal-200 text-teal-950 font-medium'
                                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70',
                                 )}
                               >
                                 <input
+                                  id={`perm-create-${permKey}`}
                                   type="checkbox"
+                                  name={permKey}
+                                  aria-label={permKey}
                                   checked={isChecked}
-                                  onChange={() => togglePermission(p.code)}
+                                  onChange={() => togglePermission(permKey)}
                                   className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 shrink-0"
                                 />
-                                <span className="font-mono truncate">{p.code}</span>
+                                <span className="font-mono text-xs font-semibold text-slate-800 break-all">{permKey}</span>
                               </label>
                             );
                           })}
@@ -474,24 +481,29 @@ export default function RolesPage() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                           {perms.map((p) => {
-                            const isChecked = selectedPermissions.includes(p.code);
+                            const permKey = p.slug || p.code;
+                            const isChecked = selectedPermissions.includes(permKey);
                             return (
                               <label
-                                key={p.code}
+                                key={permKey}
+                                htmlFor={`perm-edit-${permKey}`}
                                 className={cn(
-                                  'flex items-center gap-2 p-1.5 rounded-lg border transition-colors cursor-pointer select-none text-[11px]',
+                                  'flex items-center gap-2 p-2 rounded-lg border transition-colors cursor-pointer select-none text-[11px]',
                                   isChecked
                                     ? 'bg-teal-50 border-teal-200 text-teal-950 font-medium'
                                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70',
                                 )}
                               >
                                 <input
+                                  id={`perm-edit-${permKey}`}
                                   type="checkbox"
+                                  name={permKey}
+                                  aria-label={permKey}
                                   checked={isChecked}
-                                  onChange={() => togglePermission(p.code)}
+                                  onChange={() => togglePermission(permKey)}
                                   className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 shrink-0"
                                 />
-                                <span className="font-mono truncate">{p.code}</span>
+                                <span className="font-mono text-xs font-semibold text-slate-800 break-all">{permKey}</span>
                               </label>
                             );
                           })}

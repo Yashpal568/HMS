@@ -55,7 +55,7 @@ export class QueueController {
    * Clinician calls next waiting patient (concurrency-safe atomic dequeue)
    */
   @Post('call-next')
-  @RequirePermissions('clinical.encounters.write')
+  @RequirePermissions('emr.update')
   async callNextPatient(
     @Req() req: AuthenticatedRequest,
     @Body() dto: CallNextPatientDto,
@@ -78,7 +78,7 @@ export class QueueController {
    * Transition entry to IN_CONSULTATION
    */
   @Patch('entries/:id/start')
-  @RequirePermissions('clinical.encounters.write')
+  @RequirePermissions('emr.update')
   async startConsultation(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -99,7 +99,7 @@ export class QueueController {
    * Transition entry to COMPLETED
    */
   @Patch('entries/:id/complete')
-  @RequirePermissions('clinical.encounters.write')
+  @RequirePermissions('emr.update')
   async completeConsultation(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -120,7 +120,7 @@ export class QueueController {
    * Skip patient (absent when called)
    */
   @Patch('entries/:id/skip')
-  @RequirePermissions('clinical.encounters.write')
+  @RequirePermissions('emr.update')
   async skipPatient(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -140,10 +140,31 @@ export class QueueController {
   }
 
   /**
+   * Recall previously skipped patient back to CALLED status
+   */
+  @Patch('entries/:id/recall')
+  @RequirePermissions('emr.update')
+  async recallPatient(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    const entry = await this.queueService.recallPatient(
+      req.user.tenantId,
+      id,
+      req.user.id,
+    );
+    return {
+      success: true,
+      data: entry,
+      message: `Token ${entry.formattedToken} successfully recalled`,
+    };
+  }
+
+  /**
    * Query doctor's active queue
    */
   @Get('doctor')
-  @RequirePermissions('clinical.encounters.read')
+  @RequirePermissions('emr.read')
   async getDoctorQueue(
     @Req() req: AuthenticatedRequest,
     @Query() query: QueryQueueDto,

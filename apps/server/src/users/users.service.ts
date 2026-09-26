@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, BadRequestException, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
@@ -239,6 +239,10 @@ export class UsersService implements OnModuleInit {
       throw new BadRequestException('User with this email already exists.');
     }
 
+    if (data.role && data.role.toUpperCase() === 'SUPER_ADMIN') {
+      throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be assigned within hospital management.');
+    }
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(data.password, salt);
 
@@ -268,6 +272,27 @@ export class UsersService implements OnModuleInit {
     const existing = await this.findByEmail(normalizedEmail);
     if (existing) {
       throw new BadRequestException('A user with this email address already exists in the system.');
+    }
+
+    if (dto.role && dto.role.toUpperCase() === 'SUPER_ADMIN') {
+      throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be assigned within hospital management.');
+    }
+
+    if (dto.department && this.userModel?.db && typeof this.userModel.db.collection === 'function') {
+      const deptExists = await this.userModel.db.collection('departments').findOne({
+        tenantId: new Types.ObjectId(hospitalId),
+        $or: [
+          { name: new RegExp(`^${dto.department.trim()}$`, 'i') },
+          { code: dto.department.trim().toUpperCase() },
+          ...(Types.ObjectId.isValid(dto.department) ? [{ _id: new Types.ObjectId(dto.department) }] : [])
+        ]
+      });
+      const tenantDeptCount = await this.userModel.db.collection('departments').countDocuments({
+        tenantId: new Types.ObjectId(hospitalId)
+      });
+      if (tenantDeptCount > 0 && !deptExists) {
+        throw new BadRequestException(`Department "${dto.department}" does not exist in this hospital facility.`);
+      }
     }
 
     const temporaryPassword = generateSecureTemporaryPassword();
@@ -443,6 +468,9 @@ export class UsersService implements OnModuleInit {
     }
 
     if (dto.role) {
+      if (dto.role.toUpperCase() === 'SUPER_ADMIN') {
+        throw new ForbiddenException('SUPER_ADMIN is a SaaS platform role and cannot be assigned within hospital management.');
+      }
       user.role = dto.role.toUpperCase();
       if (!dto.permissions) {
         user.permissions = DEFAULT_ROLE_PERMISSIONS[user.role] || [];
